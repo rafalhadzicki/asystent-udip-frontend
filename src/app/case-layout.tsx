@@ -8,18 +8,38 @@ import {
   Tabs,
   Typography,
 } from '@mui/material'
+import { useMemo } from 'react'
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useGetCaseById } from '@/api/cases/cases.queries'
+import { composeApiCase } from '@/features/cases/case-from-api'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { displayDate } from '@/features/demo/date-utils'
 import { caseTabs, routes } from './routes'
 
 export const CaseLayout = () => {
   const { caseId } = useParams()
-  const { cases } = useDemoStore()
+  const { cases, overlays } = useDemoStore()
   const { t } = useTranslation()
   const location = useLocation()
-  const item = cases.find((candidate) => candidate.id === caseId)
+  const localItem = cases.find((candidate) => candidate.id === caseId)
+  // Cases stored locally (demo, created in the wizard) are not on the server.
+  const { caseDetail, isCaseLoading } = useGetCaseById(
+    localItem ? undefined : caseId,
+  )
+  const item = useMemo(
+    () =>
+      localItem ??
+      (caseDetail && composeApiCase(caseDetail, overlays[caseDetail.id])),
+    [localItem, caseDetail, overlays],
+  )
+
+  if (!item && isCaseLoading)
+    return (
+      <Typography role="status" color="text.secondary">
+        {t('caseDetail.loading')}
+      </Typography>
+    )
   if (!item)
     return (
       <Stack spacing={2}>
@@ -61,7 +81,14 @@ export const CaseLayout = () => {
             {t('caseDetail.deadline', { date: displayDate(item.deadline) })}
           </Typography>
           <Typography variant="body2">{item.applicant}</Typography>
-          <Chip size="small" label={t(`status.${item.status}`)} />
+          <Chip
+            size="small"
+            label={
+              item.apiStatus
+                ? t(`register.status.${item.apiStatus}`)
+                : t(`status.${item.status}`)
+            }
+          />
         </Stack>
         {item.status === 'completed' && (
           <Alert severity="success" sx={{ mb: 2 }}>

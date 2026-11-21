@@ -20,7 +20,9 @@ import { useTranslation } from 'react-i18next'
 import { Link, useOutletContext } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
 import { displayDate, validIsoDate } from '@/features/demo/date-utils'
+import { getErrorStatus } from '@/api/client'
 import { useDemoStore } from '@/features/demo/demo-store'
+import { useSaveCase } from '../use-save-case'
 import type { CaseItem } from '@/features/demo/types'
 import { normalizeReference, suggestedDeadline } from '../case-utils'
 import { caseTabs, routes } from '@/app/routes'
@@ -35,7 +37,7 @@ type RequestValues = Pick<
   | 'deadline'
   | 'requestText'
 >
-type Notice = 'saved' | 'scopeReset' | 'applicantChanged'
+type Notice = 'saved' | 'scopeReset' | 'applicantChanged' | 'saveFailed'
 
 const toValues = (item: CaseItem): RequestValues => ({
   reference: item.reference,
@@ -87,11 +89,13 @@ const SourceSection = ({ item }: { item: CaseItem }) => {
 
 const RequestEditor = ({ item }: { item: CaseItem }) => {
   const { t } = useTranslation('translation', { keyPrefix: 'request' })
-  const { cases, updateCase } = useDemoStore()
+  const { cases } = useDemoStore()
+  const saveCase = useSaveCase(item)
+  const isRemote = Boolean(item.apiStatus)
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
   const readOnly = item.status === 'completed'
-  const { control, handleSubmit, reset, setValue, getValues } =
+  const { control, handleSubmit, reset, setValue, setError, getValues } =
     useForm<RequestValues>({
       mode: 'onBlur',
       defaultValues: toValues(item),
@@ -109,7 +113,7 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
     value.trim() !== '' || t('errors.required')
   const date = (value: string) => isDate(value) || t('errors.date')
 
-  const onSubmit = (values: RequestValues) => {
+  const onSubmit = async (values: RequestValues) => {
     if (readOnly) return
     const trimmed: RequestValues = {
       reference: values.reference.trim(),
@@ -122,26 +126,32 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
     }
     const applicantChanged = trimmed.applicant !== item.applicant.trim()
     const resetsScope = scopeChanged
-    updateCase(
-      item.id,
-      resetsScope
-        ? {
-            ...trimmed,
-            status: 'analysis',
-            analysisNeedsReview: true,
-            responseText: '',
-            redactions: [],
-            redactionConfirmed: false,
-          }
-        : applicantChanged && item.responseText
+    try {
+      await saveCase(
+        resetsScope
           ? {
               ...trimmed,
-              status: 'waiting',
+              status: 'analysis',
+              analysisNeedsReview: true,
+              responseText: '',
               redactions: [],
               redactionConfirmed: false,
             }
-          : trimmed,
-    )
+          : applicantChanged && item.responseText
+            ? {
+                ...trimmed,
+                status: 'waiting',
+                redactions: [],
+                redactionConfirmed: false,
+              }
+            : trimmed,
+      )
+    } catch (error) {
+      if (getErrorStatus(error) === 409)
+        setError('reference', { message: t('errors.referenceTaken') })
+      else setNotice('saveFailed')
+      return
+    }
     reset(trimmed)
     setEditing(false)
     setNotice(
@@ -202,12 +212,14 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
                 validate: {
                   required,
                   unique: (value) =>
+                    isRemote ||
                     !cases.some(
                       (other) =>
                         other.id !== item.id &&
                         normalizeReference(other.reference) ===
                           normalizeReference(value),
-                    ) || t('errors.referenceTaken'),
+                    ) ||
+                    t('errors.referenceTaken'),
                 },
               }}
             />
@@ -260,23 +272,28 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
               label={t('details.deadline')}
               type="date"
               required
+              disabled={isRemote}
               slotProps={{ inputLabel: { shrink: true } }}
               helperText={
-                proposal
-                  ? t('deadlineProposal', { date: displayDate(proposal) })
-                  : undefined
+                isRemote
+                  ? t('deadlineFromServer')
+                  : proposal
+                    ? t('deadlineProposal', { date: displayDate(proposal) })
+                    : undefined
               }
               rules={{
-                validate: {
-                  date,
-                  order: (value) =>
-                    !isDate(getValues('receivedAt')) ||
-                    value >= getValues('receivedAt') ||
-                    t('errors.deadlineBeforeReceived'),
-                },
+                validate: isRemote
+                  ? {}
+                  : {
+                      date,
+                      order: (value) =>
+                        !isDate(getValues('receivedAt')) ||
+                        value >= getValues('receivedAt') ||
+                        t('errors.deadlineBeforeReceived'),
+                    },
               }}
             />
-            {proposal && proposal !== deadline && (
+            {!isRemote && proposal && proposal !== deadline && (
               <Actions className="wide">
                 <Button
                   variant="text"

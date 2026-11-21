@@ -68,6 +68,23 @@ describe('App', () => {
     expect(screen.queryByText('Podaj adres e-mail.')).not.toBeInTheDocument()
   })
 
+  it('odrzuca login niebędący adresem e-mail', async () => {
+    const login = vi.spyOn(authApi, 'login')
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>,
+    )
+    await user.type(screen.getByLabelText('E-mail'), 'admin')
+    await user.type(screen.getByLabelText('Hasło'), 'demo123')
+    await user.click(screen.getByRole('button', { name: 'Zaloguj się' }))
+    expect(
+      await screen.findByText('Podaj poprawny adres e-mail.'),
+    ).toBeInTheDocument()
+    expect(login).not.toHaveBeenCalled()
+  })
+
   it('odrzuca login składający się wyłącznie ze spacji', async () => {
     const user = userEvent.setup()
     render(

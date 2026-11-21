@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -10,17 +9,25 @@ import { AppLayout } from './app-layout'
 
 const Draft = () => {
   const { uploadDraft, setUploadDraft } = useDemoStore()
-  useEffect(() => {
-    setUploadDraft({
-      file: new File(['test'], 'test.pdf'),
-      requestText: 'test',
-      subject: '',
-      applicant: '',
-      receivedAt: '',
-      writtenAt: '',
-    })
-  }, [setUploadDraft])
-  return <div data-testid="draft">{uploadDraft ? 'present' : 'empty'}</div>
+  return (
+    <>
+      <button
+        onClick={() =>
+          setUploadDraft({
+            file: new File(['test'], 'test.pdf'),
+            requestText: 'test',
+            subject: '',
+            applicant: '',
+            receivedAt: '',
+            writtenAt: '',
+          })
+        }
+      >
+        seed
+      </button>
+      <div data-testid="draft">{uploadDraft ? 'present' : 'empty'}</div>
+    </>
+  )
 }
 
 describe('AppLayout', () => {
@@ -36,6 +43,7 @@ describe('AppLayout', () => {
         </DemoProvider>
       </MemoryRouter>,
     )
+    await user.click(screen.getByRole('button', { name: 'seed' }))
     expect(screen.getByTestId('draft')).toHaveTextContent('present')
     await user.click(screen.getByRole('button', { name: 'Wyloguj się' }))
     expect(screen.getByTestId('draft')).toHaveTextContent('empty')

@@ -1,5 +1,6 @@
 import type {
   AnalysisWarning,
+  CaseStatus as ApiCaseStatus,
   TextExtractionStatus,
 } from '@/api/cases/cases.schemas'
 
@@ -42,6 +43,8 @@ export type CaseItem = {
   requestText: string
   source: DocumentMeta
   questions: Question[]
+  // Only on cases composed from the API; never stored locally.
+  apiStatus?: ApiCaseStatus
   analysisNeedsReview?: boolean
   departments: Department[]
   materials: DocumentMeta[]

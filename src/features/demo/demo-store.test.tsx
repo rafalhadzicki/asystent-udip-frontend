@@ -1,7 +1,9 @@
 import { act, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DemoProvider, DEMO_STORAGE_KEY, useDemoStore } from './demo-store'
 import { createDemoCases, createDemoKnowledge } from './demo-data'
+import { clearSession, setSession } from '@/api/session'
 
 const DemoProbe = () => {
   const store = useDemoStore()
@@ -24,6 +26,28 @@ const DemoProbe = () => {
 beforeEach(() => localStorage.clear())
 
 describe('demo persistence', () => {
+  it('keeps local data separate for each signed-in user', async () => {
+    const user = userEvent.setup()
+    setSession({ email: 'a@example.test', accessToken: 'a' })
+    render(
+      <DemoProvider>
+        <DemoProbe />
+      </DemoProvider>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Change' }))
+    expect(screen.getByText('Changed demo subject')).toBeInTheDocument()
+    expect(
+      localStorage.getItem(`${DEMO_STORAGE_KEY}:a@example.test`),
+    ).toContain('Changed demo subject')
+    expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBeNull()
+
+    act(() => setSession({ email: 'b@example.test', accessToken: 'b' }))
+    expect(screen.queryByText('Changed demo subject')).not.toBeInTheDocument()
+    expect(
+      localStorage.getItem(`${DEMO_STORAGE_KEY}:b@example.test`),
+    ).toBeNull()
+  })
+
   it('restores cases with an optional empty written date', () => {
     const cases = createDemoCases()
     cases[0].writtenAt = ''
@@ -175,5 +199,139 @@ describe('demo persistence', () => {
     expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBe(other)
     expect(screen.getByText('Changed demo subject')).toBeInTheDocument()
     expect(screen.getByTestId('storage-error')).toHaveTextContent('conflict')
+  })
+})
+
+const OverlayProbe = () => {
+  const store = useDemoStore()
+  return (
+    <div>
+      <span data-testid="overlay">
+        {JSON.stringify(store.overlays['api-case'] ?? null)}
+      </span>
+      <span data-testid="count">{store.cases.length}</span>
+      <button
+        onClick={() =>
+          store.updateCase('api-case', {
+            responseText: 'Projekt',
+            subject: 'Ignored server field',
+          })
+        }
+      >
+        Overlay
+      </button>
+      <button onClick={() => store.addCase(store.cases[0])}>Duplicate</button>
+      <button onClick={store.resetDemo}>Reset</button>
+    </div>
+  )
+}
+
+describe('local data of cases stored on the server', () => {
+  it('keeps only local fields of an unknown case and clears them on reset', async () => {
+    const user = userEvent.setup()
+    render(
+      <DemoProvider>
+        <OverlayProbe />
+      </DemoProvider>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Overlay' }))
+    expect(screen.getByTestId('overlay')).toHaveTextContent(
+      '{"responseText":"Projekt"}',
+    )
+    expect(
+      JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).overlays,
+    ).toEqual({ 'api-case': { responseText: 'Projekt' } })
+    await user.click(screen.getByRole('button', { name: 'Reset' }))
+    expect(screen.getByTestId('overlay')).toHaveTextContent('null')
+  })
+
+  it('restores snapshots saved before overlays existed', () => {
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        cases: createDemoCases(),
+        knowledge: createDemoKnowledge(),
+      }),
+    )
+    render(
+      <DemoProvider>
+        <DemoProbe />
+      </DemoProvider>,
+    )
+    expect(screen.getByTestId('storage-error')).toBeEmptyDOMElement()
+  })
+
+  it('rejects a malformed overlay with a visible error', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        cases: createDemoCases(),
+        knowledge: createDemoKnowledge(),
+        overlays: { 'api-case': { contactedAt: 'not-a-date' } },
+      }),
+    )
+    render(
+      <DemoProvider>
+        <DemoProbe />
+      </DemoProvider>,
+    )
+    expect(screen.getByTestId('storage-error')).toHaveTextContent('restore')
+  })
+
+  it('ignores adding a case with an id that already exists', async () => {
+    const user = userEvent.setup()
+    render(
+      <DemoProvider>
+        <OverlayProbe />
+      </DemoProvider>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Duplicate' }))
+    expect(screen.getByTestId('count')).toHaveTextContent('10')
+  })
+
+  it('treats e-mail addresses that differ only in case as one user', () => {
+    setSession({ email: 'User@Example.test', accessToken: 'token' })
+    const cases = createDemoCases()
+    cases[0].subject = 'Zapisane dla małych liter'
+    localStorage.setItem(
+      `${DEMO_STORAGE_KEY}:user@example.test`,
+      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+    )
+    render(
+      <DemoProvider>
+        <DemoProbe />
+      </DemoProvider>,
+    )
+    expect(screen.getByText('Zapisane dla małych liter')).toBeInTheDocument()
+    clearSession()
+  })
+
+  it('moves copies of API cases saved by earlier versions into overlays', () => {
+    const cases = [
+      ...createDemoCases(),
+      {
+        ...createDemoCases()[0],
+        id: 'api-case',
+        apiStatus: 'NEW',
+        subject: 'Stara kopia z serwera',
+        responseText: 'Moja odpowiedź',
+      },
+    ]
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+    )
+    render(
+      <DemoProvider>
+        <OverlayProbe />
+      </DemoProvider>,
+    )
+    expect(screen.getByTestId('count')).toHaveTextContent('10')
+    const overlay = JSON.parse(screen.getByTestId('overlay').textContent!)
+    expect(overlay.responseText).toBe('Moja odpowiedź')
+    expect(overlay).not.toHaveProperty('subject')
   })
 })

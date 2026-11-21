@@ -66,6 +66,13 @@ describe('analiza sprawy', () => {
         kind: 'DEPARTMENT',
         isActive: true,
       },
+      {
+        id: 'inactive-unit',
+        name: 'Wydział wygaszony',
+        symbol: 'WW',
+        kind: 'DEPARTMENT',
+        isActive: false,
+      },
     ])
     const user = userEvent.setup()
     renderPage(createDemoCases()[0])
@@ -75,6 +82,11 @@ describe('analiza sprawy', () => {
         document.querySelector('#department-options option'),
       ).toHaveAttribute('value', 'Wydział testowy'),
     )
+    expect(
+      [...document.querySelectorAll('#department-options option')].map(
+        (option) => option.getAttribute('value'),
+      ),
+    ).toEqual(['Wydział testowy'])
     await user.type(screen.getByLabelText('Nazwa jednostki'), 'Wydział testowy')
     await user.click(screen.getByRole('button', { name: 'Dodaj jednostkę' }))
     await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))

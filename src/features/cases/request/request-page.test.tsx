@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClientProvider } from '@tanstack/react-query'
 import {
   MemoryRouter,
   Outlet,
@@ -13,6 +14,7 @@ import { theme } from '@/app/theme'
 import { DemoProvider, useDemoStore } from '@/features/demo/demo-store'
 import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
 import { DEMO_STORAGE_KEY } from '@/features/demo/demo-store'
+import { createTestQueryClient } from '@/test/query-client'
 import { RequestPage } from './request-page'
 
 const CaseOutlet = () => {
@@ -30,15 +32,17 @@ const CaseOutlet = () => {
 const renderPage = (caseId: string) =>
   render(
     <ThemeProvider theme={theme}>
-      <DemoProvider>
-        <MemoryRouter initialEntries={[`/sprawy/${caseId}/wniosek`]}>
-          <Routes>
-            <Route path="/sprawy/:caseId" element={<CaseOutlet />}>
-              <Route path="wniosek" element={<RequestPage />} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </DemoProvider>
+      <QueryClientProvider client={createTestQueryClient()}>
+        <DemoProvider>
+          <MemoryRouter initialEntries={[`/sprawy/${caseId}/wniosek`]}>
+            <Routes>
+              <Route path="/sprawy/:caseId" element={<CaseOutlet />}>
+                <Route path="wniosek" element={<RequestPage />} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </DemoProvider>
+      </QueryClientProvider>
     </ThemeProvider>,
   )
 
