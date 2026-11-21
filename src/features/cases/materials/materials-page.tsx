@@ -25,17 +25,15 @@ import type { CaseItem, DocumentMeta } from '@/features/demo/types'
 import { caseTabs, routes } from '@/app/routes'
 import { DEMO_TODAY } from '@/features/demo/demo-data'
 import { validIsoDate } from '@/features/demo/date-utils'
+import { validateMaterialFile } from './materials-utils'
 
 const today = () => DEMO_TODAY
 
-const maxFileSize = 25 * 1024 * 1024
-const fileTypes: Record<string, string[]> = {
-  pdf: ['application/pdf'],
-  docx: [
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  ],
-  txt: ['text/plain'],
-}
+const fileErrorKeys = {
+  type: 'fileTypeError',
+  size: 'fileSizeError',
+  empty: 'fileEmptyError',
+} as const
 
 export const MaterialsPage = () => {
   const item = useOutletContext<CaseItem>()
@@ -111,20 +109,9 @@ export const MaterialsPage = () => {
       setError(t('fileUnitError'))
       return
     }
-    const extension = file.name.split('.').pop()?.toLowerCase() || ''
-    if (
-      !fileTypes[extension] ||
-      (file.type && !fileTypes[extension].includes(file.type))
-    ) {
-      setError(t('fileTypeError'))
-      return
-    }
-    if (file.size > maxFileSize) {
-      setError(t('fileSizeError'))
-      return
-    }
-    if (!file.size) {
-      setError(t('fileEmptyError'))
+    const fileError = validateMaterialFile(file)
+    if (fileError) {
+      setError(t(fileErrorKeys[fileError]))
       return
     }
     const material: DocumentMeta = {
