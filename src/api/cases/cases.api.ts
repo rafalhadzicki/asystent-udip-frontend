@@ -5,6 +5,7 @@ import {
   caseYearsSchema,
   requestAnalysisSchema,
   type CaseListParams,
+  type CaseSummary,
   type ChangeCaseStatusInput,
   type CreateCaseInput,
   type ExtendDeadlineInput,
@@ -40,6 +41,27 @@ export const getCases = async (
       signal,
     }),
   )
+
+const MAX_PAGE_SIZE = 500
+const MAX_EXPORT_PAGES = 40
+
+// Walks through every page (sequentially, bounded) for the CSV export.
+export const getAllCases = async (
+  params: Omit<CaseListParams, 'limit' | 'offset'>,
+  signal?: AbortSignal,
+) => {
+  const items: CaseSummary[] = []
+  for (let page = 0; page < MAX_EXPORT_PAGES; page += 1) {
+    const result = await getCases(
+      { ...params, limit: MAX_PAGE_SIZE, offset: items.length },
+      signal,
+    )
+    items.push(...result.items)
+    if (result.items.length === 0 || items.length >= result.total) return items
+  }
+  // Better to fail than to hand over a silently truncated export.
+  throw new Error('Too many cases to export')
+}
 
 export const getCaseYears = async (signal?: AbortSignal) =>
   caseYearsSchema.parse(

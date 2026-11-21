@@ -7,7 +7,7 @@ import type { Department } from './departments.schemas'
 
 export const useGetDepartments = () => {
   const email = useSessionEmail()
-  const { data, isLoading, isError, refetch } = useQuery<
+  const { data, isLoading, isError, error, refetch } = useQuery<
     Department[],
     ApiError
   >({
@@ -15,12 +15,14 @@ export const useGetDepartments = () => {
     queryFn: ({ signal }) => getDepartments(signal),
     // The dictionary of departments changes rarely.
     staleTime: 5 * 60_000,
+    select: (list) => list.filter((department) => department.isActive),
   })
 
   return {
     departments: data,
     isDepartmentsLoading: isLoading,
     isDepartmentsError: isError,
+    departmentsError: error,
     refetchDepartments: refetch,
   }
 }

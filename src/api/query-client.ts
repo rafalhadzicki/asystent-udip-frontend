@@ -4,6 +4,7 @@ import {
   QueryClient,
   isCancelledError,
 } from '@tanstack/react-query'
+import { ZodError } from 'zod'
 import { getErrorStatus } from './client'
 import { subscribeToSession } from './session'
 
@@ -26,6 +27,8 @@ export const createQueryClient = () =>
         staleTime: 30_000,
         refetchOnWindowFocus: false,
         retry: (failureCount, error) => {
+          // A response that violates the contract will not fix itself on retry.
+          if (error instanceof ZodError) return false
           const status = getErrorStatus(error)
           if (status !== undefined && status >= 400 && status < 500)
             return false
@@ -39,4 +42,5 @@ export const createQueryClient = () =>
 export const queryClient = createQueryClient()
 
 // Any session change (login, logout, expired token) drops all server state.
-subscribeToSession(() => queryClient.clear())
+export const clearCacheOnSessionChange = (client: QueryClient) =>
+  subscribeToSession(() => client.clear())

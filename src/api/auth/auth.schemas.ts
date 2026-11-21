@@ -1,8 +1,10 @@
 import { z } from 'zod'
 
+export const emailSchema = z.email()
+
 export const loginCredentialsSchema = z.object({
-  email: z.string(),
-  password: z.string(),
+  email: emailSchema,
+  password: z.string().min(1),
 })
 
 export const loginResponseSchema = z.object({

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { FormPasswordField } from '@/components/form/form-password-field'
 import { FormTextField } from '@/components/form/form-text-field'
 import { useLogin } from '@/api/auth/auth.queries'
+import { emailSchema } from '@/api/auth/auth.schemas'
 import { getErrorStatus } from '@/api/client'
 import { ScreenReaderText } from './screen-reader-text'
 import {
@@ -99,7 +100,10 @@ export const LoginPage = () => {
               rules={{
                 required: authT('validation.loginRequired'),
                 validate: (value) =>
-                  value.trim().length > 0 || authT('validation.loginRequired'),
+                  value.trim().length === 0
+                    ? authT('validation.loginRequired')
+                    : emailSchema.safeParse(value.trim()).success ||
+                      authT('validation.loginInvalid'),
               }}
               id="login"
               label={authT('loginLabel')}

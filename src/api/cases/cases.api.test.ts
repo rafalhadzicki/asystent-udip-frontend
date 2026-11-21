@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ZodError } from 'zod'
 import { apiClient } from '../client'
-import { analyzeRequest, createCase, getCases } from './cases.api'
+import { analyzeRequest, createCase, getAllCases, getCases } from './cases.api'
 
 const summary = {
   id: 'case-1',
@@ -110,5 +110,28 @@ describe('cases api', () => {
     const form = post.mock.calls[1][1] as FormData
     expect(form.get('subject')).toBe('Temat')
     expect(form.get('file')).toBe(file)
+  })
+
+  it('getAllCases walks through every page with the signal', async () => {
+    const get = vi
+      .spyOn(apiClient, 'get')
+      .mockResolvedValueOnce({ items: [summary, summary], total: 3 })
+      .mockResolvedValueOnce({ items: [summary], total: 3 })
+    const signal = new AbortController().signal
+    const items = await getAllCases({ year: 2026 }, signal)
+    expect(items).toHaveLength(3)
+    expect(get).toHaveBeenCalledTimes(2)
+    expect(get.mock.calls[1][1]).toMatchObject({
+      signal,
+      params: { year: 2026, limit: 500, offset: 2 },
+    })
+  })
+
+  it('getAllCases fails instead of returning a truncated export', async () => {
+    vi.spyOn(apiClient, 'get').mockResolvedValue({
+      items: [summary],
+      total: 1_000_000,
+    })
+    await expect(getAllCases({ year: 2026 })).rejects.toThrow('Too many cases')
   })
 })

@@ -9,6 +9,11 @@ export const caseStatusSchema = z.enum([
   'RESPONSE_PREPARED',
   'RESPONSE_SENT',
 ])
+export const UNFINISHED_STATUSES = [
+  'NEW',
+  'SENT_TO_DEPARTMENTS',
+  'RESPONSE_PREPARED',
+] as const satisfies readonly z.infer<typeof caseStatusSchema>[]
 export const caseUrgencySchema = z.enum([
   'DONE',
   'OVERDUE',
@@ -131,6 +136,7 @@ export const caseDetailSchema = caseSummarySchema.extend({
 })
 
 export type CaseStatus = z.infer<typeof caseStatusSchema>
+export type CaseUrgency = z.infer<typeof caseUrgencySchema>
 export type CaseSort = z.infer<typeof caseSortSchema>
 export type TextExtractionStatus = z.infer<typeof textExtractionStatusSchema>
 export type AnalysisWarning = z.infer<typeof analysisWarningSchema>
@@ -141,7 +147,7 @@ export type CaseDetail = z.infer<typeof caseDetailSchema>
 
 export type CaseListParams = {
   year?: number
-  status?: CaseStatus[]
+  status?: readonly CaseStatus[]
   extended?: boolean
   assigneeId?: string
   q?: string

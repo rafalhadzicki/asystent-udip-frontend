@@ -1,14 +1,18 @@
 import { AxiosError, AxiosHeaders } from 'axios'
 import { describe, expect, it } from 'vitest'
-import { createQueryClient, queryClient } from './query-client'
+import { ZodError } from 'zod'
+import { clearCacheOnSessionChange, createQueryClient } from './query-client'
 import { setSession } from './session'
 
 describe('queryClient', () => {
   it('czyści cache przy każdej zmianie sesji', () => {
+    const client = createQueryClient()
+    const unsubscribe = clearCacheOnSessionChange(client)
     setSession({ email: 'a@example.test', accessToken: 'a' })
-    queryClient.setQueryData(['user', 'a@example.test', 'cases'], [1])
+    client.setQueryData(['user', 'a@example.test', 'cases'], [1])
     setSession({ email: 'b@example.test', accessToken: 'b' })
-    expect(queryClient.getQueryCache().getAll()).toHaveLength(0)
+    expect(client.getQueryCache().getAll()).toHaveLength(0)
+    unsubscribe()
   })
 
   it('nie ponawia zapytań po błędach 4xx, ale ponawia błędy sieci', () => {
@@ -28,6 +32,7 @@ describe('queryClient', () => {
       },
     )
     expect(retry(0, clientError)).toBe(false)
+    expect(retry(0, new ZodError([]))).toBe(false)
     expect(retry(0, new AxiosError('Network error'))).toBe(true)
     expect(retry(2, new AxiosError('Network error'))).toBe(false)
   })
