@@ -18,6 +18,8 @@ describe('getApiErrorKind', () => {
     [409, 'conflict'],
     [413, 'tooLarge'],
     [415, 'unsupported'],
+    [502, 'aiFailed'],
+    [503, 'aiNotConfigured'],
     [500, 'unknown'],
   ])('maps %s to %s', (status, kind) => {
     expect(getApiErrorKind(failWith(status))).toBe(kind)

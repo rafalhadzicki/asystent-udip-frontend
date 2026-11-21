@@ -7,6 +7,8 @@ export type ApiErrorKind =
   | 'conflict'
   | 'tooLarge'
   | 'unsupported'
+  | 'aiFailed'
+  | 'aiNotConfigured'
   | 'unknown'
 
 // The single place that translates HTTP statuses into what the UI cares about.
@@ -22,6 +24,10 @@ export const getApiErrorKind = (error: unknown): ApiErrorKind => {
       return 'tooLarge'
     case 415:
       return 'unsupported'
+    case 502:
+      return 'aiFailed'
+    case 503:
+      return 'aiNotConfigured'
     default:
       return 'unknown'
   }

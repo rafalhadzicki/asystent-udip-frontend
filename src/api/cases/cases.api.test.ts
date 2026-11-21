@@ -1,7 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ZodError } from 'zod'
 import { apiClient } from '../client'
-import { analyzeRequest, createCase, getAllCases, getCases } from './cases.api'
+import {
+  analyzeRequest,
+  createCase,
+  draftResponse,
+  getAllCases,
+  getCases,
+  getRedactionSuggestions,
+  setCaseDepartments,
+  setCaseQuestions,
+  uploadCaseDocument,
+} from './cases.api'
 
 const summary = {
   id: 'case-1',
@@ -29,6 +39,7 @@ const detail = {
   createdAt: '2026-11-20T10:00:00.000Z',
   updatedAt: '2026-11-20T10:00:00.000Z',
   departmentRequests: [],
+  questions: [],
   documents: [],
   statusHistory: [],
   allowedStatuses: ['SENT_TO_DEPARTMENTS'],
@@ -44,6 +55,9 @@ describe('cases api', () => {
       textExtractionStatus: 'NO_TEXT',
       extractedText: null,
       suggestions: { caseNumber: null, receivedAt: null, subject: null },
+      questions: [],
+      departments: [],
+      ai: { status: 'NOT_CONFIGURED' },
       warnings: ['TEXT_NOT_FOUND'],
     }
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue(response)
@@ -133,5 +147,92 @@ describe('cases api', () => {
       total: 1_000_000,
     })
     await expect(getAllCases({ year: 2026 })).rejects.toThrow('Too many cases')
+  })
+
+  it('PUT pytań i jednostek wysyła listy pod adresami sprawy', async () => {
+    const put = vi.spyOn(apiClient, 'put').mockResolvedValue(detail)
+    await setCaseQuestions({
+      id: 'case-1',
+      questions: [{ text: 'Pytanie?', departmentId: 'dep-1' }],
+    })
+    await setCaseDepartments({ id: 'case-1', departmentIds: ['dep-1'] })
+    expect(put.mock.calls[0]).toEqual([
+      '/api/cases/case-1/questions',
+      { questions: [{ text: 'Pytanie?', departmentId: 'dep-1' }] },
+    ])
+    expect(put.mock.calls[1]).toEqual([
+      '/api/cases/case-1/departments',
+      { departmentIds: ['dep-1'] },
+    ])
+  })
+
+  it('uploadCaseDocument wysyła plik, rodzaj i jednostkę jako multipart', async () => {
+    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({
+      id: 'doc-1',
+      kind: 'DEPARTMENT_RESPONSE',
+      department: null,
+      originalName: 'odp.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 4,
+      textExtractionStatus: 'EXTRACTED',
+      uploadedBy: { id: 'user-1', email: 'user@example.test' },
+      createdAt: '2026-11-20T10:00:00.000Z',
+    })
+    const file = new File(['test'], 'odp.pdf', { type: 'application/pdf' })
+    await uploadCaseDocument({
+      caseId: 'case-1',
+      file,
+      kind: 'DEPARTMENT_RESPONSE',
+      departmentId: 'dep-1',
+    })
+    const [url, body] = post.mock.calls[0]
+    expect(url).toBe('/api/cases/case-1/documents')
+    const form = body as FormData
+    expect(form.get('file')).toBe(file)
+    expect(form.get('kind')).toBe('DEPARTMENT_RESPONSE')
+    expect(form.get('departmentId')).toBe('dep-1')
+  })
+
+  it('draftResponse i redaction-suggestions parsują odpowiedzi AI', async () => {
+    const post = vi.spyOn(apiClient, 'post')
+    post.mockResolvedValueOnce({
+      text: 'Szkic [UZUPEŁNIJ: data]',
+      sources: [
+        {
+          kind: 'KNOWLEDGE',
+          documentId: 'k-1',
+          documentName: 'Ustawa',
+          category: 'LAW',
+          excerpt: 'Art. 1',
+        },
+      ],
+    })
+    await expect(
+      draftResponse({ id: 'case-1', notes: 'notatka' }),
+    ).resolves.toMatchObject({ sources: [{ documentName: 'Ustawa' }] })
+    expect(post.mock.calls[0]).toEqual([
+      '/api/cases/case-1/draft-response',
+      { notes: 'notatka' },
+    ])
+    post.mockResolvedValueOnce({
+      suggestions: [
+        {
+          text: 'Jan Kowalski',
+          category: 'PERSON_NAME',
+          reason: 'Dane osobowe',
+        },
+      ],
+    })
+    await expect(
+      getRedactionSuggestions({ id: 'case-1', text: 'Jan Kowalski' }),
+    ).resolves.toEqual({
+      suggestions: [
+        {
+          text: 'Jan Kowalski',
+          category: 'PERSON_NAME',
+          reason: 'Dane osobowe',
+        },
+      ],
+    })
   })
 })

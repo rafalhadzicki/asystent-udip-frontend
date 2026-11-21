@@ -48,8 +48,88 @@ export const caseDocumentKindSchema = z.enum([
 
 const userRefSchema = z.object({ id: z.string(), email: z.string() })
 
+export const extractionMethodSchema = z.enum(['AI', 'PATTERN'])
+export const aiAnalysisStatusSchema = z.enum([
+  'USED',
+  'NOT_CONFIGURED',
+  'FAILED',
+  'SKIPPED_NO_TEXT',
+])
+
 const suggestionSchema = <T extends z.ZodType<string>>(value: T) =>
-  z.object({ value, source: z.enum(['FILE_NAME', 'TEXT']) }).nullish()
+  z
+    .object({
+      value,
+      source: z.enum(['FILE_NAME', 'TEXT']),
+      method: extractionMethodSchema,
+    })
+    .nullish()
+
+const suggestedQuestionSchema = z.object({
+  text: z.string(),
+  departmentIds: z.array(z.string()),
+})
+
+const suggestedDepartmentSchema = z.object({
+  departmentId: z.string(),
+  symbol: z.string(),
+  name: z.string(),
+  reason: z.string(),
+})
+
+export const caseQuestionSchema = z.object({
+  id: z.string(),
+  position: z.number(),
+  text: z.string(),
+  departmentId: z.string().nullish(),
+})
+
+export const caseDocumentSchema = z.object({
+  id: z.string(),
+  kind: caseDocumentKindSchema,
+  department: z
+    .object({ id: z.string(), symbol: z.string(), name: z.string() })
+    .nullish(),
+  originalName: z.string(),
+  mimeType: z.string(),
+  sizeBytes: z.number(),
+  textExtractionStatus: textExtractionStatusSchema,
+  uploadedBy: userRefSchema,
+  createdAt: z.string(),
+})
+
+export const draftResponseSchema = z.object({
+  text: z.string(),
+  sources: z.array(
+    z.object({
+      kind: z.enum(['CASE_DOCUMENT', 'KNOWLEDGE']),
+      documentId: z.string(),
+      documentName: z.string(),
+      category: z.enum(['LAW', 'RESPONSE', 'GUIDELINE']).nullish(),
+      departmentSymbol: z.string().nullish(),
+      excerpt: z.string(),
+    }),
+  ),
+})
+
+export const redactionCategorySchema = z.enum([
+  'PERSON_NAME',
+  'ADDRESS',
+  'EMAIL',
+  'PHONE',
+  'ID_NUMBER',
+  'OTHER',
+])
+
+export const redactionSuggestionsSchema = z.object({
+  suggestions: z.array(
+    z.object({
+      text: z.string(),
+      category: redactionCategorySchema,
+      reason: z.string(),
+    }),
+  ),
+})
 
 export const requestAnalysisSchema = z.object({
   fileName: z.string(),
@@ -64,6 +144,9 @@ export const requestAnalysisSchema = z.object({
     requesterEmail: suggestionSchema(z.string()),
     requesterAddress: suggestionSchema(z.string()),
   }),
+  questions: z.array(suggestedQuestionSchema),
+  departments: z.array(suggestedDepartmentSchema),
+  ai: z.object({ status: aiAnalysisStatusSchema }),
   warnings: z.array(analysisWarningSchema),
 })
 
@@ -129,21 +212,8 @@ export const caseDetailSchema = caseSummarySchema.extend({
       answeredAt: isoDate.nullish(),
     }),
   ),
-  documents: z.array(
-    z.object({
-      id: z.string(),
-      kind: caseDocumentKindSchema,
-      department: z
-        .object({ id: z.string(), symbol: z.string(), name: z.string() })
-        .nullish(),
-      originalName: z.string(),
-      mimeType: z.string(),
-      sizeBytes: z.number(),
-      textExtractionStatus: textExtractionStatusSchema,
-      uploadedBy: userRefSchema,
-      createdAt: z.string(),
-    }),
-  ),
+  questions: z.array(caseQuestionSchema),
+  documents: z.array(caseDocumentSchema),
   statusHistory: z.array(
     z.object({
       fromStatus: caseStatusSchema.nullish(),
@@ -166,6 +236,14 @@ export type RequestAnalysis = z.infer<typeof requestAnalysisSchema>
 export type CaseSummary = z.infer<typeof caseSummarySchema>
 export type CaseList = z.infer<typeof caseListSchema>
 export type CaseDetail = z.infer<typeof caseDetailSchema>
+export type AiAnalysisStatus = z.infer<typeof aiAnalysisStatusSchema>
+export type CaseQuestion = z.infer<typeof caseQuestionSchema>
+export type CaseDocument = z.infer<typeof caseDocumentSchema>
+export type CaseDocumentKind = z.infer<typeof caseDocumentKindSchema>
+export type DraftResponse = z.infer<typeof draftResponseSchema>
+export type RedactionSuggestion = z.infer<
+  typeof redactionSuggestionsSchema
+>['suggestions'][number]
 export type CaseNumberConflict = z.infer<typeof caseNumberConflictSchema>
 export type DeadlinePreview = z.infer<typeof deadlinePreviewSchema>
 export type CaseNumberCheck = z.infer<typeof caseNumberCheckSchema>
@@ -214,3 +292,22 @@ export type ExtendDeadlineInput = {
   extendedDueAt: string
   reason: string
 }
+
+export type SetCaseQuestionsInput = {
+  id: string
+  questions: { text: string; departmentId?: string | null }[]
+}
+export type SetCaseDepartmentsInput = { id: string; departmentIds: string[] }
+export type UploadCaseDocumentInput = {
+  caseId: string
+  file: File
+  kind: CaseDocumentKind
+  departmentId?: string
+}
+export type DeleteCaseDocumentInput = { caseId: string; documentId: string }
+export type DraftResponseInput = {
+  id: string
+  questionIds?: string[]
+  notes?: string
+}
+export type RedactionSuggestionsInput = { id: string; text: string }

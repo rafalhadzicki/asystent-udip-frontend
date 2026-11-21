@@ -16,12 +16,18 @@ import {
   changeCaseStatus,
   checkCaseNumber,
   createCase,
+  deleteCaseDocument,
+  draftResponse,
   extendDeadline,
   getCase,
   getCaseYears,
   getCases,
   getDeadlinePreview,
+  getRedactionSuggestions,
+  setCaseDepartments,
+  setCaseQuestions,
   updateCase,
+  uploadCaseDocument,
 } from './cases.api'
 import {
   UNFINISHED_STATUSES,
@@ -32,7 +38,16 @@ import {
   type CaseNumberCheckParams,
   type CaseUrgency,
   type ChangeCaseStatusInput,
+  type CaseDocument,
   type CreateCaseInput,
+  type DeleteCaseDocumentInput,
+  type DraftResponse,
+  type DraftResponseInput,
+  type RedactionSuggestion,
+  type RedactionSuggestionsInput,
+  type SetCaseDepartmentsInput,
+  type SetCaseQuestionsInput,
+  type UploadCaseDocumentInput,
   type DeadlinePreview,
   type ExtendDeadlineInput,
   type RequestAnalysis,
@@ -309,5 +324,90 @@ export const useAnalyzeRequest = () => {
     isAnalyzingRequest: isPending,
     isAnalyzeRequestError: isError,
     analyzeRequestError: error,
+  }
+}
+
+export const useSetCaseQuestions = () => {
+  const { mutateAsync, isPending } =
+    useCaseMutation<SetCaseQuestionsInput>(setCaseQuestions)
+  return {
+    setCaseQuestionsAsync: mutateAsync,
+    isSettingCaseQuestions: isPending,
+  }
+}
+
+export const useSetCaseDepartments = () => {
+  const { mutateAsync, isPending } =
+    useCaseMutation<SetCaseDepartmentsInput>(setCaseDepartments)
+  return {
+    setCaseDepartmentsAsync: mutateAsync,
+    isSettingCaseDepartments: isPending,
+  }
+}
+
+// Files change the `documents` of the case, so its detail is fetched again.
+const useDocumentMutation = <TVariables extends { caseId: string }, TResult>(
+  mutationFn: (variables: TVariables) => Promise<TResult>,
+) => {
+  const queryClient = useQueryClient()
+  const email = useSessionEmail()
+  return useMutation<TResult, ApiError, TVariables>({
+    mutationFn,
+    onSuccess: (_result, { caseId }) =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.cases.detail(email, caseId),
+      }),
+  })
+}
+
+export const useUploadCaseDocument = () => {
+  const { mutateAsync, isPending } = useDocumentMutation<
+    UploadCaseDocumentInput,
+    CaseDocument
+  >(uploadCaseDocument)
+  return {
+    uploadCaseDocumentAsync: mutateAsync,
+    isUploadingCaseDocument: isPending,
+  }
+}
+
+export const useDeleteCaseDocument = () => {
+  const { mutateAsync, isPending } = useDocumentMutation<
+    DeleteCaseDocumentInput,
+    void
+  >(deleteCaseDocument)
+  return {
+    deleteCaseDocumentAsync: mutateAsync,
+    isDeletingCaseDocument: isPending,
+  }
+}
+
+// AI results are never stored by the backend, so nothing is cached.
+export const useDraftResponse = () => {
+  const { mutateAsync, isPending, reset } = useMutation<
+    DraftResponse,
+    ApiError,
+    DraftResponseInput
+  >({ mutationFn: draftResponse, gcTime: 0 })
+  return {
+    draftResponseAsync: mutateAsync,
+    isDraftingResponse: isPending,
+    resetDraftResponse: reset,
+  }
+}
+
+export const useRedactionSuggestions = () => {
+  const { mutateAsync, isPending } = useMutation<
+    RedactionSuggestion[],
+    ApiError,
+    RedactionSuggestionsInput
+  >({
+    mutationFn: async (input) =>
+      (await getRedactionSuggestions(input)).suggestions,
+    gcTime: 0,
+  })
+  return {
+    getRedactionSuggestionsAsync: mutateAsync,
+    isGettingRedactionSuggestions: isPending,
   }
 }

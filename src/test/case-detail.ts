@@ -36,6 +36,7 @@ export const detail: CaseDetail = {
       requestedAt: '2026-10-23',
     },
   ],
+  questions: [],
   documents: [
     {
       id: 'doc-1',

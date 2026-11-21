@@ -2,7 +2,10 @@ import { apiClient } from '../client'
 import {
   caseDetailSchema,
   caseListSchema,
+  caseDocumentSchema,
   caseNumberCheckSchema,
+  draftResponseSchema,
+  redactionSuggestionsSchema,
   deadlinePreviewSchema,
   caseYearsSchema,
   requestAnalysisSchema,
@@ -10,6 +13,12 @@ import {
   type CaseNumberCheckParams,
   type CaseSummary,
   type ChangeCaseStatusInput,
+  type DeleteCaseDocumentInput,
+  type DraftResponseInput,
+  type RedactionSuggestionsInput,
+  type SetCaseDepartmentsInput,
+  type SetCaseQuestionsInput,
+  type UploadCaseDocumentInput,
   type CreateCaseInput,
   type ExtendDeadlineInput,
   type UpdateCaseInput,
@@ -124,4 +133,53 @@ export const extendDeadline = async ({ id, ...body }: ExtendDeadlineInput) =>
 export const cancelExtension = async (id: string) =>
   caseDetailSchema.parse(
     await apiClient.delete<unknown>(`${caseUrl(id)}/extension`),
+  )
+
+export const setCaseQuestions = async ({
+  id,
+  ...body
+}: SetCaseQuestionsInput) =>
+  caseDetailSchema.parse(
+    await apiClient.put<unknown>(`${caseUrl(id)}/questions`, body),
+  )
+
+export const setCaseDepartments = async ({
+  id,
+  ...body
+}: SetCaseDepartmentsInput) =>
+  caseDetailSchema.parse(
+    await apiClient.put<unknown>(`${caseUrl(id)}/departments`, body),
+  )
+
+export const uploadCaseDocument = async ({
+  caseId,
+  ...fields
+}: UploadCaseDocumentInput) =>
+  caseDocumentSchema.parse(
+    await apiClient.post<unknown>(
+      `${caseUrl(caseId)}/documents`,
+      toFormData(fields),
+    ),
+  )
+
+export const deleteCaseDocument = async ({
+  caseId,
+  documentId,
+}: DeleteCaseDocumentInput) => {
+  await apiClient.delete(
+    `${caseUrl(caseId)}/documents/${encodeURIComponent(documentId)}`,
+  )
+}
+
+export const draftResponse = async ({ id, ...body }: DraftResponseInput) =>
+  draftResponseSchema.parse(
+    await apiClient.post<unknown>(`${caseUrl(id)}/draft-response`, body),
+  )
+
+export const getRedactionSuggestions = async ({
+  id,
+  ...body
+}: RedactionSuggestionsInput) =>
+  redactionSuggestionsSchema.parse(
+    await apiClient.post<unknown>(`${caseUrl(id)}/redaction-suggestions`, body),
   )

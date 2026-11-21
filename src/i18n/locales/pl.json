@@ -1,4 +1,8 @@
 {
+  "apiErrors": {
+    "aiNotConfigured": "Funkcje AI nie są skonfigurowane na serwerze. Uzupełnij dane ręcznie.",
+    "aiFailed": "Zapytanie do AI nie powiodło się lub trwało zbyt długo. Spróbuj ponownie."
+  },
   "app": {
     "name": "Asystent UDIP",
     "organization": "Urząd Miasta Bydgoszczy",

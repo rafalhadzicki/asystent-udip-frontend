@@ -19,10 +19,13 @@ const response: RequestAnalysis = {
   textExtractionStatus: 'EXTRACTED',
   extractedText: 'Odczytana treść',
   suggestions: {
-    caseNumber: { value: 'TEST/1', source: 'TEXT' },
-    subject: { value: 'Temat', source: 'TEXT' },
-    receivedAt: { value: '2026-11-20', source: 'TEXT' },
+    caseNumber: { value: 'TEST/1', source: 'TEXT', method: 'PATTERN' },
+    subject: { value: 'Temat', source: 'TEXT', method: 'PATTERN' },
+    receivedAt: { value: '2026-11-20', source: 'TEXT', method: 'PATTERN' },
   },
+  questions: [],
+  departments: [],
+  ai: { status: 'NOT_CONFIGURED' },
   warnings: ['CASE_NUMBER_TAKEN'],
 }
 
