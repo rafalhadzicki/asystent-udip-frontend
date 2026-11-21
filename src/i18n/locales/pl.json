@@ -181,7 +181,7 @@
     "missingTitle": "Brak wniosku do weryfikacji",
     "missingDescription": "Wybierz plik w poprzednim kroku. Po odświeżeniu strony szkic nie jest zachowywany.",
     "backToUpload": "Wybierz plik",
-    "ocrNotice": "Sprawdź odczyt i sugestie API z oryginałem, a brakujące dane uzupełnij ręcznie. Sprawa zostanie zapisana tylko w lokalnym demo.",
+    "ocrNotice": "Sprawdź odczyt i sugestie API z oryginałem, a brakujące dane uzupełnij ręcznie. Po zatwierdzeniu sprawa zostanie zapisana w rejestrze.",
     "extractionStatus": {
       "NO_TEXT": "Nie znaleziono tekstu w pliku. Uzupełnij go ręcznie.",
       "UNSUPPORTED": "Odczyt tekstu z tego pliku nie jest obsługiwany. Uzupełnij go ręcznie.",
@@ -196,7 +196,7 @@
     },
     "sourceTitle": "Plik źródłowy",
     "sourceSize": "Rozmiar: {{size}} bajtów",
-    "sourceNotice": "Plik nie jest zapisywany ani przechowywany po utworzeniu sprawy; zachowane zostaną tylko jego metadane i tekst wniosku.",
+    "sourceNotice": "Po utworzeniu sprawy plik zostanie zapisany w backendzie razem z wnioskiem.",
     "extractedTitle": "Odczytany tekst",
     "emptyText": "Brak tekstu w szkicu.",
     "reference": "Znak / numer sprawy",
@@ -204,23 +204,22 @@
     "subject": "Temat sprawy",
     "writtenAt": "Data sporządzenia pisma",
     "receivedAt": "Data wpływu",
-    "deadline": "Termin",
     "requestText": "Treść wniosku",
     "dateOptional": "Pole opcjonalne.",
-    "suggestion": "Propozycja: {{date}} (14 dni kalendarzowych od wpływu). Termin wymaga sprawdzenia i zatwierdzenia przez człowieka; można go zmienić.",
-    "suggestionUnavailable": "Podaj prawidłową datę wpływu, aby zobaczyć propozycję terminu.",
-    "applySuggestion": "Użyj proponowanej daty",
-    "departmentsTitle": "Przykładowe sugestie jednostek",
-    "departmentsNotice": "Sugestie demonstracyjne, nie są automatycznie wybrane i wymagają weryfikacji.",
-    "departmentName": "Właściwa jednostka merytoryczna",
-    "departmentReason": "Sugestia demonstracyjna — ustal właściwą jednostkę na podstawie treści wniosku.",
     "back": "Wstecz",
     "submit": "Utwórz sprawę i przejdź do analizy",
     "required": "To pole jest wymagane.",
     "invalidDate": "Podaj prawidłową datę.",
-    "deadlineBeforeReceipt": "Termin nie może być wcześniejszy niż data wpływu.",
     "duplicateReference": "Sprawa o takim znaku już istnieje.",
-    "questionsNotice": "Początkowe pytania w analizie powstaną z treści wniosku jako sugestie demonstracyjne i wymagają weryfikacji."
+    "questionsNotice": "Początkowe pytania w analizie powstaną z treści wniosku jako sugestie demonstracyjne i wymagają weryfikacji.",
+    "deadlineFromServer": "Termin odpowiedzi wylicza serwer po zapisaniu sprawy. Sprawdź go w widoku sprawy; w razie potrzeby można go zmienić.",
+    "receivedAtInFuture": "Data wpływu nie może być z przyszłości.",
+    "submitErrors": {
+      "tooLarge": "Plik jest zbyt duży.",
+      "unsupported": "Ten format pliku nie jest obsługiwany. Użyj PDF lub DOCX.",
+      "invalid": "Serwer odrzucił dane. Sprawdź pola formularza.",
+      "failed": "Nie udało się utworzyć sprawy. Spróbuj ponownie."
+    }
   },
   "request": {
     "source": {

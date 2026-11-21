@@ -8,17 +8,16 @@ import {
   Actions,
 } from './verification-page.styles'
 import { Alert, Button, Typography } from '@mui/material'
-import { format, parseISO } from 'date-fns'
-import { useRef } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
 import { useDemoStore } from '@/features/demo/demo-store'
-import type { CaseItem, UploadDraft } from '@/features/demo/types'
-import { DEMO_TODAY } from '@/features/demo/demo-data'
+import type { UploadDraft } from '@/features/demo/types'
+import { useCreateCase } from '@/api/cases/cases.queries'
+import { getErrorStatus } from '@/api/client'
 import { validIsoDate } from '@/features/demo/date-utils'
-import { normalizeReference, suggestedDeadline } from '../case-utils'
 import { caseTabs, routes } from '@/app/routes'
 
 type VerificationValues = {
@@ -27,9 +26,28 @@ type VerificationValues = {
   subject: string
   writtenAt: string
   receivedAt: string
-  deadline: string
   requestText: string
 }
+
+type SubmitError = 'tooLarge' | 'unsupported' | 'invalid' | 'failed'
+
+const submitErrorFor = (error: unknown): SubmitError => {
+  const status = getErrorStatus(error)
+  if (status === 413) return 'tooLarge'
+  if (status === 415) return 'unsupported'
+  if (status === 400) return 'invalid'
+  return 'failed'
+}
+
+const isFutureDate = (value: string) =>
+  value > new Date().toISOString().slice(0, 10)
+
+const splitQuestions = (text: string) =>
+  text
+    .split(/\n+|(?<=[.!?])\s+/u)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => ({ id: crypto.randomUUID(), text: part, selected: false }))
 
 const validDate = validIsoDate
 
@@ -54,75 +72,55 @@ export const VerificationPage = () => {
 
 const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
   const { t } = useTranslation('translation', { keyPrefix: 'verification' })
-  const { cases, addCase, setUploadDraft } = useDemoStore()
+  const { updateCase, setUploadDraft } = useDemoStore()
+  const { createCaseAsync, isCreatingCase } = useCreateCase()
+  const [submitError, setSubmitError] = useState<SubmitError | null>(null)
   const navigate = useNavigate()
   const submitted = useRef(false)
-  const { control, handleSubmit, setValue, trigger } =
-    useForm<VerificationValues>({
-      defaultValues: {
-        applicant: draft.applicant,
-        reference: draft.reference ?? '',
-        subject: draft.subject,
-        writtenAt: draft.writtenAt,
-        receivedAt: draft.receivedAt,
-        deadline: suggestedDeadline(draft.receivedAt),
-        requestText: draft.requestText,
-      },
-    })
-  const receivedAt = useWatch({ control, name: 'receivedAt' })
-  const suggestion = suggestedDeadline(receivedAt)
+  const { control, handleSubmit, setError } = useForm<VerificationValues>({
+    defaultValues: {
+      applicant: draft.applicant,
+      reference: draft.reference ?? '',
+      subject: draft.subject,
+      writtenAt: draft.writtenAt,
+      receivedAt: draft.receivedAt,
+      requestText: draft.requestText,
+    },
+  })
   const required = (value: string) => value.trim().length > 0 || t('required')
   const dateRequired = (value: string) =>
     (required(value) === true && validDate(value)) ||
     (value.trim() ? t('invalidDate') : t('required'))
-  const onSubmit = (values: VerificationValues) => {
+  const onSubmit = async (values: VerificationValues) => {
     if (submitted.current) return
     submitted.current = true
-    const id = crypto.randomUUID()
+    setSubmitError(null)
     const requestText = values.requestText.trim()
-    const item: CaseItem = {
-      id,
-      reference: values.reference.trim(),
-      applicant: values.applicant.trim(),
-      subject: values.subject.trim(),
-      writtenAt: values.writtenAt.trim(),
-      receivedAt: values.receivedAt.trim(),
-      deadline: values.deadline.trim(),
-      owner: 'Urzędnik demonstracyjny',
-      status: 'analysis',
-      requestText,
-      source: {
-        id: crypto.randomUUID(),
-        name: draft.file.name,
-        size: draft.file.size,
-        unit: '',
-        addedAt: DEMO_TODAY,
-      },
-      questions: requestText
-        .split(/\n+|(?<=[.!?])\s+/u)
-        .map((text) => text.trim())
-        .filter(Boolean)
-        .map((text) => ({ id: crypto.randomUUID(), text, selected: false })),
-      departments: [
-        {
-          id: crypto.randomUUID(),
-          name: t('departmentName'),
-          reason: t('departmentReason'),
-          selected: false,
-        },
-      ],
-      materials: [],
-      materialNotes: '',
-      contactedAt: '',
-      responseText: '',
-      redactions: [],
-      redactionConfirmed: false,
-      sentAt: '',
-      sentNote: '',
+    try {
+      const created = await createCaseAsync({
+        file: draft.file,
+        caseNumber: values.reference.trim(),
+        requesterName: values.applicant.trim(),
+        subject: values.subject.trim(),
+        receivedAt: values.receivedAt.trim(),
+        requestText,
+      })
+      // Fields the API does not store yet stay in the browser, keyed by case id.
+      updateCase(created.id, {
+        writtenAt: values.writtenAt.trim(),
+        questions: splitQuestions(requestText),
+      })
+      setUploadDraft(null)
+      await navigate(routes.caseTab(created.id, caseTabs.analysis))
+    } catch (error) {
+      submitted.current = false
+      const status = getErrorStatus(error)
+      if (status === 409)
+        setError('reference', { message: t('duplicateReference') })
+      else if (status === 400 && isFutureDate(values.receivedAt.trim()))
+        setError('receivedAt', { message: t('receivedAtInFuture') })
+      else setSubmitError(submitErrorFor(error))
     }
-    addCase(item)
-    setUploadDraft(null)
-    navigate(routes.caseTab(id, caseTabs.analysis))
   }
 
   return (
@@ -186,17 +184,7 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
                 name="reference"
                 label={t('reference')}
                 required
-                rules={{
-                  validate: (value) =>
-                    (required(value) === true &&
-                      (!cases.some(
-                        (item) =>
-                          normalizeReference(item.reference) ===
-                          normalizeReference(value),
-                      ) ||
-                        t('duplicateReference'))) ||
-                    required(value),
-                }}
+                rules={{ validate: required }}
               />
               <FormTextField
                 control={control}
@@ -228,44 +216,8 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
                 slotProps={{ inputLabel: { shrink: true } }}
                 rules={{ validate: dateRequired }}
               />
-              <FormTextField
-                control={control}
-                name="deadline"
-                label={t('deadline')}
-                type="date"
-                required
-                slotProps={{ inputLabel: { shrink: true } }}
-                rules={{
-                  validate: (value, values) =>
-                    dateRequired(value) === true
-                      ? !validDate(values.receivedAt) ||
-                        value >= values.receivedAt ||
-                        t('deadlineBeforeReceipt')
-                      : dateRequired(value),
-                }}
-              />
               <FullWidth>
-                <Alert severity="info">
-                  {suggestion
-                    ? t('suggestion', {
-                        date: format(parseISO(suggestion), 'dd.MM.yyyy'),
-                      })
-                    : t('suggestionUnavailable')}
-                </Alert>
-                {suggestion && (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setValue('deadline', suggestion, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
-                      void trigger('deadline')
-                    }}
-                  >
-                    {t('applySuggestion')}
-                  </Button>
-                )}
+                <Alert severity="info">{t('deadlineFromServer')}</Alert>
               </FullWidth>
               <FullWidth>
                 <FormTextField
@@ -290,27 +242,25 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
                 />
               </FullWidth>
               <FullWidth>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {t('departmentsTitle')}
-                </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {t('departmentsNotice')}
-                </Typography>
-                <Typography sx={{ mt: 1 }}>{t('departmentName')}</Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 2 }}
-                >
                   {t('questionsNotice')}
                 </Typography>
               </FullWidth>
             </Fields>
+            {submitError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {t(`submitErrors.${submitError}`)}
+              </Alert>
+            )}
             <Actions>
               <Button component={Link} to={routes.upload} variant="outlined">
                 {t('back')}
               </Button>
-              <Button type="submit" variant="contained">
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isCreatingCase}
+              >
                 {t('submit')}
               </Button>
             </Actions>
