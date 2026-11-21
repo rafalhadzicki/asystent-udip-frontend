@@ -11,6 +11,8 @@ import {
 import { beforeEach, describe, expect, it } from 'vitest'
 import { theme } from '@/app/theme'
 import { DemoProvider, useDemoStore } from '@/features/demo/demo-store'
+import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
+import { DEMO_STORAGE_KEY } from '@/features/demo/demo-store'
 import { RequestPage } from './request-page'
 
 const CaseOutlet = () => {
@@ -127,5 +129,78 @@ describe('RequestPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Edytuj wniosek' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('pozwala zapisać sprawę bez opcjonalnej daty sporządzenia', async () => {
+    const cases = createDemoCases()
+    cases[0].writtenAt = ''
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+    )
+    const user = userEvent.setup()
+    renderPage('demo-1')
+    await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
+    await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
+    expect(screen.getByText('Zapisano zmiany we wniosku.')).toBeInTheDocument()
+  })
+
+  it('odrzuca sygnaturę różniącą się tylko wielkością liter', async () => {
+    const user = userEvent.setup()
+    renderPage('demo-1')
+    await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
+    await user.clear(screen.getByLabelText(/Sygnatura/))
+    await user.type(screen.getByLabelText(/Sygnatura/), 'udip/2026/0159')
+    await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
+    expect(
+      screen.getByText('Sprawa o tej sygnaturze już istnieje.'),
+    ).toBeInTheDocument()
+  })
+
+  it('unieważnia przegląd i oznacza projekt jako nieaktualny po zmianie wnioskodawcy', async () => {
+    const cases = createDemoCases()
+    cases[0] = {
+      ...cases[0],
+      status: 'redaction',
+      responseText: 'Do: Jan Demonstracyjny',
+      redactions: [{ id: 'r', text: 'Jan', reason: '', decision: 'hide' }],
+      redactionConfirmed: true,
+    }
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+    )
+    const user = userEvent.setup()
+    renderPage('demo-1')
+    await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
+    await user.clear(screen.getByLabelText(/Wnioskodawca/))
+    await user.type(screen.getByLabelText(/Wnioskodawca/), 'Anna Testowa')
+    await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
+    expect(
+      JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases[0],
+    ).toMatchObject({
+      applicant: 'Anna Testowa',
+      status: 'waiting',
+      responseText: 'Do: Jan Demonstracyjny',
+      redactions: [],
+      redactionConfirmed: false,
+    })
+    expect(
+      screen.getByText(/Dane wnioskodawcy zmieniły się/),
+    ).toBeInTheDocument()
+  })
+
+  it('wymaga przeglądu pytań także po zmianie wniosku w etapie analizy', async () => {
+    const user = userEvent.setup()
+    renderPage('demo-1')
+    await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
+    await user.type(screen.getByLabelText(/Treść wniosku/), ' Nowe pytanie.')
+    await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
+    expect(
+      JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases[0],
+    ).toMatchObject({
+      status: 'analysis',
+      analysisNeedsReview: true,
+    })
   })
 })

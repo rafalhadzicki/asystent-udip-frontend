@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
 import { DEMO_STORAGE_KEY, DemoProvider } from '@/features/demo/demo-store'
 import type { KnowledgeItem } from '@/features/demo/types'
-import { KnowledgePage, MAX_KNOWLEDGE_FILE_BYTES } from './knowledge-page'
+import { KnowledgePage } from './knowledge-page'
+import { MAX_KNOWLEDGE_FILE_BYTES } from './knowledge-constants'
 
 const renderPage = () =>
   render(

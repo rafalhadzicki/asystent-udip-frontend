@@ -2,12 +2,12 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createDemoCases } from '../demo/demo-data'
-import type { CaseItem } from '../demo/types'
+import { createDemoCases } from '@/features/demo/demo-data'
+import type { CaseItem } from '@/features/demo/types'
 import { RegisterPage } from './register-page'
 
 const state = vi.hoisted(() => ({ cases: [] as CaseItem[] }))
-vi.mock('../demo/demo-store', () => ({
+vi.mock('@/features/demo/demo-store', () => ({
   useDemoStore: () => ({ cases: state.cases }),
 }))
 

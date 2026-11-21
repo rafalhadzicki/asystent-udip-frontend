@@ -37,6 +37,7 @@ export type CaseItem = {
   requestText: string
   source: DocumentMeta
   questions: Question[]
+  analysisNeedsReview?: boolean
   departments: Department[]
   materials: DocumentMeta[]
   materialNotes: string

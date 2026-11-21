@@ -11,7 +11,7 @@ type DemoStore = {
   addKnowledge: (item: KnowledgeItem) => void
   updateKnowledge: (id: string, changes: Partial<KnowledgeItem>) => void
   resetDemo: () => void
-  storageError: string | null
+  storageError: 'restore' | 'save' | 'conflict' | null
 }
 
 export const DemoContext = createContext<DemoStore | null>(null)

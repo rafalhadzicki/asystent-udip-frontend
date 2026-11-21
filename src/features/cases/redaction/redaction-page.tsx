@@ -1,3 +1,4 @@
+import { Page, Preview } from './redaction-page.styles'
 import { useState } from 'react'
 import {
   Alert,
@@ -15,7 +16,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { styled } from '@mui/material/styles'
 import { Link, useOutletContext } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDemoStore } from '@/features/demo/demo-store'
@@ -25,6 +25,7 @@ import type {
   Redaction,
   RedactionDecision,
 } from '@/features/demo/types'
+import { caseTabs, routes } from '@/app/routes'
 import {
   canExportRedactedText,
   findExactOccurrences,
@@ -33,23 +34,6 @@ import {
   redactText,
 } from './redaction-utils'
 
-const Page = styled('section')(({ theme }) => ({
-  width: '100%',
-  margin: '0 auto',
-  paddingBottom: theme.spacing(3),
-}))
-
-const Preview = styled(Paper)(({ theme }) => ({
-  minHeight: 180,
-  maxHeight: 440,
-  overflow: 'auto',
-  padding: theme.spacing(2),
-  whiteSpace: 'pre-wrap',
-  overflowWrap: 'anywhere',
-  fontFamily: 'inherit',
-  lineHeight: 1.7,
-}))
-
 const makeId = () =>
   globalThis.crypto?.randomUUID?.() ??
   `redaction-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -57,7 +41,7 @@ const makeId = () =>
 export const RedactionPage = () => {
   const outletCase = useOutletContext<CaseItem>()
   const { cases, updateCase } = useDemoStore()
-  const { t } = useTranslation('redaction')
+  const { t } = useTranslation('translation', { keyPrefix: 'redaction' })
   const item =
     cases.find((current) => current.id === outletCase.id) ?? outletCase
   const completed = item.status === 'completed'
@@ -205,6 +189,17 @@ export const RedactionPage = () => {
     setSendDialogOpen(false)
   }
 
+  if (item.analysisNeedsReview) {
+    return (
+      <Alert severity="warning">
+        {t('analysisReviewRequired')}{' '}
+        <Link to={routes.caseTab(item.id, caseTabs.analysis)}>
+          {t('goToAnalysis')}
+        </Link>
+      </Alert>
+    )
+  }
+
   return (
     <Page>
       <Stack spacing={2.5}>
@@ -227,7 +222,7 @@ export const RedactionPage = () => {
               <Alert severity="warning">{t('waiting.description')}</Alert>
               <Button
                 component={Link}
-                to={`/sprawy/${encodeURIComponent(item.id)}/materialy`}
+                to={routes.caseTab(item.id, caseTabs.materials)}
                 variant="outlined"
                 fullWidth
               >
@@ -244,7 +239,7 @@ export const RedactionPage = () => {
               </Typography>
               <Button
                 component={Link}
-                to={`/sprawy/${encodeURIComponent(item.id)}/materialy`}
+                to={routes.caseTab(item.id, caseTabs.materials)}
                 variant="outlined"
                 fullWidth
               >

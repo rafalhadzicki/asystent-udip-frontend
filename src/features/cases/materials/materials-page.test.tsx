@@ -47,6 +47,17 @@ const savedCase = (): CaseItem =>
 describe('MaterialsPage', () => {
   beforeEach(() => localStorage.clear())
 
+  it('blokuje dalszą pracę do czasu przeglądu zmienionego wniosku', () => {
+    renderPage({ analysisNeedsReview: true })
+    expect(screen.getByText(/Przed dalszą pracą przejrzyj/)).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Przejdź do analizy' }),
+    ).toHaveAttribute('href', '/sprawy/demo-1/analiza')
+    expect(
+      screen.queryByRole('button', { name: 'Generuj projekt' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('does not create a response when materials are received and requires entered content', async () => {
     const user = userEvent.setup()
     renderPage({

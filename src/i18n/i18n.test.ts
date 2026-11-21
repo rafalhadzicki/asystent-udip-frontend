@@ -7,6 +7,7 @@ describe('i18n', () => {
     expect(i18n.isInitialized).toBe(true)
     expect(i18n.resolvedLanguage).toBe('pl')
     expect(i18n.t('auth.submit')).toBe('Zaloguj się')
+    expect(i18n.t('calendar.title')).toBe('Kalendarz terminów')
     expect(i18n.t('auth.demo.session', { name: 'Jan' })).toBe(
       'Sesja demonstracyjna · Jan',
     )

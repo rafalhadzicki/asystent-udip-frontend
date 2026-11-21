@@ -1,4 +1,11 @@
 import {
+  Page,
+  Card,
+  DropZone,
+  IconBox,
+  HiddenInput,
+} from './upload-page.styles'
+import {
   useEffect,
   useRef,
   useState,
@@ -7,19 +14,17 @@ import {
 } from 'react'
 import {
   Alert,
-  Box,
   Button,
   CircularProgress,
-  Paper,
   Stack,
   Typography,
 } from '@mui/material'
-import { styled } from '@mui/material/styles'
 import { ArrowLeft, ArrowRight, CheckCircle2, FileUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { DEMO_TODAY } from '@/features/demo/demo-data'
 import { useDemoStore } from '@/features/demo/demo-store'
+import { routes } from '@/app/routes'
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024
 const PROCESSING_DELAY = 900
@@ -35,55 +40,6 @@ type UploadState =
   | { status: 'ready'; file: File }
   | { status: 'error'; error: UploadError }
 
-const Page = styled(Box)(({ theme }) => ({
-  maxWidth: 1220,
-  margin: '0 auto',
-  padding: theme.spacing(3),
-  [theme.breakpoints.down('sm')]: { padding: theme.spacing(2) },
-}))
-
-const Card = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  border: '1px solid #e4e9ef',
-  [theme.breakpoints.down('sm')]: { padding: theme.spacing(2) },
-}))
-
-const DropZone = styled(Box)(({ theme }) => ({
-  minHeight: 310,
-  border: '2px dashed #91a5bd',
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: '#f5f7fa',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: theme.spacing(2),
-  padding: theme.spacing(3),
-  textAlign: 'center',
-}))
-
-const IconBox = styled(Box)(({ theme }) => ({
-  display: 'grid',
-  placeItems: 'center',
-  width: 64,
-  height: 64,
-  color: theme.palette.primary.main,
-  background: '#e5ebf1',
-  borderRadius: 16,
-}))
-
-const HiddenInput = styled('input')({
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: 'hidden',
-  clip: 'rect(0, 0, 0, 0)',
-  whiteSpace: 'nowrap',
-  border: 0,
-})
-
 const validateFile = (file: File): UploadError | null => {
   if (file.size === 0) return 'empty'
   const extension = file.name.split('.').pop()?.toLowerCase()
@@ -96,7 +52,7 @@ const validateFile = (file: File): UploadError | null => {
 }
 
 export const UploadPage = () => {
-  const { t } = useTranslation('upload')
+  const { t } = useTranslation('translation', { keyPrefix: 'upload' })
   const navigate = useNavigate()
   const { setUploadDraft } = useDemoStore()
   const [state, setState] = useState<UploadState>({ status: 'idle' })
@@ -162,7 +118,7 @@ export const UploadPage = () => {
   }
   const goBack = () => {
     reset()
-    navigate('/sprawy')
+    navigate(routes.cases)
   }
 
   return (
@@ -290,7 +246,7 @@ export const UploadPage = () => {
               variant="contained"
               endIcon={<ArrowRight aria-hidden="true" />}
               disabled={state.status !== 'ready'}
-              onClick={() => navigate('/sprawy/nowy/weryfikacja')}
+              onClick={() => navigate(routes.verification)}
             >
               {t('continue')}
             </Button>

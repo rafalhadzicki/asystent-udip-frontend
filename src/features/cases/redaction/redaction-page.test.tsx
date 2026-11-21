@@ -57,6 +57,22 @@ afterEach(() => {
 })
 
 describe('redaction workflow', () => {
+  it('blocks redaction until a changed request has been reviewed', () => {
+    const snapshot = JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!)
+    snapshot.cases[0].analysisNeedsReview = true
+    localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(snapshot))
+    renderPage()
+    expect(screen.getByText(/Przed dalszą pracą przejrzyj/)).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Przejdź do analizy' }),
+    ).toHaveAttribute('href', '/sprawy/demo-1/analiza')
+    expect(
+      screen.queryByRole('button', {
+        name: 'Pobierz zanonimizowany tekst TXT',
+      }),
+    ).not.toBeInTheDocument()
+  })
+
   it('exports actual TXT bytes with every approved occurrence removed and invalidates review on changes', async () => {
     const user = userEvent.setup()
     const createObjectURL = vi.fn<(blob: Blob) => string>(

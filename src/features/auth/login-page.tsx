@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { Trans, useTranslation } from 'react-i18next'
 import { FormPasswordField } from '@/components/form/form-password-field'
 import { FormTextField } from '@/components/form/form-text-field'
-import { ScreenReaderText } from '@/components/ui/screen-reader-text'
+import { ScreenReaderText } from './screen-reader-text'
 import {
   BrandIcon,
   DemoChip,

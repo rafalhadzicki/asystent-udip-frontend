@@ -113,6 +113,7 @@ describe('demo persistence', () => {
       .mockImplementation(() => {
         throw new DOMException('Quota exceeded', 'QuotaExceededError')
       })
+
     render(
       <DemoProvider>
         <DemoProbe />
@@ -123,5 +124,56 @@ describe('demo persistence', () => {
     expect(screen.getByText('Changed demo subject')).toBeInTheDocument()
     write.mockRestore()
     log.mockRestore()
+  })
+
+  it('does not overwrite changes from another tab and keeps local edits in memory', () => {
+    render(
+      <DemoProvider>
+        <DemoProbe />
+      </DemoProvider>,
+    )
+    const other = JSON.stringify({
+      version: 1,
+      cases: createDemoCases().map((item, index) =>
+        index === 0 ? { ...item, subject: 'Other tab' } : item,
+      ),
+      knowledge: createDemoKnowledge(),
+    })
+
+    localStorage.setItem(DEMO_STORAGE_KEY, other)
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: DEMO_STORAGE_KEY,
+          newValue: other,
+          storageArea: localStorage,
+        }),
+      )
+    })
+    expect(screen.getByTestId('storage-error')).toHaveTextContent('conflict')
+    act(() => screen.getByText('Change').click())
+    expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBe(other)
+    expect(screen.getByText('Changed demo subject')).toBeInTheDocument()
+    expect(screen.getByTestId('storage-error')).toHaveTextContent('conflict')
+  })
+
+  it('detects an external change before saving even without a storage event', () => {
+    render(
+      <DemoProvider>
+        <DemoProbe />
+      </DemoProvider>,
+    )
+    const other = JSON.stringify({
+      version: 1,
+      cases: createDemoCases().map((item, index) =>
+        index === 0 ? { ...item, subject: 'Other tab' } : item,
+      ),
+      knowledge: createDemoKnowledge(),
+    })
+    localStorage.setItem(DEMO_STORAGE_KEY, other)
+    act(() => screen.getByText('Change').click())
+    expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBe(other)
+    expect(screen.getByText('Changed demo subject')).toBeInTheDocument()
+    expect(screen.getByTestId('storage-error')).toHaveTextContent('conflict')
   })
 })

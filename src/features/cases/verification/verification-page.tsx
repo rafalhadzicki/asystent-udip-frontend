@@ -1,6 +1,14 @@
-import { Alert, Button, Paper, Typography } from '@mui/material'
-import { styled } from '@mui/material/styles'
-import { addDays, format, isValid, parseISO } from 'date-fns'
+import {
+  Page,
+  Columns,
+  Card,
+  Fields,
+  FullWidth,
+  SourceText,
+  Actions,
+} from './verification-page.styles'
+import { Alert, Button, Typography } from '@mui/material'
+import { format, parseISO } from 'date-fns'
 import { useRef } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -9,50 +17,9 @@ import { FormTextField } from '@/components/form/form-text-field'
 import { useDemoStore } from '@/features/demo/demo-store'
 import type { CaseItem, UploadDraft } from '@/features/demo/types'
 import { DEMO_TODAY } from '@/features/demo/demo-data'
-
-const Page = styled('section')({
-  width: '100%',
-  maxWidth: 1440,
-  minWidth: 0,
-  margin: '0 auto',
-})
-const Columns = styled('div')(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0, 0.85fr) minmax(0, 1.15fr)',
-  gap: theme.spacing(3),
-  marginTop: theme.spacing(3),
-  [theme.breakpoints.down('md')]: { gridTemplateColumns: 'minmax(0, 1fr)' },
-}))
-const Card = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  minWidth: 0,
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: 'none',
-}))
-const Fields = styled('div')(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: theme.spacing(2.5),
-  marginTop: theme.spacing(3),
-  [theme.breakpoints.down('sm')]: { gridTemplateColumns: 'minmax(0, 1fr)' },
-}))
-const FullWidth = styled('div')({ gridColumn: '1 / -1', minWidth: 0 })
-const SourceText = styled('div')(({ theme }) => ({
-  whiteSpace: 'pre-wrap',
-  overflowWrap: 'anywhere',
-  background: theme.palette.background.default,
-  padding: theme.spacing(2),
-  borderRadius: theme.shape.borderRadius,
-  maxHeight: 480,
-  overflowY: 'auto',
-}))
-const Actions = styled('div')(({ theme }) => ({
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'space-between',
-  gap: theme.spacing(2),
-  marginTop: theme.spacing(3),
-}))
+import { validIsoDate } from '@/features/demo/date-utils'
+import { normalizeReference, suggestedDeadline } from '../case-utils'
+import { caseTabs, routes } from '@/app/routes'
 
 type VerificationValues = {
   applicant: string
@@ -64,19 +31,11 @@ type VerificationValues = {
   requestText: string
 }
 
-const validDate = (value: string) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const date = parseISO(value)
-  return isValid(date) && format(date, 'yyyy-MM-dd') === value
-}
-const suggestedDeadline = (receivedAt: string) =>
-  validDate(receivedAt)
-    ? format(addDays(parseISO(receivedAt), 14), 'yyyy-MM-dd')
-    : ''
+const validDate = validIsoDate
 
 export const VerificationPage = () => {
   const { uploadDraft } = useDemoStore()
-  const { t } = useTranslation('verification')
+  const { t } = useTranslation('translation', { keyPrefix: 'verification' })
   if (!uploadDraft) {
     return (
       <Page>
@@ -84,7 +43,7 @@ export const VerificationPage = () => {
         <Typography color="text.secondary" sx={{ my: 2 }}>
           {t('missingDescription')}
         </Typography>
-        <Button component={Link} to="/sprawy/nowy" variant="contained">
+        <Button component={Link} to={routes.upload} variant="contained">
           {t('backToUpload')}
         </Button>
       </Page>
@@ -94,7 +53,7 @@ export const VerificationPage = () => {
 }
 
 const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
-  const { t } = useTranslation('verification')
+  const { t } = useTranslation('translation', { keyPrefix: 'verification' })
   const { cases, addCase, setUploadDraft } = useDemoStore()
   const navigate = useNavigate()
   const submitted = useRef(false)
@@ -163,7 +122,7 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
     }
     addCase(item)
     setUploadDraft(null)
-    navigate(`/sprawy/${id}/analiza`)
+    navigate(routes.caseTab(id, caseTabs.analysis))
   }
 
   return (
@@ -221,8 +180,8 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
                     (required(value) === true &&
                       (!cases.some(
                         (item) =>
-                          item.reference.trim().toLocaleLowerCase('pl') ===
-                          value.trim().toLocaleLowerCase('pl'),
+                          normalizeReference(item.reference) ===
+                          normalizeReference(value),
                       ) ||
                         t('duplicateReference'))) ||
                     required(value),
@@ -337,7 +296,7 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
               </FullWidth>
             </Fields>
             <Actions>
-              <Button component={Link} to="/sprawy/nowy" variant="outlined">
+              <Button component={Link} to={routes.upload} variant="outlined">
                 {t('back')}
               </Button>
               <Button type="submit" variant="contained">

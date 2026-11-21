@@ -1,3 +1,6 @@
+import { Layout, Item, Actions } from './analysis-page.styles'
+import { SectionCard as Panel } from '@/components/ui/section-card'
+import { selectedDepartments, selectedQuestions } from './analysis-utils'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useOutletContext } from 'react-router-dom'
@@ -16,9 +19,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { styled } from '@mui/material/styles'
 import { ArrowRight, Plus, Trash2 } from 'lucide-react'
 import { useDemoStore } from '@/features/demo/demo-store'
+import { caseTabs, routes } from '@/app/routes'
 import type {
   CaseItem,
   Department,
@@ -26,51 +29,10 @@ import type {
   Question,
 } from '@/features/demo/types'
 
-const Layout = styled('div')(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0, 2fr) minmax(260px, 1fr)',
-  gap: theme.spacing(2),
-  alignItems: 'start',
-  [theme.breakpoints.down('md')]: { gridTemplateColumns: '1fr' },
-}))
-
-const Panel = styled('section')(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius,
-  padding: theme.spacing(3),
-}))
-
-const Item = styled('div')(({ theme }) => ({
-  padding: theme.spacing(2),
-  backgroundColor: '#f5f7f9',
-  borderRadius: theme.shape.borderRadius,
-}))
-
-const Actions = styled('div')(({ theme }) => ({
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'flex-end',
-  gap: theme.spacing(1.5),
-  padding: theme.spacing(2, 0),
-}))
-
-const selectedQuestions = (questions: Question[]) =>
-  questions
-    .filter((question) => question.selected)
-    .map((question) => [question.id, question.text.trim()])
-    .sort(([left], [right]) => left.localeCompare(right))
-
-const selectedDepartments = (departments: Department[]) =>
-  departments
-    .filter((department) => department.selected)
-    .map((department) => [department.id, department.name.trim()])
-    .sort(([left], [right]) => left.localeCompare(right))
-
 const newId = () => globalThis.crypto.randomUUID()
 
 const AnalysisEditor = ({ item }: { item: CaseItem }) => {
-  const { t } = useTranslation('analysis')
+  const { t } = useTranslation('translation', { keyPrefix: 'analysis' })
   const { knowledge, updateCase } = useDemoStore()
   const navigate = useNavigate()
   const [questions, setQuestions] = useState<Question[]>(() =>
@@ -86,11 +48,12 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const [message, setMessage] = useState('')
   const [example, setExample] = useState<KnowledgeItem | null>(null)
   const readonly = item.status === 'completed'
+  const departmentsChanged =
+    JSON.stringify(selectedDepartments(departments)) !==
+    JSON.stringify(selectedDepartments(item.departments))
   const changedScope =
     JSON.stringify(selectedQuestions(questions)) !==
-      JSON.stringify(selectedQuestions(item.questions)) ||
-    JSON.stringify(selectedDepartments(departments)) !==
-      JSON.stringify(selectedDepartments(item.departments))
+      JSON.stringify(selectedQuestions(item.questions)) || departmentsChanged
   const hasDraft = Boolean(
     item.responseText ||
     item.redactions.length ||
@@ -151,14 +114,19 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const save = (continueToMaterials: boolean) => {
     if (readonly) {
       if (continueToMaterials)
-        navigate(`/sprawy/${encodeURIComponent(item.id)}/materialy`)
+        navigate(routes.caseTab(item.id, caseTabs.materials))
       return
     }
-    if (continueToMaterials) {
+    if (continueToMaterials || item.analysisNeedsReview) {
       setAttemptedContinue(true)
       if (questionsInvalid || departmentsInvalid) return
     }
-    const changes: Partial<CaseItem> = { questions, departments }
+    const changes: Partial<CaseItem> = {
+      questions,
+      departments,
+      analysisNeedsReview: false,
+      ...(departmentsChanged ? { contactedAt: '' } : {}),
+    }
     if (changedScope) {
       changes.redactions = []
       changes.redactionConfirmed = false
@@ -174,7 +142,7 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
     updateCase(item.id, changes)
     setMessage(t(invalidatesDraft ? 'invalidationSaved' : 'saved'))
     if (continueToMaterials)
-      navigate(`/sprawy/${encodeURIComponent(item.id)}/materialy`)
+      navigate(routes.caseTab(item.id, caseTabs.materials))
   }
 
   return (
@@ -186,6 +154,9 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
         <Typography color="text.secondary">{t('intro')}</Typography>
       </Box>
       <Alert severity="info">{t('simulation')}</Alert>
+      {item.analysisNeedsReview && (
+        <Alert severity="warning">{t('reviewRequired')}</Alert>
+      )}
       {readonly && <Alert severity="info">{t('readonly')}</Alert>}
       {invalidatesDraft && !readonly && (
         <Alert severity="warning">{t('invalidationWarning')}</Alert>

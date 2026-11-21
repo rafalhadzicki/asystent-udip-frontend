@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createDemoCases, createDemoKnowledge } from './demo-data'
 import type { CaseItem, KnowledgeItem, UploadDraft } from './types'
 import { validIsoDate } from './date-utils'
@@ -18,15 +18,16 @@ const freshSnapshot = (): DemoSnapshot => ({
 })
 
 const readSnapshot = () => {
+  let raw: string | null = null
   try {
-    const raw = localStorage.getItem(DEMO_STORAGE_KEY)
-    if (!raw) return { snapshot: freshSnapshot(), error: null }
+    raw = localStorage.getItem(DEMO_STORAGE_KEY)
+    if (!raw) return { snapshot: freshSnapshot(), error: null, raw }
     const parsed: unknown = JSON.parse(raw)
     if (!isSnapshot(parsed)) throw new Error('Invalid demo data')
-    return { snapshot: parsed, error: null }
+    return { snapshot: parsed, error: null, raw }
   } catch (error) {
     console.error('Cannot restore demo data', error)
-    return { snapshot: freshSnapshot(), error: 'restore' }
+    return { snapshot: freshSnapshot(), error: 'restore' as const, raw }
   }
 }
 
@@ -85,6 +86,8 @@ const isSnapshot = (value: unknown): value is DemoSnapshot => {
         Array.isArray(item.materials) &&
         item.materials.every(documentValid) &&
         Array.isArray(item.questions) &&
+        (item.analysisNeedsReview === undefined ||
+          typeof item.analysisNeedsReview === 'boolean') &&
         item.questions.every(
           (q) =>
             isRecord(q) &&
@@ -129,14 +132,43 @@ export const DemoProvider = ({ children }: { children: ReactNode }) => {
   const [initial] = useState(readSnapshot)
   const [snapshot, setSnapshot] = useState(initial.snapshot)
   const currentSnapshot = useRef(initial.snapshot)
-  const [storageError, setStorageError] = useState<string | null>(initial.error)
+  const persistedRaw = useRef(initial.raw)
+  const conflict = useRef(false)
+  const [storageError, setStorageError] = useState<
+    'restore' | 'save' | 'conflict' | null
+  >(initial.error)
   const [uploadDraft, setUploadDraft] = useState<UploadDraft | null>(null)
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        event.storageArea === localStorage &&
+        (event.key === DEMO_STORAGE_KEY || event.key === null) &&
+        (event.key === null || event.newValue !== persistedRaw.current)
+      ) {
+        conflict.current = true
+        setStorageError('conflict')
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
 
   const saveSnapshot = (next: DemoSnapshot) => {
     currentSnapshot.current = next
     setSnapshot(next)
     try {
-      localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(next))
+      if (
+        conflict.current ||
+        localStorage.getItem(DEMO_STORAGE_KEY) !== persistedRaw.current
+      ) {
+        conflict.current = true
+        setStorageError('conflict')
+        return
+      }
+      const raw = JSON.stringify(next)
+      localStorage.setItem(DEMO_STORAGE_KEY, raw)
+      persistedRaw.current = raw
       setStorageError(null)
     } catch (error) {
       console.error('Cannot persist demo data', error)

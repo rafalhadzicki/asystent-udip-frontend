@@ -1,15 +1,29 @@
+import {
+  Layout,
+  Section,
+  SectionHeader,
+  SectionTitle,
+  SourceIcon,
+  Details,
+  Detail,
+  Term,
+  Description,
+  RequestText,
+  FieldGrid,
+  Actions,
+} from './request-page.styles'
 import { useState } from 'react'
-import { Alert, Button, Typography } from '@mui/material'
-import { styled } from '@mui/material/styles'
-import { addDays, format, isValid, parseISO } from 'date-fns'
+import { Alert, Button } from '@mui/material'
 import { ArrowRight, FileText, Pencil } from 'lucide-react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useOutletContext } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
-import { displayDate } from '@/features/demo/date-utils'
+import { displayDate, validIsoDate } from '@/features/demo/date-utils'
 import { useDemoStore } from '@/features/demo/demo-store'
 import type { CaseItem } from '@/features/demo/types'
+import { normalizeReference, suggestedDeadline } from '../case-utils'
+import { caseTabs, routes } from '@/app/routes'
 
 type RequestValues = Pick<
   CaseItem,
@@ -21,10 +35,7 @@ type RequestValues = Pick<
   | 'deadline'
   | 'requestText'
 >
-type Notice = 'saved' | 'scopeReset'
-
-const DEADLINE_DAYS = 14
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+type Notice = 'saved' | 'scopeReset' | 'applicantChanged'
 
 const toValues = (item: CaseItem): RequestValues => ({
   reference: item.reference,
@@ -36,108 +47,10 @@ const toValues = (item: CaseItem): RequestValues => ({
   requestText: item.requestText,
 })
 
-const isDate = (value: string) =>
-  DATE_PATTERN.test(value) && isValid(parseISO(value))
-
-const proposeDeadline = (receivedAt: string) =>
-  isDate(receivedAt)
-    ? format(addDays(parseISO(receivedAt), DEADLINE_DAYS), 'yyyy-MM-dd')
-    : ''
-
-const Layout = styled('div')(({ theme }) => ({
-  display: 'grid',
-  gap: theme.spacing(3),
-  alignItems: 'start',
-  [theme.breakpoints.up('md')]: { gridTemplateColumns: '320px minmax(0, 1fr)' },
-}))
-
-const Section = styled('section')(({ theme }) => ({
-  padding: theme.spacing(3),
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: theme.palette.background.paper,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(2.5),
-}))
-
-const SectionHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  flexWrap: 'wrap',
-  gap: theme.spacing(1.5),
-}))
-
-const SectionTitle = styled(Typography)(({ theme }) => ({
-  fontSize: '1rem',
-  fontWeight: 600,
-  color: theme.palette.primary.main,
-}))
-
-const SourceIcon = styled('div')(({ theme }) => ({
-  width: 48,
-  height: 48,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderRadius: 10,
-  backgroundColor: theme.palette.primary.main,
-  color: theme.palette.primary.contrastText,
-  '& svg': { width: 24, height: 24 },
-}))
-
-const Details = styled('dl')(({ theme }) => ({
-  margin: 0,
-  display: 'grid',
-  gap: theme.spacing(2),
-  [theme.breakpoints.up('sm')]: {
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  },
-}))
-
-const Detail = styled('div', { shouldForwardProp: (prop) => prop !== 'wide' })<{
-  wide?: boolean
-}>(({ wide }) => ({ minWidth: 0, gridColumn: wide ? '1 / -1' : undefined }))
-
-const Term = styled('dt')(({ theme }) => ({
-  marginBottom: theme.spacing(0.5),
-  fontSize: '0.8125rem',
-  color: theme.palette.text.secondary,
-}))
-
-const Description = styled('dd')(({ theme }) => ({
-  margin: 0,
-  color: theme.palette.text.primary,
-  whiteSpace: 'pre-wrap',
-  overflowWrap: 'anywhere',
-}))
-
-const RequestText = styled(Description)(({ theme }) => ({
-  padding: theme.spacing(2),
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: theme.palette.background.default,
-  lineHeight: 1.6,
-}))
-
-const FieldGrid = styled('div')(({ theme }) => ({
-  display: 'grid',
-  gap: theme.spacing(2),
-  [theme.breakpoints.up('sm')]: {
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  },
-  '& .wide': { gridColumn: '1 / -1' },
-}))
-
-const Actions = styled('div')(({ theme }) => ({
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'flex-end',
-  gap: theme.spacing(1.5),
-}))
+const isDate = validIsoDate
 
 const SourceSection = ({ item }: { item: CaseItem }) => {
-  const { t } = useTranslation('request')
+  const { t } = useTranslation('translation', { keyPrefix: 'request' })
   const size = new Intl.NumberFormat('pl-PL', {
     maximumFractionDigits: 0,
   }).format(item.source.size / 1024)
@@ -173,7 +86,7 @@ const SourceSection = ({ item }: { item: CaseItem }) => {
 }
 
 const RequestEditor = ({ item }: { item: CaseItem }) => {
-  const { t } = useTranslation('request')
+  const { t } = useTranslation('translation', { keyPrefix: 'request' })
   const { cases, updateCase } = useDemoStore()
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
@@ -188,16 +101,10 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
     name: ['receivedAt', 'deadline', 'subject', 'requestText'],
   })
 
-  const proposal = proposeDeadline(receivedAt)
+  const proposal = suggestedDeadline(receivedAt)
   const scopeChanged =
     subject.trim() !== item.subject.trim() ||
     requestText.trim() !== item.requestText.trim()
-  const hasDownstreamWork =
-    item.status !== 'analysis' ||
-    item.responseText !== '' ||
-    item.redactions.length > 0 ||
-    item.redactionConfirmed
-
   const required = (value: string) =>
     value.trim() !== '' || t('errors.required')
   const date = (value: string) => isDate(value) || t('errors.date')
@@ -213,22 +120,37 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
       deadline: values.deadline,
       requestText: values.requestText.trim(),
     }
-    const resetsScope = scopeChanged && hasDownstreamWork
+    const applicantChanged = trimmed.applicant !== item.applicant.trim()
+    const resetsScope = scopeChanged
     updateCase(
       item.id,
       resetsScope
         ? {
             ...trimmed,
             status: 'analysis',
+            analysisNeedsReview: true,
             responseText: '',
             redactions: [],
             redactionConfirmed: false,
           }
-        : trimmed,
+        : applicantChanged && item.responseText
+          ? {
+              ...trimmed,
+              status: 'waiting',
+              redactions: [],
+              redactionConfirmed: false,
+            }
+          : trimmed,
     )
     reset(trimmed)
     setEditing(false)
-    setNotice(resetsScope ? 'scopeReset' : 'saved')
+    setNotice(
+      resetsScope
+        ? 'scopeReset'
+        : applicantChanged && item.responseText
+          ? 'applicantChanged'
+          : 'saved',
+    )
   }
 
   const cancel = () => {
@@ -261,7 +183,7 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
       {readOnly && <Alert severity="info">{t('readOnly')}</Alert>}
       {notice && (
         <Alert
-          severity={notice === 'scopeReset' ? 'warning' : 'success'}
+          severity={notice === 'saved' ? 'success' : 'warning'}
           role="status"
         >
           {t(`notice.${notice}`)}
@@ -283,7 +205,8 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
                     !cases.some(
                       (other) =>
                         other.id !== item.id &&
-                        other.reference.trim() === value.trim(),
+                        normalizeReference(other.reference) ===
+                          normalizeReference(value),
                     ) || t('errors.referenceTaken'),
                 },
               }}
@@ -319,12 +242,12 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
               name="writtenAt"
               label={t('details.writtenAt')}
               type="date"
-              required
               slotProps={{ inputLabel: { shrink: true } }}
               rules={{
                 validate: {
-                  date,
+                  date: (value) => !value || date(value),
                   order: (value) =>
+                    !value ||
                     !isDate(getValues('receivedAt')) ||
                     value <= getValues('receivedAt') ||
                     t('errors.writtenAfterReceived'),
@@ -378,7 +301,7 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
               minRows={6}
               rules={{ validate: { required } }}
             />
-            {scopeChanged && hasDownstreamWork && (
+            {scopeChanged && (
               <Alert className="wide" severity="warning">
                 {t('scopeWarning')}
               </Alert>
@@ -430,7 +353,7 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
         <Actions>
           <Button
             component={Link}
-            to={`/sprawy/${item.id}/analiza`}
+            to={routes.caseTab(item.id, caseTabs.analysis)}
             variant="contained"
             endIcon={<ArrowRight aria-hidden="true" size={16} />}
           >

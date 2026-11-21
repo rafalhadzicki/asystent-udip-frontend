@@ -32,6 +32,7 @@ import type { DemoUser } from '@/features/auth/mock-auth'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { DEMO_TODAY } from '@/features/demo/demo-data'
 import { displayDate } from '@/features/demo/date-utils'
+import { routes } from './routes'
 
 const Sidebar = styled('nav')(({ theme }) => ({
   width: 240,
@@ -63,17 +64,17 @@ export const AppLayout = ({
   const [resetOpen, setResetOpen] = useState(false)
   const links = [
     {
-      to: '/sprawy',
+      to: routes.cases,
       text: t('navigation.cases'),
       icon: <FolderOpen size={20} />,
     },
     {
-      to: '/kalendarz',
+      to: routes.calendar,
       text: t('navigation.calendar'),
       icon: <CalendarDays size={20} />,
     },
     {
-      to: '/baza-wiedzy',
+      to: routes.knowledge,
       text: t('navigation.knowledge'),
       icon: <Library size={20} />,
     },
@@ -155,7 +156,7 @@ export const AppLayout = ({
           </Typography>
           <Button
             component={Link}
-            to="/sprawy/nowy"
+            to={routes.upload}
             variant="contained"
             startIcon={<Plus size={18} />}
           >
@@ -187,7 +188,9 @@ export const AppLayout = ({
               {t(
                 storageError === 'restore'
                   ? 'demo.restoreError'
-                  : 'demo.saveError',
+                  : storageError === 'conflict'
+                    ? 'demo.conflictError'
+                    : 'demo.saveError',
               )}
             </Alert>
           )}
@@ -208,7 +211,7 @@ export const AppLayout = ({
             onClick={() => {
               resetDemo()
               setResetOpen(false)
-              navigate('/sprawy')
+              navigate(routes.cases)
             }}
           >
             {t('demo.reset')}

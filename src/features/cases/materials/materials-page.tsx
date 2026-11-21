@@ -1,3 +1,5 @@
+import { Layout, Columns, MaterialItem } from './materials-page.styles'
+import { SectionCard as Card } from '@/components/ui/section-card'
 import {
   useEffect,
   useLayoutEffect,
@@ -18,40 +20,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { styled } from '@mui/material/styles'
 import { useDemoStore } from '@/features/demo/demo-store'
 import type { CaseItem, DocumentMeta } from '@/features/demo/types'
+import { caseTabs, routes } from '@/app/routes'
 import { DEMO_TODAY } from '@/features/demo/demo-data'
 import { validIsoDate } from '@/features/demo/date-utils'
-
-const Layout = styled('section')(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(3),
-}))
-
-const Columns = styled('div')(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0, 2fr) minmax(280px, 1fr)',
-  gap: theme.spacing(3),
-  alignItems: 'start',
-  [theme.breakpoints.down('md')]: { gridTemplateColumns: 'minmax(0, 1fr)' },
-}))
-
-const Card = styled('section')(({ theme }) => ({
-  background: theme.palette.background.paper,
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.shape.borderRadius,
-  padding: theme.spacing(3),
-}))
-
-const MaterialItem = styled('li')(({ theme }) => ({
-  listStyle: 'none',
-  padding: theme.spacing(1.5),
-  borderRadius: theme.shape.borderRadius,
-  background: theme.palette.background.default,
-  overflowWrap: 'anywhere',
-}))
 
 const today = () => DEMO_TODAY
 
@@ -67,7 +40,7 @@ const fileTypes: Record<string, string[]> = {
 export const MaterialsPage = () => {
   const item = useOutletContext<CaseItem>()
   const { updateCase, storageError } = useDemoStore()
-  const { t } = useTranslation('materials')
+  const { t } = useTranslation('translation', { keyPrefix: 'materials' })
   const [unit, setUnit] = useState('')
   const [contactDate, setContactDate] = useState(item.contactedAt || today())
   const [error, setError] = useState('')
@@ -216,6 +189,17 @@ export const MaterialsPage = () => {
     cancelGeneration()
     updateCase(item.id, { status: 'draft' })
     setSaved(true)
+  }
+
+  if (item.analysisNeedsReview) {
+    return (
+      <Alert severity="warning">
+        {t('analysisReviewRequired')}{' '}
+        <Link to={routes.caseTab(item.id, caseTabs.analysis)}>
+          {t('goToAnalysis')}
+        </Link>
+      </Alert>
+    )
   }
 
   return (
@@ -493,7 +477,7 @@ export const MaterialsPage = () => {
           {item.responseText.trim() && !stale && !generating ? (
             <Button
               component={Link}
-              to={`/sprawy/${encodeURIComponent(item.id)}/anonimizacja`}
+              to={routes.caseTab(item.id, caseTabs.redaction)}
               variant="contained"
             >
               {t('next')}

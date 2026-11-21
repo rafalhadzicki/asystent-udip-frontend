@@ -55,6 +55,10 @@ dostępny do podglądu po jego rejestracji.
 Zapis jest jawnie oznaczony w UI: używaj wyłącznie danych testowych.
 Reset demo wymaga potwierdzenia i przywraca początkowe dane.
 Błędy odczytu lub zapisu są pokazywane użytkownikowi.
+Jeżeli dane zmienią się w innej karcie, zapis w bieżącej karcie zostaje
+wstrzymany, aby nie nadpisać tamtych zmian. Przed odświeżeniem skopiuj
+potrzebne niezapisane treści. To mechanizm ostrzegawczy demo, a nie
+transakcyjna synchronizacja wielu użytkowników.
 Stała data odniesienia demo to **21.11.2026**, żeby rejestr i kalendarz
 miały spójne, powtarzalne stany pilności. Sugestia 14 dni jest propozycją
 do zatwierdzenia, a nie pełnym silnikiem obliczania terminów prawnych.
@@ -93,6 +97,9 @@ npm run format:check
 Alias `@/` wskazuje na `src/`. Font jest lokalną zależnością, a nie zasobem
 pobieranym z CDN. Motyw MUI znajduje się w `src/app/theme.ts`, a style
 logowania w `src/features/auth/login-page.styles.ts`.
+Ścieżki i funkcja budująca adresy spraw znajdują się w `src/app/routes.ts`.
+Każdy widok sprawy ma własny folder z komponentem, stylami i testami;
+wspólne dla kilku widoków funkcje pozostają w `src/features/cases`.
 
 Komponenty definiujemy jako `const Component = (...) => ...`. Stylowane
 komponenty tworzymy przez `styled` z MUI, korzystające z silnika
@@ -111,7 +118,8 @@ Pole hasła zarządza wyłącznie widocznością, nie regułami logowania.
 
 Ogólne style przycisków pozostają w motywie MUI. Do ładowania używamy
 wbudowanego `Button loading`, a do większej akcji `size="large"`,
-bez dodatkowego wrappera. `ScreenReaderText` znajduje się w `components/ui`.
+bez dodatkowego wrappera. `ScreenReaderText` znajduje się przy logowaniu;
+wspólny kontener sekcji `SectionCard` znajduje się w `components/ui`.
 Layout logowania pozostaje lokalny w feature `auth`.
 
 ## Klient HTTP
@@ -143,8 +151,8 @@ mocków nie zaszywamy w kliencie HTTP.
 
 Polskie teksty interfejsu, walidacji i dostępności znajdują się w
 `src/i18n/locales/pl.json`. Konfiguracja w `src/i18n/index.ts` ładuje je lokalnie,
-bez żądań do API. Obecnie jedynym językiem jest polski, bez przełącznika. Każdy widok ma
-własny słownik i namespace, a współdzielone teksty pozostają w `pl.json`.
+bez żądań do API. Obecnie jedynym językiem jest polski, bez przełącznika.
+Teksty widoków są pogrupowane w obiektach jednego pliku `pl.json`.
 
 W komponentach używamy `useTranslation()` i `t('auth.submit')`, a dla tekstu
 z elementami JSX — `Trans`. Typy kluczy wynikają ze słownika; nieistniejący
