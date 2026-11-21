@@ -1,19 +1,21 @@
 # Asystent UDIP — frontend
 
 Aplikacja demonstracyjna React i TypeScript dla projektu hackathonowego.
-Widoki są połączone wspólnym modelem sprawy; integracja z backendem jest
-jeszcze niezaimplementowana.
+Logowanie korzysta z backendu; pozostałe widoki są nadal połączone lokalnym,
+demonstracyjnym modelem sprawy.
 
-## Logowanie demonstracyjne
+## Logowanie i stan integracji
 
-Ekran `/login` ma walidację, podgląd hasła i symulację logowania.
-Konto testowe: login `demo`, hasło `demo123`. Nie używaj rzeczywistych danych.
-Po zalogowaniu `/sprawy` pokazuje rejestr dziesięciu spraw demonstracyjnych.
+Ekran `/login` wysyła e-mail i hasło do `POST /api/auth/login`.
+Po zalogowaniu `/sprawy` nadal pokazuje lokalne dane demonstracyjne, a nie
+sprawy z API. Pozostałe operacje również nie zapisują danych w backendzie.
+W widokach spraw i bazy wiedzy używaj wyłącznie danych testowych.
 
 Sesja logowania istnieje tylko w pamięci i kończy się po odświeżeniu strony.
-Nie zapisujemy hasła ani tokenów. Mock i przekierowania w przeglądarce
-nie zapewniają uwierzytelniania ani ochrony danych; wymagają zastąpienia
-rzeczywistą integracją przed użyciem aplikacji z prawdziwymi dokumentami.
+Token jest przechowywany tylko w pamięci, nie zapisujemy hasła ani tokenu
+w LocalStorage. Lokalne dane demo są współdzielone przez konta korzystające
+z tej samej przeglądarki; logowanie nie zapewnia ich izolacji ani ochrony.
+Nie używaj aplikacji z prawdziwymi dokumentami na tym etapie integracji.
 
 ## Przepływ demonstracyjny
 
@@ -76,7 +78,15 @@ npm ci
 npm run dev
 ```
 
-Adres serwera deweloperskiego pojawi się w terminalu.
+Przed uruchomieniem ustaw w `.env.local` adres backendu bez końcowego `/api`:
+
+```env
+VITE_API_BASE_URL=https://adres-backendu
+```
+
+W przypadku tunelu ngrok wymagającego pominięcia strony ostrzegawczej ustaw
+także `VITE_API_NGROK=true`. Zmienne Vite są publiczne: nie umieszczaj w nich
+haseł ani tokenów. Adres serwera deweloperskiego pojawi się w terminalu.
 
 ## Weryfikacja
 
@@ -92,7 +102,7 @@ npm run format:check
 - Vite, React, TypeScript, React Router i TanStack Query.
 - MUI z silnikiem styled-components i Lucide.
 - React Hook Form z walidacją w `rules`; date-fns do pracy z datami.
-- Axios z typowanym klientem HTTP (jeszcze niepodłączonym do logowania).
+- Axios z typowanym klientem HTTP; mutacja logowania korzysta z TanStack Query.
 - i18next i react-i18next — teksty pod typowanymi kluczami tłumaczeń.
 - Vitest, Testing Library, ESLint i Prettier.
 

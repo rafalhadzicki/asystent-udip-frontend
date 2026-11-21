@@ -9,26 +9,23 @@
   "auth": {
     "formLabel": "Logowanie",
     "credentialsLegend": "Dane logowania",
-    "loginLabel": "Login",
+    "loginLabel": "E-mail",
     "passwordLabel": "Hasło",
     "submit": "Zaloguj się",
     "submitting": "Logowanie…",
     "submittingAnnouncement": "Trwa logowanie.",
     "logout": "Wyloguj się",
     "validation": {
-      "loginRequired": "Podaj login.",
+      "loginRequired": "Podaj adres e-mail.",
       "passwordRequired": "Podaj hasło."
     },
     "errors": {
-      "invalidCredentials": "Nieprawidłowy login lub hasło."
+      "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
+      "requestFailed": "Nie udało się zalogować. Sprawdź połączenie z serwerem i spróbuj ponownie."
     },
-    "demo": {
-      "credentials": "Konto testowe: <login>{{login}}</login> / <password>{{password}}</password>",
-      "notice": "Logowanie jest symulowane. Nie wpisuj rzeczywistych danych.",
-      "sessionNotice": "Odświeżenie strony kończy sesję demonstracyjną.",
-      "userName": "Urzędnik demonstracyjny",
-      "session": "Sesja demonstracyjna · {{name}}"
-    }
+    "migrationNotice": "Logowanie korzysta z API. Pozostałe widoki nadal używają lokalnych danych demonstracyjnych — nie wpisuj rzeczywistych danych.",
+    "sessionNotice": "Odświeżenie strony kończy sesję.",
+    "session": "Zalogowano · {{email}}"
   },
   "form": {
     "password": {

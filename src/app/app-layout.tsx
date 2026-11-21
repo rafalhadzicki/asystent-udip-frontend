@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { DemoUser } from '@/features/auth/mock-auth'
+import type { AuthSession } from '@/features/auth/auth-api'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { DEMO_TODAY } from '@/features/demo/demo-data'
 import { displayDate } from '@/features/demo/date-utils'
@@ -53,7 +53,7 @@ export const AppLayout = ({
   user,
   onLogout,
 }: {
-  user: DemoUser
+  user: AuthSession
   onLogout: () => void
 }) => {
   const { t } = useTranslation()
@@ -163,7 +163,7 @@ export const AppLayout = ({
             {t('navigation.newCase')}
           </Button>
           <Typography variant="body2">
-            {t('auth.demo.session', { name: t(user.nameKey) })}
+            {t('auth.session', { email: user.email })}
           </Typography>
           <Button onClick={onLogout}>{t('auth.logout')}</Button>
         </Stack>

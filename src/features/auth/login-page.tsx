@@ -1,7 +1,8 @@
 import { Alert, Button, Typography } from '@mui/material'
 import { ArrowRight, Circle, Landmark } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
+import axios from 'axios'
 import { FormPasswordField } from '@/components/form/form-password-field'
 import { FormTextField } from '@/components/form/form-text-field'
 import { ScreenReaderText } from './screen-reader-text'
@@ -15,7 +16,8 @@ import {
   LoginHeader,
   LoginLayout,
 } from './login-page.styles'
-import { demoCredentials, mockLogin, type DemoUser } from './mock-auth'
+import type { AuthSession } from './auth-api'
+import { useLogin } from './use-login'
 
 type LoginValues = {
   login: string
@@ -25,10 +27,11 @@ type LoginValues = {
 export const LoginPage = ({
   onLogin,
 }: {
-  onLogin: (user: DemoUser) => void
+  onLogin: (user: AuthSession) => void
 }) => {
   const { t } = useTranslation()
   const { t: authT } = useTranslation('translation', { keyPrefix: 'auth' })
+  const login = useLogin()
   const {
     control,
     handleSubmit,
@@ -41,12 +44,23 @@ export const LoginPage = ({
 
   const onSubmit = async (values: LoginValues) => {
     clearErrors('root')
-    const result = await mockLogin(values.login, values.password)
-    if (!result.ok) {
-      setError('root', { message: authT(`errors.${result.code}`) })
-      return
+    try {
+      const session = await login.mutateAsync({
+        email: values.login.trim(),
+        password: values.password,
+      })
+      onLogin(session)
+    } catch (error) {
+      const invalid =
+        axios.isAxiosError(error) && error.response?.status === 401
+      setError('root', {
+        message: authT(
+          invalid ? 'errors.invalidCredentials' : 'errors.requestFailed',
+        ),
+      })
+    } finally {
+      login.reset()
     }
-    onLogin(result.user)
   }
 
   return (
@@ -140,17 +154,10 @@ export const LoginPage = ({
         </LoginForm>
 
         <LoginFooter>
-          <Typography variant="body2">
-            <Trans
-              i18nKey="auth.demo.credentials"
-              values={demoCredentials}
-              components={{ login: <code />, password: <code /> }}
-            />
-          </Typography>
           <Typography variant="caption" component="p" sx={{ mt: 1 }}>
-            {authT('demo.notice')}
+            {authT('migrationNotice')}
             <br />
-            {authT('demo.sessionNotice')}
+            {authT('sessionNotice')}
           </Typography>
         </LoginFooter>
       </LoginContainer>

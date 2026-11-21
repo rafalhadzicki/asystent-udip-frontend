@@ -4,7 +4,7 @@ import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { Button, Typography } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { LoginPage } from '@/features/auth/login-page'
-import type { DemoUser } from '@/features/auth/mock-auth'
+import type { AuthSession } from '@/features/auth/auth-api'
 import { DemoProvider } from '@/features/demo/demo-store'
 import { AppLayout } from '@/app/app-layout'
 import { CaseLayout } from '@/app/case-layout'
@@ -44,7 +44,7 @@ const NotFoundPage = () => {
 }
 
 const App = () => {
-  const [user, setUser] = useState<DemoUser | null>(null)
+  const [user, setUser] = useState<AuthSession | null>(null)
   return (
     <DemoProvider>
       <Routes>

@@ -7,6 +7,10 @@ export type RequestConfig<TData = unknown> = Omit<
 
 const httpClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers:
+    import.meta.env.VITE_API_NGROK === 'true'
+      ? { 'ngrok-skip-browser-warning': 'true' }
+      : undefined,
 })
 
 export const apiClient = {
