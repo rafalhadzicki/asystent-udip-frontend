@@ -11,9 +11,10 @@ Po zalogowaniu `/sprawy` nadal pokazuje lokalne dane demonstracyjne, a nie
 sprawy z API. Pozostałe operacje również nie zapisują danych w backendzie.
 W widokach spraw i bazy wiedzy używaj wyłącznie danych testowych.
 
-Sesja logowania istnieje tylko w pamięci i kończy się po odświeżeniu strony.
-Token jest przechowywany tylko w pamięci, nie zapisujemy hasła ani tokenu
-w LocalStorage. Lokalne dane demo są zapisywane osobno dla każdego konta
+Tymczasowo token i e-mail sesji są zapisywane w LocalStorage
+(`asystent-udip-session`), żeby odświeżenie strony nie wymagało logowania.
+Hasła nie zapisujemy. Przed pracą na prawdziwych danych token trzeba
+przenieść do pamięci lub ciasteczka httpOnly. Lokalne dane demo są zapisywane osobno dla każdego konta
 (klucz zawiera e-mail), ale nie są szyfrowane ani chronione przed osobą
 korzystającą z tej samej przeglądarki.
 Nie używaj aplikacji z prawdziwymi dokumentami na tym etapie integracji.
@@ -163,7 +164,7 @@ Cała komunikacja z backendem leży w `src/api/`:
 ```
 src/api/
   client.ts          # Axios: adres API, timeout, token, obsługa 401
-  session.ts         # sesja w pamięci (token + e-mail), useSession()
+  session.ts         # sesja (token + e-mail, tymczasowo w LocalStorage), useSession()
   query-client.ts    # QueryClient z domyślnymi opcjami i globalnym onError
   query-keys.ts      # fabryka kluczy Query, zakresowana e-mailem użytkownika
   auth/        { auth.api.ts, auth.schemas.ts, auth.queries.ts }

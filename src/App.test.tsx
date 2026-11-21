@@ -139,8 +139,11 @@ describe('App', () => {
       email: 'demo@example.com',
       password: 'demo123',
     })
-    expect(JSON.stringify(localStorage)).not.toContain('test-token')
+    expect(localStorage.getItem('asystent-udip-session')).toContain(
+      'test-token',
+    )
     await user.click(screen.getByRole('button', { name: 'Wyloguj się' }))
+    expect(localStorage.getItem('asystent-udip-session')).toBeNull()
     expect(screen.getByLabelText('Hasło')).toHaveValue('')
     expect(
       screen.getByRole('heading', { name: 'Asystent UDIP' }),
