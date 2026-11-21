@@ -15,38 +15,18 @@ import { Link, useNavigate } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
 import { useDemoStore } from '@/features/demo/demo-store'
 import type { UploadDraft } from '@/features/demo/types'
-import { useCreateCase } from '@/api/cases/cases.queries'
 import { getApiErrorKind } from '@/api/errors'
+import {
+  useCreateCaseFromDraft,
+  type VerifiedCaseValues,
+} from '../use-create-case-from-draft'
+import {
+  isFutureDate,
+  toSubmitError,
+  type SubmitError,
+} from './verification-utils'
 import { validIsoDate } from '@/features/demo/date-utils'
 import { caseTabs, routes } from '@/app/routes'
-
-type VerificationValues = {
-  applicant: string
-  reference: string
-  subject: string
-  writtenAt: string
-  receivedAt: string
-  requestText: string
-}
-
-type SubmitError = 'tooLarge' | 'unsupported' | 'invalid' | 'failed'
-
-const toSubmitError = (error: unknown): SubmitError => {
-  const kind = getApiErrorKind(error)
-  return kind === 'tooLarge' || kind === 'unsupported' || kind === 'invalid'
-    ? kind
-    : 'failed'
-}
-
-const isFutureDate = (value: string) =>
-  value > new Date().toISOString().slice(0, 10)
-
-const splitQuestions = (text: string) =>
-  text
-    .split(/\n+|(?<=[.!?])\s+/u)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((part) => ({ id: crypto.randomUUID(), text: part, selected: false }))
 
 const validDate = validIsoDate
 
@@ -71,12 +51,11 @@ export const VerificationPage = () => {
 
 const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
   const { t } = useTranslation('translation', { keyPrefix: 'verification' })
-  const { updateCase, setUploadDraft } = useDemoStore()
-  const { createCaseAsync, isCreatingCase } = useCreateCase()
+  const { createFromDraft, isCreatingCase } = useCreateCaseFromDraft(draft)
   const [submitError, setSubmitError] = useState<SubmitError | null>(null)
   const navigate = useNavigate()
   const submitted = useRef(false)
-  const { control, handleSubmit, setError } = useForm<VerificationValues>({
+  const { control, handleSubmit, setError } = useForm<VerifiedCaseValues>({
     defaultValues: {
       applicant: draft.applicant,
       reference: draft.reference ?? '',
@@ -90,27 +69,13 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
   const dateRequired = (value: string) =>
     (required(value) === true && validDate(value)) ||
     (value.trim() ? t('invalidDate') : t('required'))
-  const onSubmit = async (values: VerificationValues) => {
+  const onSubmit = async (values: VerifiedCaseValues) => {
     if (submitted.current) return
     submitted.current = true
     setSubmitError(null)
-    const requestText = values.requestText.trim()
     try {
-      const created = await createCaseAsync({
-        file: draft.file,
-        caseNumber: values.reference.trim(),
-        requesterName: values.applicant.trim(),
-        subject: values.subject.trim(),
-        receivedAt: values.receivedAt.trim(),
-        requestText,
-      })
-      // Fields the API does not store yet stay in the browser, keyed by case id.
-      updateCase(created.id, {
-        writtenAt: values.writtenAt.trim(),
-        questions: splitQuestions(requestText),
-      })
-      setUploadDraft(null)
-      await navigate(routes.caseTab(created.id, caseTabs.analysis))
+      const caseId = await createFromDraft(values)
+      await navigate(routes.caseTab(caseId, caseTabs.analysis))
     } catch (error) {
       submitted.current = false
       const kind = getApiErrorKind(error)
