@@ -37,9 +37,11 @@ anonimizacja tekstu → pobranie TXT → ręczne odnotowanie wysyłki poza aplik
 - `/kalendarz`: terminy pochodzące z tego samego rejestru.
 - `/baza-wiedzy`: wyszukiwanie, dodawanie i aktualizacja metadanych materiałów.
 
-Anonimizacja usuwa wszystkie dokładne wystąpienia zatwierdzonych fragmentów
-z nowego pliku TXT. **Nie anonimizuje oryginalnego PDF/DOCX ani załączników**,
-nie jest kompletnym wykrywaniem danych osobowych. Oryginalny tekst odpowiedzi
+Analiza proponuje osobno warianty wielkości liter pełnych danych wnioskodawcy.
+Każda decyzja usuwa z nowego TXT wyłącznie dokładne wystąpienia wybranego
+wariantu, z uwzględnieniem wielkości liter. Analiza nie wykrywa odmian imion
+i nazwisk ani wszystkich innych danych osobowych. **Nie anonimizuje oryginalnego
+PDF/DOCX ani załączników** i nie gwarantuje bezpieczeństwa tekstu. Oryginalny tekst odpowiedzi
 pozostaje w lokalnym demo do porównania. Oświadczenie nie zastępuje przeglądu
 całości przez człowieka. Aplikacja nie wysyła korespondencji ani nie integruje
 się z EZD/ePUAP.
@@ -106,6 +108,8 @@ komponenty tworzymy przez `styled` z MUI, korzystające z silnika
 `@mui/styled-engine-sc`. Alias silnika jest skonfigurowany w Vite i TypeScript,
 a npm override zapewnia ten sam silnik dla zależności uruchamianych przez
 Vitest. Nie używamy Emotion, Tailwind, shadcn ani Zod.
+`sx` stosujemy do drobnych, lokalnych korekt; większe układy i bardziej
+rozbudowane style umieszczamy w plikach `.styles.ts` danego widoku.
 
 ## Wspólne komponenty i formularze
 

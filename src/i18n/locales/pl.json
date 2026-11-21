@@ -351,7 +351,7 @@
     "goToAnalysis": "Przejdź do analizy",
     "title": "Anonimizacja odpowiedzi",
     "subtitle": "Pracujesz na treści odpowiedzi zapisanej w tej sprawie.",
-    "demoWarning": "Wersja demonstracyjna: dane mogą być testowe i są przechowywane lokalnie w przeglądarce. Sugestie nie zastępują ręcznej weryfikacji ani pełnego przeglądu prywatności.",
+    "demoWarning": "Wersja demonstracyjna — używaj tylko danych testowych. Sugestie mogą pominąć odmiany imion i nazwisk oraz inne dane osobowe. Przed pobraniem i udostępnieniem ręcznie sprawdź całą treść i podgląd; oznaczenie fragmentów nie gwarantuje bezpieczeństwa tekstu.",
     "missing": {
       "title": "Brak treści odpowiedzi",
       "description": "Dodaj lub przygotuj odpowiedź w materiałach tej sprawy. Nie używamy osobnego przykładowego pisma.",
@@ -363,13 +363,12 @@
     },
     "analysis": {
       "title": "Sugestie demonstracyjne",
-      "description": "Uruchom sprawdzenie, aby wskazać wyłącznie dokładne wystąpienia pełnego imienia i nazwiska wnioskodawcy. To nie jest pełne wyszukiwanie danych osobowych i może nie wykryć innych informacji.",
+      "description": "Sprawdzenie wyszukuje pełne imię i nazwisko wnioskodawcy niezależnie od wielkości liter. Każdy wariant zapisu dodaje jako osobną sugestię. Nie rozpoznaje odmian ani innych danych osobowych.",
       "run": "Uruchom analizę demonstracyjną",
-      "noMatch": "Nie znaleziono dokładnego wystąpienia pełnego imienia i nazwiska wnioskodawcy.",
-      "alreadyAdded": "Dokładny fragment wnioskodawcy znajduje się już na liście.",
-      "overlap": "Sugestia nachodzi na istniejący fragment. Sprawdź ręcznie i unikaj nakładających się pozycji.",
-      "added": "Dodano pełne imię i nazwisko wnioskodawcy jako sugestię ({{count}} wystąp.).",
-      "applicantReason": "Sugestia demonstracyjna: dokładny tekst wnioskodawcy."
+      "noMatch": "Nie znaleziono pełnego imienia i nazwiska wnioskodawcy. Sprawdź ręcznie także odmiany i inne dane.",
+      "variantsAdded": "Dodano warianty zapisu jako osobne sugestie: {{count}}.",
+      "variantsPartial": "Dodano wariantów: {{added}}. Pominięto wariantów już dodanych lub nakładających się na istniejące fragmenty: {{skipped}}. Sprawdź je ręcznie.",
+      "applicantReason": "Sugestia demonstracyjna: wariant zapisu danych wnioskodawcy."
     },
     "manual": {
       "title": "Dodaj fragment ręcznie",

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Redaction } from '@/features/demo/types'
 import {
   canExportRedactedText,
+  findCaseInsensitiveOccurrences,
   findExactOccurrences,
   hasUnresolvedRedactions,
   overlapsExistingRedaction,
@@ -19,6 +20,34 @@ describe('redaction utilities', () => {
       { start: 0, end: 3 },
       { start: 6, end: 9 },
     ])
+  })
+
+  it('finds case variants with Polish characters and original text offsets', () => {
+    const text = '😀 Żaneta ŻÓŁĆ, żANETA żółć, Żanecie Żółci'
+    const matches = findCaseInsensitiveOccurrences(text, 'Żaneta Żółć')
+    expect(matches.map(({ start, end }) => text.slice(start, end))).toEqual([
+      'Żaneta ŻÓŁĆ',
+      'żANETA żółć',
+    ])
+    expect(matches[0].start).toBe(3)
+  })
+
+  it('treats metacharacters literally and finds overlapping occurrences', () => {
+    expect(findCaseInsensitiveOccurrences('a.a A.A', 'A.A')).toEqual([
+      { start: 0, end: 3 },
+      { start: 4, end: 7 },
+    ])
+    expect(findCaseInsensitiveOccurrences('aAa', 'AA')).toEqual([
+      { start: 0, end: 2 },
+      { start: 1, end: 3 },
+    ])
+    expect(findCaseInsensitiveOccurrences('anything', '')).toEqual([])
+  })
+
+  it('keeps decisions exact so saved choices do not affect other variants', () => {
+    expect(redactText('Jan JAN Jan', [redaction('Jan')])).toBe(
+      '[ZANONIMIZOWANO] JAN [ZANONIMIZOWANO]',
+    )
   })
 
   it('merges overlapping selected text ranges before replacement', () => {

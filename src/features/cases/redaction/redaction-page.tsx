@@ -1,4 +1,7 @@
-import { Page, Preview } from './redaction-page.styles'
+import { Grid, Page } from './redaction-page.styles'
+import { ManualFragmentForm } from './manual-fragment-form'
+import { RedactionList } from './redaction-list'
+import { RedactionPreview } from './redaction-preview'
 import { useState } from 'react'
 import {
   Alert,
@@ -9,7 +12,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   FormControlLabel,
   Paper,
   Stack,
@@ -28,7 +30,7 @@ import type {
 import { caseTabs, routes } from '@/app/routes'
 import {
   canExportRedactedText,
-  findExactOccurrences,
+  findCaseInsensitiveOccurrences,
   hasUnresolvedRedactions,
   overlapsExistingRedaction,
   redactText,
@@ -39,11 +41,9 @@ const makeId = () =>
   `redaction-${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 export const RedactionPage = () => {
-  const outletCase = useOutletContext<CaseItem>()
-  const { cases, updateCase } = useDemoStore()
+  const item = useOutletContext<CaseItem>()
+  const { updateCase } = useDemoStore()
   const { t } = useTranslation('translation', { keyPrefix: 'redaction' })
-  const item =
-    cases.find((current) => current.id === outletCase.id) ?? outletCase
   const completed = item.status === 'completed'
   const responseNeedsSaving =
     item.status === 'waiting' && Boolean(item.responseText)
@@ -53,10 +53,7 @@ export const RedactionPage = () => {
     item.redactionConfirmed,
     redactions,
   )
-  const [fragment, setFragment] = useState('')
-  const [fragmentError, setFragmentError] = useState('')
   const [analysisMessage, setAnalysisMessage] = useState('')
-  const [showOriginal, setShowOriginal] = useState(false)
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [sentAt, setSentAt] = useState('')
   const [sentNote, setSentNote] = useState('')
@@ -71,23 +68,18 @@ export const RedactionPage = () => {
     })
   }
 
-  const addManualFragment = () => {
-    const candidate = fragment
+  const addManualFragment = (candidate: string): string | null => {
     if (!candidate.trim()) {
-      setFragmentError(t('errors.empty'))
-      return
+      return t('errors.empty')
     }
     if (item.responseText.indexOf(candidate) === -1) {
-      setFragmentError(t('errors.notFound'))
-      return
+      return t('errors.notFound')
     }
     if (redactions.some((redaction) => redaction.text === candidate)) {
-      setFragmentError(t('errors.duplicate'))
-      return
+      return t('errors.duplicate')
     }
     if (overlapsExistingRedaction(item.responseText, candidate, redactions)) {
-      setFragmentError(t('errors.overlap'))
-      return
+      return t('errors.overlap')
     }
 
     changeRedactions([
@@ -99,36 +91,47 @@ export const RedactionPage = () => {
         decision: 'pending',
       },
     ])
-    setFragment('')
-    setFragmentError('')
+    return null
   }
 
   const runDemoAnalysis = () => {
     const applicant = item.applicant
-    const matches = findExactOccurrences(item.responseText, applicant)
+    const matches = findCaseInsensitiveOccurrences(item.responseText, applicant)
     if (matches.length === 0) {
       setAnalysisMessage(t('analysis.noMatch'))
       return
     }
-    if (redactions.some((redaction) => redaction.text === applicant)) {
-      setAnalysisMessage(t('analysis.alreadyAdded'))
-      return
-    }
-    if (overlapsExistingRedaction(item.responseText, applicant, redactions)) {
-      setAnalysisMessage(t('analysis.overlap'))
-      return
-    }
-
-    changeRedactions([
-      ...redactions,
-      {
+    const variants = [
+      ...new Set(
+        matches.map(({ start, end }) => item.responseText.slice(start, end)),
+      ),
+    ]
+    const added: Redaction[] = []
+    let skipped = 0
+    for (const variant of variants) {
+      if (
+        redactions.some((redaction) => redaction.text === variant) ||
+        overlapsExistingRedaction(item.responseText, variant, [
+          ...redactions,
+          ...added,
+        ])
+      ) {
+        skipped += 1
+        continue
+      }
+      added.push({
         id: makeId(),
-        text: applicant,
+        text: variant,
         reason: t('analysis.applicantReason'),
         decision: 'pending',
-      },
-    ])
-    setAnalysisMessage(t('analysis.added', { count: matches.length }))
+      })
+    }
+    if (added.length) changeRedactions([...redactions, ...added])
+    setAnalysisMessage(
+      skipped
+        ? t('analysis.variantsPartial', { added: added.length, skipped })
+        : t('analysis.variantsAdded', { count: added.length }),
+    )
   }
 
   const decide = (id: string, decision: RedactionDecision) => {
@@ -248,21 +251,7 @@ export const RedactionPage = () => {
             </Stack>
           </Paper>
         ) : (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'minmax(0, 1fr)',
-                lg: 'minmax(0, 1.7fr) minmax(300px, 1fr)',
-              },
-              gridTemplateAreas: {
-                xs: '"preview" "analysis" "manual" "decisions" "review"',
-                lg: '"preview analysis" "preview manual" "preview decisions" "review review"',
-              },
-              gap: 2.5,
-              alignItems: 'start',
-            }}
-          >
+          <Grid>
             <Paper variant="outlined" sx={{ p: 2, gridArea: 'analysis' }}>
               <Stack spacing={1.5}>
                 <Typography variant="h2">{t('analysis.title')}</Typography>
@@ -285,124 +274,21 @@ export const RedactionPage = () => {
               </Stack>
             </Paper>
 
-            <Paper variant="outlined" sx={{ p: 2, gridArea: 'manual' }}>
-              <Stack spacing={1.5}>
-                <Typography variant="h2">{t('manual.title')}</Typography>
-                <Typography color="text.secondary">
-                  {t('manual.description')}
-                </Typography>
-                <TextField
-                  fullWidth
-                  label={t('manual.inputLabel')}
-                  value={fragment}
-                  onChange={(event) => {
-                    setFragment(event.target.value)
-                    setFragmentError('')
-                  }}
-                  error={Boolean(fragmentError)}
-                  helperText={fragmentError || t('manual.helper')}
-                  disabled={completed}
-                />
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={addManualFragment}
-                  disabled={completed || !item.responseText}
-                >
-                  {t('manual.add')}
-                </Button>
-              </Stack>
-            </Paper>
+            <ManualFragmentForm
+              disabled={completed}
+              onAdd={addManualFragment}
+            />
 
-            <Paper variant="outlined" sx={{ p: 2, gridArea: 'decisions' }}>
-              <Stack spacing={2}>
-                <Box>
-                  <Typography variant="h2">{t('list.title')}</Typography>
-                  <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                    {t('list.description')}
-                  </Typography>
-                </Box>
-                {redactions.length === 0 ? (
-                  <Alert severity="info">{t('list.empty')}</Alert>
-                ) : (
-                  <Stack divider={<Divider flexItem />} spacing={2}>
-                    {redactions.map((redaction) => (
-                      <Stack key={redaction.id} spacing={1}>
-                        <Typography
-                          component="p"
-                          sx={{ overflowWrap: 'anywhere', fontWeight: 600 }}
-                        >
-                          {redaction.text}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {redaction.reason}
-                        </Typography>
-                        <Stack spacing={1}>
-                          {(['hide', 'keep', 'pending'] as const).map(
-                            (decision) => (
-                              <Button
-                                key={decision}
-                                fullWidth
-                                size="small"
-                                variant={
-                                  redaction.decision === decision
-                                    ? 'contained'
-                                    : 'outlined'
-                                }
-                                disabled={completed}
-                                aria-pressed={redaction.decision === decision}
-                                onClick={() => decide(redaction.id, decision)}
-                              >
-                                {t(`decisions.${decision}`)}
-                              </Button>
-                            ),
-                          )}
-                        </Stack>
-                      </Stack>
-                    ))}
-                  </Stack>
-                )}
-              </Stack>
-            </Paper>
+            <RedactionList
+              redactions={redactions}
+              disabled={completed}
+              onDecide={decide}
+            />
 
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                gridArea: 'preview',
-                position: { lg: 'sticky' },
-                top: 24,
-              }}
-            >
-              <Stack spacing={1.5}>
-                <Stack spacing={1}>
-                  <Typography variant="h2">{t('preview.title')}</Typography>
-                  <Typography color="text.secondary">
-                    {t('preview.description')}
-                  </Typography>
-                </Stack>
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={() => setShowOriginal((value) => !value)}
-                >
-                  {t(
-                    showOriginal
-                      ? 'preview.showSanitized'
-                      : 'preview.showOriginal',
-                  )}
-                </Button>
-                <Preview variant="outlined" aria-label={t('preview.label')}>
-                  {showOriginal
-                    ? item.responseText
-                    : redactText(
-                        item.responseText,
-                        redactions,
-                        t('replacement'),
-                      )}
-                </Preview>
-              </Stack>
-            </Paper>
+            <RedactionPreview
+              text={item.responseText}
+              redactions={redactions}
+            />
 
             <Paper variant="outlined" sx={{ p: 2, gridArea: 'review' }}>
               <Stack spacing={1.5}>
@@ -434,7 +320,7 @@ export const RedactionPage = () => {
                 </Typography>
               </Stack>
             </Paper>
-          </Box>
+          </Grid>
         )}
 
         {completed ? (

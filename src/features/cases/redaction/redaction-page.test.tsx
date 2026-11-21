@@ -38,7 +38,7 @@ beforeEach(() => {
     ...cases[0],
     status: 'draft',
     responseText:
-      'Do: Jan Demonstracyjny\nKwota: 123 zł.\nJan Demonstracyjny otrzymuje odpowiedź.',
+      'Do: Jan Demonstracyjny\nKwota: 123 zł.\nJAN DEMONSTRACYJNY otrzymuje odpowiedź.',
   }
   localStorage.setItem(
     DEMO_STORAGE_KEY,
@@ -98,9 +98,11 @@ describe('redaction workflow', () => {
     await user.click(
       screen.getByRole('button', { name: 'Uruchom analizę demonstracyjną' }),
     )
-    await user.click(
-      screen.getByRole('button', { name: 'Ukryj w pobranym tekście' }),
-    )
+    for (const button of screen.getAllByRole('button', {
+      name: 'Ukryj w pobranym tekście',
+    })) {
+      await user.click(button)
+    }
     await user.click(
       screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
     )
@@ -126,7 +128,7 @@ describe('redaction workflow', () => {
       () => expect(revokeObjectURL).toHaveBeenCalledWith('blob:demo-export'),
       { timeout: 2000 },
     )
-    await user.click(screen.getByRole('button', { name: 'Pozostaw' }))
+    await user.click(screen.getAllByRole('button', { name: 'Pozostaw' })[0])
     expect(download).toBeDisabled()
     expect(
       screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
@@ -169,6 +171,111 @@ describe('redaction workflow', () => {
       await screen.findByRole('button', {
         name: 'Uruchom analizę demonstracyjną',
       }),
+    ).toBeDisabled()
+  })
+
+  it('suggests case variants separately without hiding declined variants or inflections', async () => {
+    const cases = createDemoCases()
+    cases[0] = {
+      ...cases[0],
+      applicant: 'Żaneta Żółć',
+      status: 'draft',
+      responseText: 'Żaneta Żółć; ŻANETA ŻÓŁĆ; Żanecie Żółci',
+    }
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    expect(
+      screen.getByText(/Sugestie mogą pominąć odmiany/),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Uruchom analizę demonstracyjną' }),
+    )
+    expect(
+      screen.getByText(/Dodano warianty zapisu jako osobne sugestie: 2/),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Żaneta Żółć')).toBeInTheDocument()
+    expect(screen.getByText('ŻANETA ŻÓŁĆ')).toBeInTheDocument()
+    const hideButtons = screen.getAllByRole('button', {
+      name: 'Ukryj w pobranym tekście',
+    })
+    await user.click(hideButtons[0])
+    await user.click(screen.getAllByRole('button', { name: 'Pozostaw' })[1])
+    expect(screen.getByLabelText('Podgląd odpowiedzi')).toHaveTextContent(
+      '[ZANONIMIZOWANO]; ŻANETA ŻÓŁĆ; Żanecie Żółci',
+    )
+    await user.click(
+      screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
+    )
+    expect(
+      screen.getByRole('button', {
+        name: 'Pobierz zanonimizowany tekst TXT',
+      }),
+    ).toBeEnabled()
+    await user.click(
+      screen.getByRole('button', { name: 'Uruchom analizę demonstracyjną' }),
+    )
+    expect(
+      screen.getByText(/Pominięto wariantów już dodanych/),
+    ).toBeInTheDocument()
+  })
+
+  it('preserves previously saved exact decisions and confirmation', () => {
+    const cases = createDemoCases()
+    cases[0] = {
+      ...cases[0],
+      status: 'redaction',
+      responseText: 'Jan i JAN',
+      redactions: [{ id: 'legacy', text: 'Jan', reason: '', decision: 'hide' }],
+      redactionConfirmed: true,
+    }
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+    )
+    renderPage()
+    expect(screen.getByLabelText('Podgląd odpowiedzi')).toHaveTextContent(
+      '[ZANONIMIZOWANO] i JAN',
+    )
+    expect(
+      screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
+    ).toBeChecked()
+  })
+
+  it('skips overlapping suggestions, adds other variants and resets review', async () => {
+    const cases = createDemoCases()
+    cases[0] = {
+      ...cases[0],
+      applicant: 'Jan Kowalski',
+      status: 'redaction',
+      responseText: 'Jan Kowalski; JAN KOWALSKI',
+      redactions: [
+        { id: 'existing', text: 'Jan', reason: '', decision: 'hide' },
+      ],
+      redactionConfirmed: true,
+    }
+    localStorage.setItem(
+      DEMO_STORAGE_KEY,
+      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(
+      screen.getByRole('button', { name: 'Uruchom analizę demonstracyjną' }),
+    )
+    expect(
+      screen.getByText(/Dodano wariantów: 1. Pominięto wariantów/),
+    ).toBeInTheDocument()
+    expect(screen.getByText('JAN KOWALSKI')).toBeInTheDocument()
+    expect(screen.queryByText('Jan Kowalski')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
+    ).not.toBeChecked()
+    expect(
+      screen.getByRole('button', { name: 'Pobierz zanonimizowany tekst TXT' }),
     ).toBeDisabled()
   })
 })
