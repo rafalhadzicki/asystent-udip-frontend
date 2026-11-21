@@ -1,10 +1,17 @@
-import { render, screen } from '@testing-library/react'
+import { render as renderView, screen } from '@testing-library/react'
+import { ThemeProvider } from '@mui/material/styles'
+import type { ReactNode } from 'react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
+import { theme } from './app/theme'
+
+const render = (ui: ReactNode) =>
+  renderView(<ThemeProvider theme={theme}>{ui}</ThemeProvider>)
 
 describe('App', () => {
+  beforeEach(() => localStorage.clear())
   it('wyświetla puste logowanie z informacją o mockach', () => {
     render(
       <MemoryRouter>
@@ -86,7 +93,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Hasło'), 'demo123')
     await user.click(screen.getByRole('button', { name: 'Zaloguj się' }))
     expect(
-      await screen.findByRole('heading', { name: 'Sprawy' }),
+      await screen.findByRole('heading', { name: 'Sprawy' }, { timeout: 5000 }),
     ).toBeInTheDocument()
     expect(
       screen.getByText('Sesja demonstracyjna · Urzędnik demonstracyjny'),

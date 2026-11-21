@@ -5,6 +5,18 @@ import { Button, Typography } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { LoginPage } from '@/features/auth/login-page'
 import type { DemoUser } from '@/features/auth/mock-auth'
+import { DemoProvider } from '@/features/demo/demo-store'
+import { AppLayout } from '@/app/app-layout'
+import { CaseLayout } from '@/app/case-layout'
+import { RegisterPage } from '@/features/cases/register-page'
+import { UploadPage } from '@/features/cases/upload-page'
+import { VerificationPage } from '@/features/cases/verification-page'
+import { RequestPage } from '@/features/cases/request-page'
+import { AnalysisPage } from '@/features/cases/analysis-page'
+import { MaterialsPage } from '@/features/cases/materials-page'
+import { RedactionPage } from '@/features/cases/redaction-page'
+import { CalendarPage } from '@/features/calendar/calendar-page'
+import { KnowledgePage } from '@/features/knowledge/knowledge-page'
 
 const PageLayout = styled('main')(({ theme }) => ({
   margin: '0 auto',
@@ -17,28 +29,6 @@ const PageLayout = styled('main')(({ theme }) => ({
   gap: theme.spacing(2),
   padding: theme.spacing(6, 3),
 }))
-
-const CasesPlaceholder = ({
-  user,
-  onLogout,
-}: {
-  user: DemoUser
-  onLogout: () => void
-}) => {
-  const { t } = useTranslation()
-  return (
-    <PageLayout>
-      <Typography variant="body2" color="text.secondary">
-        {t('auth.demo.session', { name: t(user.nameKey) })}
-      </Typography>
-      <Typography variant="h1">{t('cases.title')}</Typography>
-      <Typography color="text.secondary">{t('cases.placeholder')}</Typography>
-      <Button variant="outlined" onClick={onLogout}>
-        {t('auth.logout')}
-      </Button>
-    </PageLayout>
-  )
-}
 
 const NotFoundPage = () => {
   const { t } = useTranslation()
@@ -56,33 +46,50 @@ const App = () => {
   const [user, setUser] = useState<DemoUser | null>(null)
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={<Navigate to={user ? '/sprawy' : '/login'} replace />}
-      />
-      <Route
-        path="/login"
-        element={
-          user ? (
-            <Navigate to="/sprawy" replace />
-          ) : (
-            <LoginPage onLogin={setUser} />
-          )
-        }
-      />
-      <Route
-        path="/sprawy"
-        element={
-          user ? (
-            <CasesPlaceholder user={user} onLogout={() => setUser(null)} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <DemoProvider>
+      <Routes>
+        <Route
+          path="/"
+          element={<Navigate to={user ? '/sprawy' : '/login'} replace />}
+        />
+        <Route
+          path="/login"
+          element={
+            user ? (
+              <Navigate to="/sprawy" replace />
+            ) : (
+              <LoginPage onLogin={setUser} />
+            )
+          }
+        />
+        <Route
+          element={
+            user ? (
+              <AppLayout user={user} onLogout={() => setUser(null)} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        >
+          <Route path="/sprawy" element={<RegisterPage />} />
+          <Route path="/sprawy/nowy" element={<UploadPage />} />
+          <Route
+            path="/sprawy/nowy/weryfikacja"
+            element={<VerificationPage />}
+          />
+          <Route path="/sprawy/:caseId" element={<CaseLayout />}>
+            <Route index element={<Navigate to="wniosek" replace />} />
+            <Route path="wniosek" element={<RequestPage />} />
+            <Route path="analiza" element={<AnalysisPage />} />
+            <Route path="materialy" element={<MaterialsPage />} />
+            <Route path="anonimizacja" element={<RedactionPage />} />
+          </Route>
+          <Route path="/kalendarz" element={<CalendarPage />} />
+          <Route path="/baza-wiedzy" element={<KnowledgePage />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </DemoProvider>
   )
 }
 

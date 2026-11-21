@@ -1,18 +1,65 @@
 # Asystent UDIP — frontend
 
-Szkielet aplikacji React i TypeScript dla projektu hackathonowego. Widoki
-obsługi spraw i integracja z API nie są jeszcze zaimplementowane.
+Aplikacja demonstracyjna React i TypeScript dla projektu hackathonowego.
+Widoki są połączone wspólnym modelem sprawy; integracja z backendem jest
+jeszcze niezaimplementowana.
 
 ## Logowanie demonstracyjne
 
 Ekran `/login` ma walidację, podgląd hasła i symulację logowania.
 Konto testowe: login `demo`, hasło `demo123`. Nie używaj rzeczywistych danych.
-Po zalogowaniu `/sprawy` pokazuje ekran tymczasowy z wylogowaniem.
+Po zalogowaniu `/sprawy` pokazuje rejestr dziesięciu spraw demonstracyjnych.
 
-Sesja istnieje tylko w pamięci i kończy się po odświeżeniu strony.
+Sesja logowania istnieje tylko w pamięci i kończy się po odświeżeniu strony.
 Nie zapisujemy hasła ani tokenów. Mock i przekierowania w przeglądarce
 nie zapewniają uwierzytelniania ani ochrony danych; wymagają zastąpienia
 rzeczywistą integracją przed użyciem aplikacji z prawdziwymi dokumentami.
+
+## Przepływ demonstracyjny
+
+Rejestr → nowy wniosek → wybór PDF/DOCX → symulacja OCR → weryfikacja
+tekstu i dat → analiza pytań i jednostek → materiały i odpowiedź →
+anonimizacja tekstu → pobranie TXT → ręczne odnotowanie wysyłki poza aplikacją.
+
+- `/sprawy`: wyszukiwanie, filtry w URL, sortowanie, paginacja, eksport CSV.
+- `/sprawy/nowy` i `/sprawy/nowy/weryfikacja`: wybór rzeczywistego pliku,
+  walidacja i tworzenie sprawy. OCR zwraca wyraźnie oznaczony przykład,
+  **nie odczytuje treści wybranego dokumentu**.
+- `/sprawy/:caseId/wniosek`: metryka i korekta tekstu.
+- `/sprawy/:caseId/analiza`: edycja pytań i wybór jednostek,
+  przykłady z bazy wiedzy.
+- `/sprawy/:caseId/materialy`: odnotowanie kontaktu poza aplikacją,
+  metadane załączników, wklejenie tekstu materiałów, jawne generowanie
+  demonstracyjnego projektu i edycja. Projekt korzysta z wpisanych tekstów,
+  nie z treści plików; nie dodaje własnych ustaleń faktycznych.
+- `/sprawy/:caseId/anonimizacja`: propozycja dotycząca nazwiska wnioskodawcy
+  i ręczne fragmenty, decyzje człowieka, podgląd i rzeczywiste pobranie TXT.
+- `/kalendarz`: terminy pochodzące z tego samego rejestru.
+- `/baza-wiedzy`: wyszukiwanie, dodawanie i aktualizacja metadanych materiałów.
+
+Anonimizacja usuwa wszystkie dokładne wystąpienia zatwierdzonych fragmentów
+z nowego pliku TXT. **Nie anonimizuje oryginalnego PDF/DOCX ani załączników**,
+nie jest kompletnym wykrywaniem danych osobowych. Oryginalny tekst odpowiedzi
+pozostaje w lokalnym demo do porównania. Oświadczenie nie zastępuje przeglądu
+całości przez człowieka. Aplikacja nie wysyła korespondencji ani nie integruje
+się z EZD/ePUAP.
+
+## Zapis demo
+
+Metadane i teksty spraw oraz bazy wiedzy są zapisywane w LocalStorage
+pod kluczem `asystent-udip-demo-v1`. Nie zapisujemy plików, haseł ani tokenów.
+Wgrywany wniosek przed zatwierdzeniem istnieje tylko w pamięci; odświeżenie
+na weryfikacji wymaga ponownego wyboru pliku. Oryginalny plik nie będzie
+dostępny do podglądu po jego rejestracji.
+
+Zapis jest jawnie oznaczony w UI: używaj wyłącznie danych testowych.
+Reset demo wymaga potwierdzenia i przywraca początkowe dane.
+Błędy odczytu lub zapisu są pokazywane użytkownikowi.
+Stała data odniesienia demo to **21.11.2026**, żeby rejestr i kalendarz
+miały spójne, powtarzalne stany pilności. Sugestia 14 dni jest propozycją
+do zatwierdzenia, a nie pełnym silnikiem obliczania terminów prawnych.
+Backend będzie musiał zapewnić ekstrakcję dokumentów, kontrolę dostępu,
+trwały zapis i reguły terminów uzgodnione z organizatorem.
 
 ## Uruchomienie
 
@@ -96,7 +143,8 @@ mocków nie zaszywamy w kliencie HTTP.
 
 Polskie teksty interfejsu, walidacji i dostępności znajdują się w
 `src/i18n/locales/pl.json`. Konfiguracja w `src/i18n/index.ts` ładuje je lokalnie,
-bez żądań do API. Obecnie jedynym językiem jest polski, bez przełącznika.
+bez żądań do API. Obecnie jedynym językiem jest polski, bez przełącznika. Każdy widok ma
+własny słownik i namespace, a współdzielone teksty pozostają w `pl.json`.
 
 W komponentach używamy `useTranslation()` i `t('auth.submit')`, a dla tekstu
 z elementami JSX — `Trans`. Typy kluczy wynikają ze słownika; nieistniejący

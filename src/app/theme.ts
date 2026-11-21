@@ -9,6 +9,8 @@ export const theme = createTheme({
   typography: {
     fontFamily: '"Geist Variable", sans-serif',
     h1: { fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em' },
+    h2: { fontSize: '1.25rem', fontWeight: 600 },
+    h3: { fontSize: '1.125rem', fontWeight: 600 },
   },
   shape: { borderRadius: 8 },
   components: {
