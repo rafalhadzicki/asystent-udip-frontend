@@ -1,8 +1,8 @@
 # Asystent UDIP — frontend
 
 Aplikacja demonstracyjna React i TypeScript dla projektu hackathonowego.
-Logowanie korzysta z backendu; pozostałe widoki są nadal połączone lokalnym,
-demonstracyjnym modelem sprawy.
+Logowanie, odczyt wniosku i podpowiedzi nazw jednostek korzystają z backendu;
+pozostałe funkcje są nadal połączone lokalnym, demonstracyjnym modelem sprawy.
 
 ## Logowanie i stan integracji
 
@@ -19,17 +19,20 @@ Nie używaj aplikacji z prawdziwymi dokumentami na tym etapie integracji.
 
 ## Przepływ demonstracyjny
 
-Rejestr → nowy wniosek → wybór PDF/DOCX → symulacja OCR → weryfikacja
+Rejestr → nowy wniosek → wybór PDF/DOCX → odczyt przez API → weryfikacja
 tekstu i dat → analiza pytań i jednostek → materiały i odpowiedź →
 anonimizacja tekstu → pobranie TXT → ręczne odnotowanie wysyłki poza aplikacją.
 
 - `/sprawy`: wyszukiwanie, filtry w URL, sortowanie, paginacja, eksport CSV.
 - `/sprawy/nowy` i `/sprawy/nowy/weryfikacja`: wybór rzeczywistego pliku,
-  walidacja i tworzenie sprawy. OCR zwraca wyraźnie oznaczony przykład,
-  **nie odczytuje treści wybranego dokumentu**.
+  walidacja i tworzenie lokalnej sprawy. Plik jest wysyłany do
+  `POST /api/cases/analyze`, który zwraca tekst i sugestie do weryfikacji.
+  Odczyt może się nie powieść lub być niepełny; dane należy sprawdzić.
+  Utworzenie sprawy nadal nie wysyła jej do backendu.
 - `/sprawy/:caseId/wniosek`: metryka i korekta tekstu.
 - `/sprawy/:caseId/analiza`: edycja pytań i wybór jednostek,
-  przykłady z bazy wiedzy.
+  przykłady z bazy wiedzy. Pole nazwy podpowiada jednostki z `GET /api/departments`,
+  jednak wybór jednostek nadal jest zapisywany tylko lokalnie.
 - `/sprawy/:caseId/materialy`: odnotowanie kontaktu poza aplikacją,
   metadane załączników, wklejenie tekstu materiałów, jawne generowanie
   demonstracyjnego projektu i edycja. Projekt korzysta z wpisanych tekstów,
@@ -102,7 +105,7 @@ npm run format:check
 - Vite, React, TypeScript, React Router i TanStack Query.
 - MUI z silnikiem styled-components i Lucide.
 - React Hook Form z walidacją w `rules`; date-fns do pracy z datami.
-- Axios z typowanym klientem HTTP; mutacja logowania korzysta z TanStack Query.
+- Axios z interceptorami i TanStack Query; odpowiedzi API walidujemy schematami Zod.
 - i18next i react-i18next — teksty pod typowanymi kluczami tłumaczeń.
 - Vitest, Testing Library, ESLint i Prettier.
 
@@ -117,7 +120,7 @@ Komponenty definiujemy jako `const Component = (...) => ...`. Stylowane
 komponenty tworzymy przez `styled` z MUI, korzystające z silnika
 `@mui/styled-engine-sc`. Alias silnika jest skonfigurowany w Vite i TypeScript,
 a npm override zapewnia ten sam silnik dla zależności uruchamianych przez
-Vitest. Nie używamy Emotion, Tailwind, shadcn ani Zod.
+Vitest. Nie używamy Emotion, Tailwind ani shadcn.
 `sx` stosujemy do drobnych, lokalnych korekt; większe układy i bardziej
 rozbudowane style umieszczamy w plikach `.styles.ts` danego widoku.
 
@@ -136,30 +139,35 @@ bez dodatkowego wrappera. `ScreenReaderText` znajduje się przy logowaniu;
 wspólny kontener sekcji `SectionCard` znajduje się w `components/ui`.
 Layout logowania pozostaje lokalny w feature `auth`.
 
-## Klient HTTP
+## Warstwa API
 
-`src/lib/api-client.ts` to cienka nakładka na Axios z metodami
-`get/post/put/patch/delete`, zwracająca `response.data`.
-Typ odpowiedzi nie jest walidacją danych w runtime.
-Drugi generyk metod zapisujących określa typ payloadu.
+Cała komunikacja z backendem leży w `src/api/`:
 
-```ts
-apiClient.get<CaseResponse[]>('/cases', {
-  params: { page: 1 },
-  signal,
-})
-apiClient.post<CaseResponse, CreateCaseRequest>('/cases', payload)
-apiClient.get<Blob>('/documents/demo', { responseType: 'blob' })
+```
+src/api/
+  client.ts          # Axios: adres API, timeout, token, obsługa 401
+  session.ts         # sesja w pamięci (token + e-mail), useSession()
+  query-client.ts    # QueryClient z domyślnymi opcjami i globalnym onError
+  query-keys.ts      # fabryka kluczy Query, zakresowana e-mailem użytkownika
+  auth/        { auth.api.ts, auth.schemas.ts, auth.queries.ts }
+  departments/ { departments.api.ts, departments.schemas.ts, departments.queries.ts }
+  cases/       { cases.api.ts, cases.schemas.ts, cases.queries.ts }
 ```
 
-Konfiguracja requestu pozwala także przekazać `onUploadProgress`.
-Docelowy adres serwera ustawia `VITE_API_BASE_URL` w lokalnym pliku
-`.env.local`; bez niego adresy są względne do origin aplikacji.
-Nie dodawaj sekretów do zmiennych `VITE_*`: są widoczne w przeglądarce.
-Klient nie wykonuje żądań podczas importu i nie jest używany przez mock logowania.
-Błędy oraz anulowanie propaguje do wywołującego, bez toastów i pustych fallbacków.
-Przyszłe endpointy i hooki Query umieszczamy przy odpowiednim feature;
-mocków nie zaszywamy w kliencie HTTP.
+- `*.schemas.ts` — schematy Zod zgodne z kontraktem backendu; typy wyprowadzamy
+  przez `z.infer`. Odpowiedź niezgodna z kontraktem kończy się `ZodError`.
+- `*.api.ts` — czyste funkcje wywołujące `apiClient` i parsujące odpowiedź.
+- `*.queries.ts` — hooki `useGetX` / `useCreateX` zwracające nazwane pola,
+  np. `{ departments, isDepartmentsLoading, isDepartmentsError }`. Mutacje spraw
+  zapisują zwrócony szczegół w cache i unieważniają listy.
+
+Klient dokleja `Authorization` z bieżącej sesji. 401 z uwierzytelnionego
+requestu kończy sesję (powrót do logowania); 401 z logowania obsługuje formularz.
+Każda zmiana sesji czyści cache Query. Zapytania nie są ponawiane po błędach 4xx.
+Komponenty nie przekazują tokenu ani nie wołają `apiClient` bezpośrednio.
+
+Adres serwera ustawia `VITE_API_BASE_URL` w `.env.local`; bez niego requesty
+są odrzucane. Nie dodawaj sekretów do zmiennych `VITE_*`: są widoczne w przeglądarce.
 
 ## Tłumaczenia
 

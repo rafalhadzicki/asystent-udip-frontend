@@ -1,10 +1,10 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { Button, Typography } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { LoginPage } from '@/features/auth/login-page'
-import type { AuthSession } from '@/features/auth/auth-api'
+import { useSession } from '@/api/session'
+import { logout } from '@/api/auth/auth.api'
 import { DemoProvider } from '@/features/demo/demo-store'
 import { AppLayout } from '@/app/app-layout'
 import { CaseLayout } from '@/app/case-layout'
@@ -44,7 +44,7 @@ const NotFoundPage = () => {
 }
 
 const App = () => {
-  const [user, setUser] = useState<AuthSession | null>(null)
+  const user = useSession()
   return (
     <DemoProvider>
       <Routes>
@@ -55,17 +55,13 @@ const App = () => {
         <Route
           path={routes.login}
           element={
-            user ? (
-              <Navigate to={routes.cases} replace />
-            ) : (
-              <LoginPage onLogin={setUser} />
-            )
+            user ? <Navigate to={routes.cases} replace /> : <LoginPage />
           }
         />
         <Route
           element={
             user ? (
-              <AppLayout user={user} onLogout={() => setUser(null)} />
+              <AppLayout user={user} onLogout={logout} />
             ) : (
               <Navigate to={routes.login} replace />
             )

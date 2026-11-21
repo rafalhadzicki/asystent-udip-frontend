@@ -61,7 +61,7 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
     useForm<VerificationValues>({
       defaultValues: {
         applicant: draft.applicant,
-        reference: '',
+        reference: draft.reference ?? '',
         subject: draft.subject,
         writtenAt: draft.writtenAt,
         receivedAt: draft.receivedAt,
@@ -133,6 +133,17 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
       <Alert severity="info" sx={{ mt: 1 }}>
         {t('ocrNotice')}
       </Alert>
+      {draft.textExtractionStatus &&
+        draft.textExtractionStatus !== 'EXTRACTED' && (
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {t(`extractionStatus.${draft.textExtractionStatus}`)}
+          </Alert>
+        )}
+      {draft.warnings?.map((warning) => (
+        <Alert key={warning} severity="warning" sx={{ mt: 1 }}>
+          {t(`warnings.${warning}`)}
+        </Alert>
+      ))}
       <Columns>
         <Card as="section" aria-labelledby="source-title">
           <Typography

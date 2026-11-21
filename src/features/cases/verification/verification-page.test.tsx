@@ -72,11 +72,14 @@ describe('weryfikacja wniosku', () => {
     renderPage(draft)
     expect(await screen.findByText('wniosek.pdf')).toBeInTheDocument()
     expect(screen.getByText('Rozmiar: 3 bajtów')).toBeInTheDocument()
-    expect(screen.getByText(/odczyt OCR jest symulowany/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Sprawdź odczyt i sugestie API/),
+    ).toBeInTheDocument()
     expect(screen.getByLabelText('Termin *')).toHaveValue('2026-12-05')
     fireEvent.change(screen.getByLabelText('Data wpływu *'), {
       target: { value: '2026-12-01' },
     })
+
     expect(screen.getByText(/15.12.2026/)).toBeInTheDocument()
     expect(screen.getByLabelText('Termin *')).toHaveValue('2026-12-05')
     await user.click(
@@ -129,6 +132,28 @@ describe('weryfikacja wniosku', () => {
         JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY) || '{}').cases,
       ).toHaveLength(11),
     )
+  })
+
+  it('pokazuje ostrzeżenia i wypełnia sugerowany numer sprawy', async () => {
+    renderPage({
+      ...draft,
+      reference: 'NOWA/123',
+      textExtractionStatus: 'NO_TEXT',
+      requestText: '',
+      warnings: ['TEXT_NOT_FOUND', 'CASE_NUMBER_TAKEN'],
+    })
+    expect(await screen.findByLabelText('Znak / numer sprawy *')).toHaveValue(
+      'NOWA/123',
+    )
+    expect(
+      screen.getByText('Nie znaleziono tekstu w pliku. Uzupełnij go ręcznie.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('API nie znalazło tekstu w pliku.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Sugerowany numer sprawy jest już zajęty/),
+    ).toBeInTheDocument()
   })
 
   it('odrzuca puste dane, powtórzony znak i termin przed wpływem', async () => {

@@ -2,9 +2,10 @@ import { Alert, Button, Typography } from '@mui/material'
 import { ArrowRight, Circle, Landmark } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import axios from 'axios'
 import { FormPasswordField } from '@/components/form/form-password-field'
 import { FormTextField } from '@/components/form/form-text-field'
+import { useLogin } from '@/api/auth/auth.queries'
+import { getErrorStatus } from '@/api/client'
 import { ScreenReaderText } from './screen-reader-text'
 import {
   BrandIcon,
@@ -16,22 +17,16 @@ import {
   LoginHeader,
   LoginLayout,
 } from './login-page.styles'
-import type { AuthSession } from './auth-api'
-import { useLogin } from './use-login'
 
 type LoginValues = {
   login: string
   password: string
 }
 
-export const LoginPage = ({
-  onLogin,
-}: {
-  onLogin: (user: AuthSession) => void
-}) => {
+export const LoginPage = () => {
   const { t } = useTranslation()
   const { t: authT } = useTranslation('translation', { keyPrefix: 'auth' })
-  const login = useLogin()
+  const { loginAsync, resetLogin } = useLogin()
   const {
     control,
     handleSubmit,
@@ -45,21 +40,19 @@ export const LoginPage = ({
   const onSubmit = async (values: LoginValues) => {
     clearErrors('root')
     try {
-      const session = await login.mutateAsync({
+      await loginAsync({
         email: values.login.trim(),
         password: values.password,
       })
-      onLogin(session)
     } catch (error) {
-      const invalid =
-        axios.isAxiosError(error) && error.response?.status === 401
+      const invalid = getErrorStatus(error) === 401
       setError('root', {
         message: authT(
           invalid ? 'errors.invalidCredentials' : 'errors.requestFailed',
         ),
       })
     } finally {
-      login.reset()
+      resetLogin()
     }
   }
 

@@ -28,6 +28,7 @@ import type {
   KnowledgeItem,
   Question,
 } from '@/features/demo/types'
+import { useGetDepartments } from '@/api/departments/departments.queries'
 
 const newId = () => globalThis.crypto.randomUUID()
 
@@ -48,6 +49,8 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const [message, setMessage] = useState('')
   const [example, setExample] = useState<KnowledgeItem | null>(null)
   const readonly = item.status === 'completed'
+  const { departments: departmentOptions, isDepartmentsError } =
+    useGetDepartments()
   const departmentsChanged =
     JSON.stringify(selectedDepartments(departments)) !==
     JSON.stringify(selectedDepartments(item.departments))
@@ -102,9 +105,18 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
       setDepartmentError(t('departmentDuplicate'))
       return
     }
+    const matchedDepartment = departmentOptions?.find(
+      (department) =>
+        department.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
+    )
     setDepartments((current) => [
       ...current,
-      { id: newId(), name, reason: departmentReason.trim(), selected: true },
+      {
+        id: matchedDepartment?.id ?? newId(),
+        name,
+        reason: departmentReason.trim(),
+        selected: true,
+      },
     ])
     setDepartmentName('')
     setDepartmentReason('')
@@ -343,12 +355,25 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
                     label={t('customName')}
                     value={departmentName}
                     error={Boolean(departmentError)}
-                    helperText={departmentError}
+                    helperText={departmentError || t('departmentLookupHint')}
+                    slotProps={{ htmlInput: { list: 'department-options' } }}
                     onChange={(event) => {
                       setDepartmentName(event.target.value)
                       setDepartmentError('')
                     }}
                   />
+                  <datalist id="department-options">
+                    {departmentOptions?.map((department) => (
+                      <option key={department.id} value={department.name}>
+                        {department.symbol}
+                      </option>
+                    ))}
+                  </datalist>
+                  {isDepartmentsError && (
+                    <Alert severity="warning">
+                      {t('departmentLookupError')}
+                    </Alert>
+                  )}
                   <TextField
                     label={t('customReason')}
                     value={departmentReason}

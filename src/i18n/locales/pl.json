@@ -49,7 +49,7 @@
     "cancel": "Anuluj"
   },
   "demo": {
-    "notice": "Demo · data odniesienia: {{date}}. OCR i AI są symulowane. Używaj wyłącznie danych testowych: metadane i teksty pozostają w tej przeglądarce. Oryginalne pliki nie są zapisywane.",
+    "notice": "Demo · data odniesienia: {{date}}. Analiza pytań i projekt odpowiedzi są symulowane. Używaj wyłącznie danych testowych: wybrany plik jest wysyłany do API w celu odczytu; sprawy i teksty pozostają w tej przeglądarce.",
     "reset": "Resetuj demo",
     "resetTitle": "Przywrócić dane demonstracyjne?",
     "resetDescription": "Wszystkie dodane sprawy, materiały i zmiany zostaną usunięte z demo w tej przeglądarce.",
@@ -152,14 +152,11 @@
     "remove": "Usuń plik",
     "retry": "Spróbuj ponownie",
     "formats": "Obsługiwane formaty: PDF, DOCX · Maksymalny rozmiar: 25 MB",
-    "processing": "Symulowanie przetwarzania pliku…",
+    "processing": "Odczytywanie pliku przez API…",
     "ready": "Plik gotowy do weryfikacji",
     "size": "Rozmiar: {{size}} bajtów",
-    "demoTitle": "Dane demonstracyjne — symulacja, nie OCR",
-    "demoNotice": "Treść pliku nie jest odczytywana ani analizowana. W następnym kroku zobaczysz przykładowy wniosek i dane testowe, a nie treść wybranego dokumentu.",
-    "sampleSubject": "Przykładowy wniosek o informację publiczną",
-    "sampleApplicant": "Wnioskodawca demonstracyjny",
-    "sampleText": "Przykład demonstracyjny: Proszę o udostępnienie informacji o wydatkach urzędu na utrzymanie zieleni miejskiej.",
+    "demoTitle": "Odczyt przez API, rejestr demonstracyjny",
+    "demoNotice": "Wybrany plik zostanie wysłany do API w celu odczytu. Używaj wyłącznie danych testowych: utworzona następnie sprawa zostanie zapisana tylko w tej przeglądarce, a nie w backendzie.",
     "cancel": "Anuluj",
     "continue": "Dalej: Weryfikacja danych",
     "continueHint": "Wybierz plik, aby kontynuować.",
@@ -168,7 +165,11 @@
       "extension": "Nieobsługiwane rozszerzenie pliku. Wybierz plik PDF lub DOCX.",
       "mime": "Typ pliku nie odpowiada rozszerzeniu PDF lub DOCX. Wybierz właściwy dokument.",
       "size": "Plik jest zbyt duży. Maksymalny rozmiar to 25 MB.",
-      "multiple": "Wybierz tylko jeden plik."
+      "multiple": "Wybierz tylko jeden plik.",
+      "unauthorized": "Sesja wygasła lub jest nieprawidłowa. Wyloguj się i zaloguj ponownie.",
+      "serverSize": "Serwer odrzucił plik jako zbyt duży. Wybierz mniejszy dokument.",
+      "serverFormat": "Serwer nie rozpoznał pliku jako poprawnego PDF lub DOCX. Wybierz inny dokument.",
+      "request": "Nie udało się odczytać pliku przez API. Spróbuj ponownie."
     }
   },
   "verification": {
@@ -178,11 +179,23 @@
     "missingTitle": "Brak wniosku do weryfikacji",
     "missingDescription": "Wybierz plik w poprzednim kroku. Po odświeżeniu strony szkic nie jest zachowywany.",
     "backToUpload": "Wybierz plik",
-    "ocrNotice": "Wersja demonstracyjna: odczyt OCR jest symulowany, a tekst nie musi odpowiadać zawartości pliku. Porównaj go z oryginałem i popraw dane.",
+    "ocrNotice": "Sprawdź odczyt i sugestie API z oryginałem, a brakujące dane uzupełnij ręcznie. Sprawa zostanie zapisana tylko w lokalnym demo.",
+    "extractionStatus": {
+      "NO_TEXT": "Nie znaleziono tekstu w pliku. Uzupełnij go ręcznie.",
+      "UNSUPPORTED": "Odczyt tekstu z tego pliku nie jest obsługiwany. Uzupełnij go ręcznie.",
+      "FAILED": "Odczyt tekstu nie powiódł się. Uzupełnij go ręcznie."
+    },
+    "warnings": {
+      "TEXT_NOT_FOUND": "API nie znalazło tekstu w pliku.",
+      "TEXT_EXTRACTION_UNSUPPORTED": "API nie obsługuje odczytu tekstu z tego pliku.",
+      "TEXT_EXTRACTION_FAILED": "API nie zdołało odczytać tekstu z pliku.",
+      "RECEIVED_AT_IN_FUTURE_IGNORED": "Pominięto datę wpływu z przyszłości — sprawdź i podaj właściwą datę.",
+      "CASE_NUMBER_TAKEN": "Sugerowany numer sprawy jest już zajęty w backendzie — sprawdź numer."
+    },
     "sourceTitle": "Plik źródłowy",
     "sourceSize": "Rozmiar: {{size}} bajtów",
     "sourceNotice": "Plik nie jest zapisywany ani przechowywany po utworzeniu sprawy; zachowane zostaną tylko jego metadane i tekst wniosku.",
-    "extractedTitle": "Symulowany odczyt tekstu",
+    "extractedTitle": "Odczytany tekst",
     "emptyText": "Brak tekstu w szkicu.",
     "reference": "Znak / numer sprawy",
     "applicant": "Wnioskodawca",
@@ -269,6 +282,8 @@
     "noReason": "Nie podano uzasadnienia.",
     "removeDepartment": "Usuń jednostkę {{name}}",
     "customName": "Nazwa jednostki",
+    "departmentLookupHint": "Podpowiedzi nazw pochodzą z API; wybór zapisuje się na razie tylko lokalnie.",
+    "departmentLookupError": "Nie udało się pobrać jednostek z API. Możesz wpisać nazwę ręcznie.",
     "customReason": "Uzasadnienie wyboru (opcjonalnie)",
     "addDepartment": "Dodaj jednostkę",
     "departmentNameRequired": "Podaj nazwę jednostki.",

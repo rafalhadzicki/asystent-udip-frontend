@@ -1,7 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
 import {
   DEMO_STORAGE_KEY,
@@ -10,6 +11,12 @@ import {
 } from '@/features/demo/demo-store'
 import type { CaseItem, KnowledgeItem } from '@/features/demo/types'
 import { AnalysisPage } from './analysis-page'
+import * as departmentApi from '@/api/departments/departments.api'
+import { createTestQueryClient } from '@/test/query-client'
+
+vi.mock('@/api/departments/departments.api', () => ({
+  getDepartments: vi.fn().mockResolvedValue([]),
+}))
 
 const CaseOutlet = () => {
   const { cases } = useDemoStore()
@@ -22,16 +29,18 @@ const renderPage = (item: CaseItem, knowledge = createDemoKnowledge()) => {
     JSON.stringify({ version: 1, cases: [item], knowledge }),
   )
   return render(
-    <DemoProvider>
-      <MemoryRouter initialEntries={[`/sprawy/${item.id}/analiza`]}>
-        <Routes>
-          <Route path="/sprawy/:caseId" element={<CaseOutlet />}>
-            <Route path="analiza" element={<AnalysisPage />} />
-            <Route path="materialy" element={<div>Etap materiałów</div>} />
-          </Route>
-        </Routes>
-      </MemoryRouter>
-    </DemoProvider>,
+    <QueryClientProvider client={createTestQueryClient()}>
+      <DemoProvider>
+        <MemoryRouter initialEntries={[`/sprawy/${item.id}/analiza`]}>
+          <Routes>
+            <Route path="/sprawy/:caseId" element={<CaseOutlet />}>
+              <Route path="analiza" element={<AnalysisPage />} />
+              <Route path="materialy" element={<div>Etap materiałów</div>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </DemoProvider>
+    </QueryClientProvider>,
   )
 }
 
@@ -43,7 +52,53 @@ const savedCase = () =>
   ).cases[0]
 
 describe('analiza sprawy', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    localStorage.clear()
+    vi.mocked(departmentApi.getDepartments).mockReset().mockResolvedValue([])
+  })
+
+  it('podpowiada jednostki z API i zapisuje wybór lokalnie', async () => {
+    vi.mocked(departmentApi.getDepartments).mockResolvedValue([
+      {
+        id: 'api-unit',
+        name: 'Wydział testowy',
+        symbol: 'WT',
+        kind: 'DEPARTMENT',
+        isActive: true,
+      },
+    ])
+    const user = userEvent.setup()
+    renderPage(createDemoCases()[0])
+    await waitFor(() => expect(departmentApi.getDepartments).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(
+        document.querySelector('#department-options option'),
+      ).toHaveAttribute('value', 'Wydział testowy'),
+    )
+    await user.type(screen.getByLabelText('Nazwa jednostki'), 'Wydział testowy')
+    await user.click(screen.getByRole('button', { name: 'Dodaj jednostkę' }))
+    await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
+    expect(savedCase().departments).toContainEqual(
+      expect.objectContaining({
+        id: 'api-unit',
+        name: 'Wydział testowy',
+        selected: true,
+      }),
+    )
+    expect(
+      screen.getByText(/wybór zapisuje się na razie tylko lokalnie/),
+    ).toBeInTheDocument()
+  })
+
+  it('informuje o błędzie pobierania jednostek', async () => {
+    vi.mocked(departmentApi.getDepartments).mockRejectedValue(
+      new Error('network'),
+    )
+    renderPage(createDemoCases()[0])
+    expect(
+      await screen.findByText(/Nie udało się pobrać jednostek z API/),
+    ).toBeInTheDocument()
+  })
 
   it('requires a nonempty selected question and a selected department before continuing', async () => {
     const user = userEvent.setup()

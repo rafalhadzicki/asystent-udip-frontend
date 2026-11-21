@@ -1,3 +1,8 @@
+import type {
+  AnalysisWarning,
+  TextExtractionStatus,
+} from '@/api/cases/cases.schemas'
+
 export type CaseStatus =
   'analysis' | 'waiting' | 'draft' | 'redaction' | 'completed'
 
@@ -51,6 +56,9 @@ export type CaseItem = {
 
 export type UploadDraft = {
   file: File
+  reference?: string
+  warnings?: AnalysisWarning[]
+  textExtractionStatus?: TextExtractionStatus
   requestText: string
   subject: string
   applicant: string

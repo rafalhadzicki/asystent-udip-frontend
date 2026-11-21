@@ -1,6 +1,6 @@
 import { render as renderView, screen } from '@testing-library/react'
 import { ThemeProvider } from '@mui/material/styles'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import type { ReactNode } from 'react'
 import userEvent from '@testing-library/user-event'
@@ -8,12 +8,12 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { theme } from './app/theme'
-import * as authApi from './features/auth/auth-api'
+import * as authApi from './api/auth/auth.api'
+import type { AuthSession } from './api/auth/auth.schemas'
+import { createTestQueryClient } from './test/query-client'
 
 const render = (ui: ReactNode) => {
-  const client = new QueryClient({
-    defaultOptions: { mutations: { retry: false } },
-  })
+  const client = createTestQueryClient()
   return renderView(
     <ThemeProvider theme={theme}>
       <QueryClientProvider client={client}>{ui}</QueryClientProvider>
@@ -131,7 +131,7 @@ describe('App', () => {
   })
 
   it('blokuje formularz podczas logowania', async () => {
-    let finishLogin: (session: authApi.AuthSession) => void = () => {
+    let finishLogin: (session: AuthSession) => void = () => {
       throw new Error('Login was not started')
     }
     vi.spyOn(authApi, 'login').mockImplementation(

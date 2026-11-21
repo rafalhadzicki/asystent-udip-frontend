@@ -22,18 +22,27 @@ import {
 import { ArrowLeft, ArrowRight, CheckCircle2, FileUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { DEMO_TODAY } from '@/features/demo/demo-data'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { routes } from '@/app/routes'
+import { useAnalyzeRequest } from '@/api/cases/cases.queries'
+import { getErrorStatus } from '@/api/client'
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024
-const PROCESSING_DELAY = 900
 const MIME_TYPES = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 } as const
 
-type UploadError = 'empty' | 'extension' | 'mime' | 'size' | 'multiple'
+type UploadError =
+  | 'empty'
+  | 'extension'
+  | 'mime'
+  | 'size'
+  | 'multiple'
+  | 'unauthorized'
+  | 'serverSize'
+  | 'serverFormat'
+  | 'request'
 type UploadState =
   | { status: 'idle' }
   | { status: 'processing'; file: File }
@@ -51,28 +60,33 @@ const validateFile = (file: File): UploadError | null => {
   return null
 }
 
+const toUploadError = (error: unknown): UploadError => {
+  switch (getErrorStatus(error)) {
+    case 401:
+      return 'unauthorized'
+    case 413:
+      return 'serverSize'
+    case 415:
+      return 'serverFormat'
+    default:
+      return 'request'
+  }
+}
+
 export const UploadPage = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'upload' })
   const navigate = useNavigate()
   const { setUploadDraft } = useDemoStore()
   const [state, setState] = useState<UploadState>({ status: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { analyzeRequest, cancelAnalyzeRequest } = useAnalyzeRequest()
 
   useEffect(() => {
     setUploadDraft(null)
-    return () => {
-      if (timerRef.current !== null) clearTimeout(timerRef.current)
-    }
   }, [setUploadDraft])
 
-  const clearTimer = () => {
-    if (timerRef.current !== null) clearTimeout(timerRef.current)
-    timerRef.current = null
-  }
-
   const reset = () => {
-    clearTimer()
+    cancelAnalyzeRequest()
     setUploadDraft(null)
     setState({ status: 'idle' })
     if (inputRef.current) inputRef.current.value = ''
@@ -81,9 +95,7 @@ export const UploadPage = () => {
   const selectFiles = (files: FileList | File[]) => {
     if (files.length === 0) return
     const selectedFiles = Array.from(files)
-    clearTimer()
-    setUploadDraft(null)
-    if (inputRef.current) inputRef.current.value = ''
+    reset()
     if (selectedFiles.length !== 1) {
       setState({ status: 'error', error: 'multiple' })
       return
@@ -95,18 +107,24 @@ export const UploadPage = () => {
       return
     }
     setState({ status: 'processing', file })
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null
-      setUploadDraft({
-        file,
-        requestText: t('sampleText'),
-        subject: t('sampleSubject'),
-        applicant: t('sampleApplicant'),
-        receivedAt: DEMO_TODAY,
-        writtenAt: DEMO_TODAY,
-      })
-      setState({ status: 'ready', file })
-    }, PROCESSING_DELAY)
+    analyzeRequest(file, {
+      onSuccess: (result) => {
+        setUploadDraft({
+          file,
+          requestText: result.extractedText ?? '',
+          reference: result.suggestions.caseNumber?.value ?? '',
+          subject: result.suggestions.subject?.value ?? '',
+          applicant: '',
+          receivedAt: result.suggestions.receivedAt?.value ?? '',
+          writtenAt: '',
+          warnings: result.warnings,
+          textExtractionStatus: result.textExtractionStatus,
+        })
+        setState({ status: 'ready', file })
+      },
+      onError: (requestError) =>
+        setState({ status: 'error', error: toUploadError(requestError) }),
+    })
   }
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {

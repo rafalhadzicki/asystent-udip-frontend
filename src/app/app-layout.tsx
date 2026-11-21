@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { AuthSession } from '@/features/auth/auth-api'
+import type { AuthSession } from '@/api/auth/auth.schemas'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { DEMO_TODAY } from '@/features/demo/demo-data'
 import { displayDate } from '@/features/demo/date-utils'

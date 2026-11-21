@@ -3,6 +3,7 @@ import { createDemoCases, createDemoKnowledge } from './demo-data'
 import type { CaseItem, KnowledgeItem, UploadDraft } from './types'
 import { validIsoDate } from './date-utils'
 import { DemoContext } from './demo-context'
+import { getSession, subscribeToSession } from '@/api/session'
 
 export const DEMO_STORAGE_KEY = 'asystent-udip-demo-v1'
 
@@ -138,6 +139,15 @@ export const DemoProvider = ({ children }: { children: ReactNode }) => {
     'restore' | 'save' | 'conflict' | null
   >(initial.error)
   const [uploadDraft, setUploadDraft] = useState<UploadDraft | null>(null)
+
+  // The uploaded file belongs to the session: drop it on logout or expiry.
+  useEffect(
+    () =>
+      subscribeToSession(() => {
+        if (!getSession()) setUploadDraft(null)
+      }),
+    [],
+  )
 
   useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
