@@ -1,0 +1,32 @@
+{
+  "back": "Wróć do rejestru spraw",
+  "title": "Nowy wniosek",
+  "description": "Rozpocznij rejestrację, wybierając dokument wniosku.",
+  "step": "Krok 1 z 2: Wybór pliku",
+  "nextStep": "Krok 2: Weryfikacja",
+  "dropTitle": "Przeciągnij plik PDF lub DOCX tutaj",
+  "dropDescription": "lub wybierz dokument z dysku",
+  "choose": "Wybierz plik z dysku",
+  "replace": "Zmień plik",
+  "remove": "Usuń plik",
+  "retry": "Spróbuj ponownie",
+  "formats": "Obsługiwane formaty: PDF, DOCX · Maksymalny rozmiar: 25 MB",
+  "processing": "Symulowanie przetwarzania pliku…",
+  "ready": "Plik gotowy do weryfikacji",
+  "size": "Rozmiar: {{size}} bajtów",
+  "demoTitle": "Dane demonstracyjne — symulacja, nie OCR",
+  "demoNotice": "Treść pliku nie jest odczytywana ani analizowana. W następnym kroku zobaczysz przykładowy wniosek i dane testowe, a nie treść wybranego dokumentu.",
+  "sampleSubject": "Przykładowy wniosek o informację publiczną",
+  "sampleApplicant": "Wnioskodawca demonstracyjny",
+  "sampleText": "Przykład demonstracyjny: Proszę o udostępnienie informacji o wydatkach urzędu na utrzymanie zieleni miejskiej.",
+  "cancel": "Anuluj",
+  "continue": "Dalej: Weryfikacja danych",
+  "continueHint": "Wybierz plik, aby kontynuować.",
+  "errors": {
+    "empty": "Plik jest pusty. Wybierz inny dokument.",
+    "extension": "Nieobsługiwane rozszerzenie pliku. Wybierz plik PDF lub DOCX.",
+    "mime": "Typ pliku nie odpowiada rozszerzeniu PDF lub DOCX. Wybierz właściwy dokument.",
+    "size": "Plik jest zbyt duży. Maksymalny rozmiar to 25 MB.",
+    "multiple": "Wybierz tylko jeden plik."
+  }
+}

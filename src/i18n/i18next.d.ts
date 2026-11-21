@@ -1,10 +1,10 @@
 import 'i18next'
-import type pl from './locales/pl.json'
+import type { resources } from './index'
 
 declare module 'i18next' {
   interface CustomTypeOptions {
     defaultNS: 'translation'
     strictKeyChecks: true
-    resources: { translation: typeof pl }
+    resources: typeof resources.pl
   }
 }

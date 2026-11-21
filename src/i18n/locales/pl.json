@@ -40,6 +40,44 @@
     "title": "Sprawy",
     "placeholder": "To szkielet aplikacji. Widoki obsługi spraw zostaną dodane po zatwierdzeniu projektu interfejsu."
   },
+  "navigation": {
+    "cases": "Sprawy",
+    "calendar": "Kalendarz",
+    "knowledge": "Baza wiedzy",
+    "main": "Nawigacja główna",
+    "open": "Otwórz nawigację",
+    "newCase": "Nowy wniosek"
+  },
+  "common": {
+    "cancel": "Anuluj"
+  },
+  "demo": {
+    "notice": "Demo · data odniesienia: {{date}}. OCR i AI są symulowane. Używaj wyłącznie danych testowych: metadane i teksty pozostają w tej przeglądarce. Oryginalne pliki nie są zapisywane.",
+    "reset": "Resetuj demo",
+    "resetTitle": "Przywrócić dane demonstracyjne?",
+    "resetDescription": "Wszystkie dodane sprawy, materiały i zmiany zostaną usunięte z demo w tej przeglądarce.",
+    "restoreError": "Nie udało się odczytać zapisanych danych demo. Pokazujemy dane początkowe. Resetuj demo, aby rozpocząć od nowa.",
+    "saveError": "Nie udało się zapisać zmian w przeglądarce. Zmiany są dostępne tylko do odświeżenia strony."
+  },
+  "status": {
+    "analysis": "W analizie",
+    "waiting": "Oczekuje na materiały",
+    "draft": "Projekt odpowiedzi",
+    "redaction": "Anonimizacja",
+    "completed": "Zakończona"
+  },
+  "caseDetail": {
+    "missing": "Nie znaleziono sprawy. Mogła zostać usunięta podczas resetowania demo.",
+    "back": "Wróć do rejestru spraw",
+    "request": "Wniosek",
+    "analysis": "Analiza",
+    "materials": "Materiały i odpowiedź",
+    "redaction": "Anonimizacja",
+    "received": "Wpływ: {{date}}",
+    "deadline": "Termin zatwierdzony: {{date}}",
+    "completed": "Wysyłkę poza aplikacją odnotowano: {{date}}.",
+    "tabs": "Zakładki sprawy"
+  },
   "notFound": {
     "title": "Nie znaleziono strony",
     "back": "Wróć do strony głównej"

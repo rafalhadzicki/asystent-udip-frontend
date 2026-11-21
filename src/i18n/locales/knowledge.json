@@ -1,0 +1,91 @@
+{
+  "title": "Baza wiedzy",
+  "subtitle": "Materiały referencyjne wspierające przygotowanie odpowiedzi: akty prawne, wzory odpowiedzi i wytyczne wewnętrzne.",
+  "summary": "Pozycje w bazie: {{count}}",
+  "add": "Dodaj dokument",
+  "demoNotice": {
+    "title": "Wersja demonstracyjna",
+    "body": "Pozycje w bazie są przykładowe. Przechowywane są tylko nazwa, opis, kategoria i metadane pliku — sama treść pliku nie jest zapisywana. Aplikacja nie weryfikuje stanu prawnego ani nie aktualizuje przepisów automatycznie; aktualność materiałów musi potwierdzić pracownik."
+  },
+  "filters": {
+    "searchLabel": "Szukaj w bazie wiedzy",
+    "searchPlaceholder": "Nazwa, opis lub nazwa pliku",
+    "categoryLabel": "Filtruj według kategorii",
+    "all": "Wszystkie",
+    "withCount": "{{label}} ({{count}})"
+  },
+  "categories": {
+    "law": "Akt prawny",
+    "response": "Wzór odpowiedzi",
+    "guideline": "Wytyczne"
+  },
+  "table": {
+    "label": "Dokumenty w bazie wiedzy",
+    "name": "Nazwa i opis",
+    "category": "Kategoria",
+    "updated": "Aktualizacja",
+    "actions": "Akcje",
+    "file": "Plik: {{name}}",
+    "preview": "Podgląd",
+    "previewLabel": "Podgląd: {{name}}",
+    "update": "Aktualizuj",
+    "updateLabel": "Aktualizuj: {{name}}",
+    "empty": "Brak dokumentów spełniających kryteria wyszukiwania.",
+    "clearFilters": "Wyczyść filtry"
+  },
+  "pagination": {
+    "rowsPerPage": "Wierszy na stronę:",
+    "displayed": "{{from}}–{{to}} z {{count}}",
+    "first": "Pierwsza strona",
+    "previous": "Poprzednia strona",
+    "next": "Następna strona",
+    "last": "Ostatnia strona"
+  },
+  "form": {
+    "addTitle": "Dodaj dokument do bazy wiedzy",
+    "updateTitle": "Aktualizuj dokument",
+    "name": "Nazwa dokumentu",
+    "category": "Kategoria",
+    "description": "Opis zakresu",
+    "descriptionHelp": "Krótko opisz, czego dotyczy materiał i kiedy z niego korzystać.",
+    "file": "Plik",
+    "chooseFile": "Wybierz plik",
+    "replaceFile": "Zastąp plik",
+    "fileHelp": "PDF, DOCX lub TXT, maksymalnie 25 MB.",
+    "noFile": "Nie wybrano pliku",
+    "currentFile": "Obecny plik: {{name}}",
+    "selectedFile": "Wybrany plik: {{name}} ({{size}})",
+    "fileCaveat": "W wersji demonstracyjnej zapisywana jest tylko nazwa pliku. Treść pliku nie jest przechowywana.",
+    "updateCaveat": "Aktualizacja zmienia wyłącznie dane wpisu i ustawia datę aktualizacji na dzisiejszą. Nie oznacza weryfikacji stanu prawnego.",
+    "cancel": "Anuluj",
+    "submitAdd": "Dodaj dokument",
+    "submitUpdate": "Zapisz zmiany",
+    "categoryPlaceholder": "Wybierz kategorię"
+  },
+  "errors": {
+    "nameRequired": "Podaj nazwę dokumentu.",
+    "categoryRequired": "Wybierz kategorię.",
+    "descriptionRequired": "Podaj opis dokumentu.",
+    "fileRequired": "Wybierz plik PDF, DOCX lub TXT.",
+    "fileType": "Nieobsługiwany format pliku. Dozwolone formaty: PDF, DOCX, TXT.",
+    "fileSize": "Plik jest za duży. Maksymalny rozmiar to 25 MB.",
+    "fileEmpty": "Wybrany plik jest pusty."
+  },
+  "preview": {
+    "title": "Podgląd dokumentu",
+    "caveat": "Podgląd pokazuje wyłącznie zapisane metadane i opis. Treść pliku nie jest przechowywana w wersji demonstracyjnej, dlatego nie można jej wyświetlić.",
+    "category": "Kategoria",
+    "fileName": "Nazwa pliku",
+    "updated": "Data aktualizacji",
+    "description": "Opis",
+    "close": "Zamknij"
+  },
+  "size": {
+    "kb": "{{value}} KB",
+    "mb": "{{value}} MB"
+  },
+  "feedback": {
+    "added": "Dodano dokument „{{name}}”.",
+    "updated": "Zaktualizowano dokument „{{name}}”."
+  }
+}
