@@ -1,5 +1,5 @@
 import { Page, Surface, Badge, Status, CaseLink } from './register-page.styles'
-import { useMemo, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 import {
@@ -23,30 +23,40 @@ import {
   Typography,
 } from '@mui/material'
 import { Download, Plus, RotateCcw, Search } from 'lucide-react'
-import { useDemoStore } from '@/features/demo/demo-store'
-import type { CaseStatus } from '@/features/demo/types'
+import {
+  useGetCases,
+  useGetCaseYears,
+  useGetDeadlineSummary,
+  useRefetchCases,
+} from '@/api/cases/cases.queries'
+import {
+  caseStatusSchema,
+  type CaseSort,
+  type CaseStatus,
+} from '@/api/cases/cases.schemas'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { caseTabs, routes } from '@/app/routes'
-import { csvCell, formatDate, getUrgency } from './register-utils'
+import { caseOwner, formatDate, urgencyTones } from './register-utils'
+import { useExportCases } from './use-export-cases'
 
 const PAGE_SIZE = 10
-const statuses: CaseStatus[] = [
-  'analysis',
-  'waiting',
-  'draft',
-  'redaction',
-  'completed',
-]
+const MAX_SEARCH_LENGTH = 200
+const statuses = caseStatusSchema.options
 type Sort = 'oldest' | 'newest' | 'deadline'
+const apiSort: Record<Sort, CaseSort> = {
+  oldest: 'RECEIVED_ASC',
+  newest: 'RECEIVED_DESC',
+  deadline: 'DEADLINE_ASC',
+}
+
 export const RegisterPage = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'register' })
-  const { cases } = useDemoStore()
   const [params, setParams] = useSearchParams()
-  const [exportError, setExportError] = useState(false)
 
   const search = params.get('search') ?? ''
-  const year = params.get('year') ?? ''
-  const statusParam = params.get('status') ?? ''
-  const status = statuses.find((value) => value === statusParam) ?? ''
+  const statusParam = params.get('status')
+  const status: CaseStatus | '' =
+    statuses.find((value) => value === statusParam) ?? ''
   const sortParam = params.get('sort')
   const sort: Sort =
     sortParam === 'newest' || sortParam === 'deadline' ? sortParam : 'oldest'
@@ -54,63 +64,65 @@ export const RegisterPage = () => {
   const requestedPage =
     Number.isSafeInteger(pageParam) && pageParam > 0 ? pageParam : 1
 
-  const years = useMemo(
-    () =>
-      [
-        ...new Set(
-          cases
-            .map((item) => item.receivedAt.slice(0, 4))
-            .filter((value) => /^\d{4}$/.test(value)),
-        ),
-      ]
-        .sort()
-        .reverse(),
-    [cases],
-  )
-  const counts = useMemo(
-    () =>
-      cases.reduce(
-        (result, item) => {
-          const level = getUrgency(item)
-          if (level === 'overdue' || level === 'today' || level === 'tomorrow')
-            result[level] += 1
-          return result
-        },
-        { overdue: 0, today: 0, tomorrow: 0 },
-      ),
-    [cases],
-  )
-  const filtered = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase('pl')
-    return cases
-      .filter(
-        (item) =>
-          (!query ||
-            [item.reference, item.subject, item.applicant, item.owner].some(
-              (value) => value.toLocaleLowerCase('pl').includes(query),
-            )) &&
-          (!year || item.receivedAt.slice(0, 4) === year) &&
-          (!status || item.status === status),
-      )
-      .sort((a, b) => {
-        const aDate = sort === 'deadline' ? a.deadline : a.receivedAt
-        const bDate = sort === 'deadline' ? b.deadline : b.receivedAt
-        if (!aDate || !bDate)
-          return aDate
-            ? -1
-            : bDate
-              ? 1
-              : a.reference.localeCompare(b.reference, 'pl')
-        const order = aDate.localeCompare(bDate)
-        return (
-          (sort === 'newest' ? -order : order) ||
-          a.reference.localeCompare(b.reference, 'pl')
-        )
-      })
-  }, [cases, search, year, status, sort])
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const { caseYears, isCaseYearsError } = useGetCaseYears()
+  // The years decide which year is shown by default, so the list waits for them.
+  const yearsReady = caseYears !== undefined || isCaseYearsError
+  const years = [...(caseYears ?? [])].sort((a, b) => b - a)
+  // The API lists one receipt year at a time and defaults to the current one.
+  const yearParam = Number(params.get('year'))
+  const year =
+    Number.isSafeInteger(yearParam) && yearParam > 0
+      ? yearParam
+      : (years[0] ?? new Date().getFullYear())
+
+  const searchText = search.trim().slice(0, MAX_SEARCH_LENGTH)
+  const debouncedSearch = useDebouncedValue(searchText)
+  const filtersFor = (q: string) => ({
+    year,
+    status: status ? [status] : undefined,
+    q: q || undefined,
+    sort: apiSort[sort],
+  })
+  const { exportCsv, isExporting, exportError, dismissExportError } =
+    useExportCases(filtersFor(searchText))
+  const { getCasesResponse, isCasesLoading, isCasesPlaceholder, isCasesError } =
+    useGetCases(
+      {
+        ...filtersFor(debouncedSearch),
+        limit: PAGE_SIZE,
+        offset: (requestedPage - 1) * PAGE_SIZE,
+      },
+      { enabled: yearsReady },
+    )
+  const isListPending = isCasesLoading || !yearsReady
+  const refetchAll = useRefetchCases()
+  const summary = useGetDeadlineSummary(years)
+
+  const rows = getCasesResponse?.items ?? []
+  const total = getCasesResponse?.total ?? 0
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const page = Math.min(requestedPage, pageCount)
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const counts = {
+    overdue: summary.overdue,
+    today: summary.today,
+    tomorrow: summary.tomorrow,
+  }
+
+  useEffect(() => {
+    if (!isCasesPlaceholder && getCasesResponse && requestedPage > pageCount) {
+      const next = new URLSearchParams(params)
+      if (pageCount === 1) next.delete('page')
+      else next.set('page', String(pageCount))
+      setParams(next, { replace: true })
+    }
+  }, [
+    isCasesPlaceholder,
+    getCasesResponse,
+    requestedPage,
+    pageCount,
+    params,
+    setParams,
+  ])
 
   const updateParams = (key: string, value: string, replace = false) => {
     const next = new URLSearchParams(params)
@@ -126,56 +138,6 @@ export const RegisterPage = () => {
     )
     setParams(next)
   }
-  const exportCsv = () => {
-    setExportError(false)
-    try {
-      const headers = [
-        t('columns.reference'),
-        t('columns.subject'),
-        t('columns.applicant'),
-        t('columns.received'),
-        t('columns.deadline'),
-        t('columns.urgency'),
-        t('columns.status'),
-        t('columns.owner'),
-      ]
-      const lines = filtered.map((item) => [
-        item.reference,
-        item.subject,
-        item.applicant,
-        formatDate(item.receivedAt),
-        formatDate(item.deadline),
-        t(`urgency.${getUrgency(item)}`),
-        t(`status.${item.status}`),
-        item.owner,
-      ])
-      const csv =
-        '\ufeff' +
-        [headers, ...lines]
-          .map((line) => line.map(csvCell).join(';'))
-          .join('\r\n')
-      const url = URL.createObjectURL(
-        new Blob([csv], { type: 'text/csv;charset=utf-8' }),
-      )
-      try {
-        const anchor = document.createElement('a')
-        anchor.href = url
-        anchor.download = t('exportFilename')
-        document.body.appendChild(anchor)
-        try {
-          anchor.click()
-        } finally {
-          anchor.remove()
-        }
-      } finally {
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      }
-    } catch (error) {
-      console.error('Cannot export demo register', error)
-      setExportError(true)
-    }
-  }
-
   return (
     <Page>
       <Stack spacing={2.5}>
@@ -210,7 +172,8 @@ export const RegisterPage = () => {
             <Button
               variant="outlined"
               startIcon={<Download size={17} />}
-              onClick={exportCsv}
+              onClick={() => void exportCsv()}
+              disabled={isExporting}
             >
               {t('export')}
             </Button>
@@ -225,8 +188,24 @@ export const RegisterPage = () => {
           </Stack>
         </Box>
 
+        {(isCasesError || isCaseYearsError || summary.isError) && (
+          <Alert
+            severity="error"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => void refetchAll()}
+              >
+                {t('retry')}
+              </Button>
+            }
+          >
+            {t('loadError')}
+          </Alert>
+        )}
         {exportError && (
-          <Alert severity="error" onClose={() => setExportError(false)}>
+          <Alert severity="error" onClose={dismissExportError}>
             {t('exportError')}
           </Alert>
         )}
@@ -244,6 +223,15 @@ export const RegisterPage = () => {
               </Badge>
             ))}
           </Stack>
+          {summary.isPartial && (
+            <Typography
+              variant="caption"
+              role="note"
+              sx={{ color: '#647589', display: 'block', mt: 1 }}
+            >
+              {t('summaryPartial')}
+            </Typography>
+          )}
         </Surface>
 
         <Surface sx={{ p: 2 }}>
@@ -286,15 +274,16 @@ export const RegisterPage = () => {
                 labelId="register-year-label"
                 label={t('filters.year')}
                 value={year}
-                onChange={(event) => updateParams('year', event.target.value)}
+                onChange={(event) =>
+                  updateParams('year', String(event.target.value))
+                }
               >
-                <MenuItem value="">{t('filters.allYears')}</MenuItem>
                 {years.map((value) => (
                   <MenuItem key={value} value={value}>
                     {value}
                   </MenuItem>
                 ))}
-                {year && !years.includes(year) && (
+                {!years.includes(year) && (
                   <MenuItem value={year}>{year}</MenuItem>
                 )}
               </Select>
@@ -359,7 +348,7 @@ export const RegisterPage = () => {
             }}
           >
             <Typography sx={{ fontWeight: 700 }}>
-              {t('results', { count: filtered.length })}
+              {t('results', { count: total })}
             </Typography>
             <Typography
               variant="caption"
@@ -400,7 +389,7 @@ export const RegisterPage = () => {
                   <TableRow key={item.id} hover>
                     <TableCell>
                       <CaseLink to={routes.caseTab(item.id, caseTabs.request)}>
-                        {item.reference}
+                        {item.caseNumber}
                       </CaseLink>
                     </TableCell>
                     <TableCell sx={{ overflowWrap: 'anywhere' }}>
@@ -410,22 +399,16 @@ export const RegisterPage = () => {
                       >
                         {item.subject}
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: '#6b7b8b', mt: 0.5, lineHeight: 1.5 }}
-                      >
-                        {item.applicant}
-                      </Typography>
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       {formatDate(item.receivedAt)}
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                      {formatDate(item.deadline)}
+                      {formatDate(item.effectiveDueAt)}
                     </TableCell>
                     <TableCell>
-                      <Badge $tone={getUrgency(item)}>
-                        {t(`urgency.${getUrgency(item)}`)}
+                      <Badge $tone={urgencyTones[item.urgency]}>
+                        {t(`urgency.${urgencyTones[item.urgency]}`)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -433,10 +416,21 @@ export const RegisterPage = () => {
                         {t(`status.${item.status}`)}
                       </Status>
                     </TableCell>
-                    <TableCell sx={{ minWidth: 150 }}>{item.owner}</TableCell>
+                    <TableCell sx={{ minWidth: 150 }}>
+                      {caseOwner(item)}
+                    </TableCell>
                   </TableRow>
                 ))}
-                {rows.length === 0 && (
+                {rows.length === 0 && isListPending && (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                      <Typography role="status" sx={{ fontWeight: 700 }}>
+                        {t('loading')}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+                {rows.length === 0 && !isListPending && !isCasesError && (
                   <TableRow>
                     <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                       <Typography sx={{ fontWeight: 700 }}>
@@ -468,9 +462,9 @@ export const RegisterPage = () => {
           >
             <Typography variant="body2" sx={{ color: '#627387' }}>
               {t('range', {
-                from: filtered.length ? (page - 1) * PAGE_SIZE + 1 : 0,
-                to: Math.min(page * PAGE_SIZE, filtered.length),
-                count: filtered.length,
+                from: total ? (page - 1) * PAGE_SIZE + 1 : 0,
+                to: Math.min(page * PAGE_SIZE, total),
+                count: total,
               })}
             </Typography>
             {pageCount > 1 && (

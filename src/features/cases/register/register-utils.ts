@@ -1,17 +1,17 @@
 import { isValid, parseISO } from 'date-fns'
-import { displayDate, urgency } from '@/features/demo/date-utils'
-import type { CaseItem } from '@/features/demo/types'
+import type { CaseSummary, CaseUrgency } from '@/api/cases/cases.schemas'
+import { displayDate } from '@/features/demo/date-utils'
 
-const hasDate = (value: string) => Boolean(value) && isValid(parseISO(value))
+export const urgencyTones = {
+  DONE: 'completed',
+  OVERDUE: 'overdue',
+  DUE_TODAY: 'today',
+  DUE_TOMORROW: 'tomorrow',
+  UPCOMING: 'normal',
+} as const satisfies Record<CaseUrgency, string>
 
-export const getUrgency = (item: CaseItem) => {
-  if (item.status === 'completed') return 'completed'
-  if (!hasDate(item.deadline)) return 'unknown'
-  return urgency(item)
-}
-
-export const formatDate = (value: string) =>
-  hasDate(value) ? displayDate(value) : '—'
+export const formatDate = (value?: string | null) =>
+  value && isValid(parseISO(value)) ? displayDate(value) : '—'
 
 export const csvCell = (value: string) => {
   let first = 0
@@ -27,3 +27,6 @@ export const csvCell = (value: string) => {
       : value
   return `"${safe.replaceAll('"', '""')}"`
 }
+
+export const caseOwner = (item: CaseSummary) =>
+  item.assignee?.email ?? item.handlerInitials ?? '—'

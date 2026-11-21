@@ -1,9 +1,8 @@
 import { Paper } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import styled from 'styled-components'
-import type { CaseStatus } from '@/features/demo/types'
-import { urgency } from '@/features/demo/date-utils'
-type Urgency = ReturnType<typeof urgency> | 'unknown'
+import type { CaseStatus } from '@/api/cases/cases.schemas'
+type Urgency = 'overdue' | 'today' | 'tomorrow' | 'normal' | 'completed'
 
 const Page = styled.div`
   color: #172b43;
@@ -34,7 +33,6 @@ const Badge = styled.span<{ $tone: Urgency }>`
       tomorrow: '#1755b3',
       normal: '#506174',
       completed: '#657486',
-      unknown: '#657486',
     })[$tone]};
   background: ${({ $tone }) =>
     ({
@@ -43,7 +41,6 @@ const Badge = styled.span<{ $tone: Urgency }>`
       tomorrow: '#eaf2ff',
       normal: '#f0f3f6',
       completed: '#f0f3f6',
-      unknown: '#f0f3f6',
     })[$tone]};
 `
 
@@ -60,11 +57,10 @@ const Status = styled.span<{ $status: CaseStatus }>`
     border-radius: 50%;
     background: ${({ $status }) =>
       ({
-        analysis: '#3169cc',
-        waiting: '#d58a21',
-        draft: '#745bc2',
-        redaction: '#158578',
-        completed: '#7b8794',
+        NEW: '#3169cc',
+        SENT_TO_DEPARTMENTS: '#d58a21',
+        RESPONSE_PREPARED: '#745bc2',
+        RESPONSE_SENT: '#7b8794',
       })[$status]};
   }
 `

@@ -13,8 +13,9 @@ W widokach spraw i bazy wiedzy używaj wyłącznie danych testowych.
 
 Sesja logowania istnieje tylko w pamięci i kończy się po odświeżeniu strony.
 Token jest przechowywany tylko w pamięci, nie zapisujemy hasła ani tokenu
-w LocalStorage. Lokalne dane demo są współdzielone przez konta korzystające
-z tej samej przeglądarki; logowanie nie zapewnia ich izolacji ani ochrony.
+w LocalStorage. Lokalne dane demo są zapisywane osobno dla każdego konta
+(klucz zawiera e-mail), ale nie są szyfrowane ani chronione przed osobą
+korzystającą z tej samej przeglądarki.
 Nie używaj aplikacji z prawdziwymi dokumentami na tym etapie integracji.
 
 ## Przepływ demonstracyjny
@@ -23,13 +24,28 @@ Rejestr → nowy wniosek → wybór PDF/DOCX → odczyt przez API → weryfikacj
 tekstu i dat → analiza pytań i jednostek → materiały i odpowiedź →
 anonimizacja tekstu → pobranie TXT → ręczne odnotowanie wysyłki poza aplikacją.
 
-- `/sprawy`: wyszukiwanie, filtry w URL, sortowanie, paginacja, eksport CSV.
+- `/sprawy`: lista z `GET /api/cases` (wyszukiwanie, rok, etap, sortowanie
+  i paginacja po stronie serwera; filtry w URL) oraz lata z `GET /api/cases/years`.
+  API listuje jeden rok wpływu naraz, domyślnie najnowszy — brak opcji
+  „wszystkie lata”. Eksport CSV pobiera wszystkie sprawy spełniające filtry.
+  Rejestr nie pokazuje wnioskodawcy (lista API go nie zwraca). Liczniki
+  terminów obejmują niezakończone sprawy ze wszystkich lat, ale pojedyncze
+  pobranie jest ograniczone do 500 spraw na rok — przy większej liczbie
+  aplikacja oznacza liczby jako przybliżone.
 - `/sprawy/nowy` i `/sprawy/nowy/weryfikacja`: wybór rzeczywistego pliku,
   walidacja i tworzenie lokalnej sprawy. Plik jest wysyłany do
   `POST /api/cases/analyze`, który zwraca tekst i sugestie do weryfikacji.
   Odczyt może się nie powieść lub być niepełny; dane należy sprawdzić.
-  Utworzenie sprawy nadal nie wysyła jej do backendu.
-- `/sprawy/:caseId/wniosek`: metryka i korekta tekstu.
+  Utworzenie sprawy nadal nie wysyła jej do backendu, więc taka sprawa jest
+  dostępna tylko lokalnie i **nie pojawia się w rejestrze z API**.
+- `/sprawy/:caseId/wniosek`: metryka i korekta tekstu. Sprawa z rejestru API
+  jest czytana z `GET /api/cases/{id}` (cache TanStack Query) i nie jest
+  kopiowana do `localStorage`. Edycja numeru, tematu, wnioskodawcy, daty wpływu
+  i treści zapisuje się przez `PATCH /api/cases/{id}`; termin liczy backend,
+  więc pole jest zablokowane. Data sporządzenia, analiza, materiały, odpowiedź
+  i anonimizacja pozostają lokalne: dla spraw z API zapisujemy tylko te pola
+  (nakładka po `id` sprawy, osobno dla każdego konta). Lokalny etap pracy nie
+  jest nadpisywany zmianą statusu na serwerze; w nagłówku widać status z API.
 - `/sprawy/:caseId/analiza`: edycja pytań i wybór jednostek,
   przykłady z bazy wiedzy. Pole nazwy podpowiada jednostki z `GET /api/departments`,
   jednak wybór jednostek nadal jest zapisywany tylko lokalnie.
@@ -54,7 +70,7 @@ się z EZD/ePUAP.
 ## Zapis demo
 
 Metadane i teksty spraw oraz bazy wiedzy są zapisywane w LocalStorage
-pod kluczem `asystent-udip-demo-v1`. Nie zapisujemy plików, haseł ani tokenów.
+pod kluczem `asystent-udip-demo-v1:<e-mail>`. Nie zapisujemy plików, haseł ani tokenów.
 Wgrywany wniosek przed zatwierdzeniem istnieje tylko w pamięci; odświeżenie
 na weryfikacji wymaga ponownego wyboru pliku. Oryginalny plik nie będzie
 dostępny do podglądu po jego rejestracji.
@@ -81,7 +97,8 @@ npm ci
 npm run dev
 ```
 
-Przed uruchomieniem ustaw w `.env.local` adres backendu bez końcowego `/api`:
+Przed uruchomieniem skopiuj `.env.example` do `.env.local` i ustaw adres backendu
+bez końcowego `/api`:
 
 ```env
 VITE_API_BASE_URL=https://adres-backendu
