@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useOutletContext } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
 import { displayDate, validIsoDate } from '@/features/demo/date-utils'
-import { getErrorStatus } from '@/api/client'
+import { getApiErrorKind } from '@/api/errors'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { useSaveCase } from '../use-save-case'
 import type { CaseItem } from '@/features/demo/types'
@@ -147,7 +147,7 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
             : trimmed,
       )
     } catch (error) {
-      if (getErrorStatus(error) === 409)
+      if (getApiErrorKind(error) === 'conflict')
         setError('reference', { message: t('errors.referenceTaken') })
       else setNotice('saveFailed')
       return

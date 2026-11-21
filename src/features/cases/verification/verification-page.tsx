@@ -16,7 +16,7 @@ import { FormTextField } from '@/components/form/form-text-field'
 import { useDemoStore } from '@/features/demo/demo-store'
 import type { UploadDraft } from '@/features/demo/types'
 import { useCreateCase } from '@/api/cases/cases.queries'
-import { getErrorStatus } from '@/api/client'
+import { getApiErrorKind } from '@/api/errors'
 import { validIsoDate } from '@/features/demo/date-utils'
 import { caseTabs, routes } from '@/app/routes'
 
@@ -31,12 +31,11 @@ type VerificationValues = {
 
 type SubmitError = 'tooLarge' | 'unsupported' | 'invalid' | 'failed'
 
-const submitErrorFor = (error: unknown): SubmitError => {
-  const status = getErrorStatus(error)
-  if (status === 413) return 'tooLarge'
-  if (status === 415) return 'unsupported'
-  if (status === 400) return 'invalid'
-  return 'failed'
+const toSubmitError = (error: unknown): SubmitError => {
+  const kind = getApiErrorKind(error)
+  return kind === 'tooLarge' || kind === 'unsupported' || kind === 'invalid'
+    ? kind
+    : 'failed'
 }
 
 const isFutureDate = (value: string) =>
@@ -114,12 +113,12 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
       await navigate(routes.caseTab(created.id, caseTabs.analysis))
     } catch (error) {
       submitted.current = false
-      const status = getErrorStatus(error)
-      if (status === 409)
+      const kind = getApiErrorKind(error)
+      if (kind === 'conflict')
         setError('reference', { message: t('duplicateReference') })
-      else if (status === 400 && isFutureDate(values.receivedAt.trim()))
+      else if (kind === 'invalid' && isFutureDate(values.receivedAt.trim()))
         setError('receivedAt', { message: t('receivedAtInFuture') })
-      else setSubmitError(submitErrorFor(error))
+      else setSubmitError(toSubmitError(error))
     }
   }
 

@@ -6,7 +6,7 @@ import { FormPasswordField } from '@/components/form/form-password-field'
 import { FormTextField } from '@/components/form/form-text-field'
 import { useLogin } from '@/api/auth/auth.queries'
 import { emailSchema } from '@/api/auth/auth.schemas'
-import { getErrorStatus } from '@/api/client'
+import { getApiErrorKind } from '@/api/errors'
 import { ScreenReaderText } from './screen-reader-text'
 import {
   BrandIcon,
@@ -46,7 +46,7 @@ export const LoginPage = () => {
         password: values.password,
       })
     } catch (error) {
-      const invalid = getErrorStatus(error) === 401
+      const invalid = getApiErrorKind(error) === 'unauthorized'
       setError('root', {
         message: authT(
           invalid ? 'errors.invalidCredentials' : 'errors.requestFailed',

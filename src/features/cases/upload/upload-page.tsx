@@ -25,7 +25,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { routes } from '@/app/routes'
 import { useAnalyzeRequest } from '@/api/cases/cases.queries'
-import { getErrorStatus } from '@/api/client'
+import { getApiErrorKind } from '@/api/errors'
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024
 const MIME_TYPES = {
@@ -61,12 +61,12 @@ const validateFile = (file: File): UploadError | null => {
 }
 
 const toUploadError = (error: unknown): UploadError => {
-  switch (getErrorStatus(error)) {
-    case 401:
+  switch (getApiErrorKind(error)) {
+    case 'unauthorized':
       return 'unauthorized'
-    case 413:
+    case 'tooLarge':
       return 'serverSize'
-    case 415:
+    case 'unsupported':
       return 'serverFormat'
     default:
       return 'request'
