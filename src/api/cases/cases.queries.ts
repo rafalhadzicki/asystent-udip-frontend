@@ -75,6 +75,8 @@ export const useGetDeadlineSummary = (years: number[]) => {
       const params: CaseListParams = {
         year,
         status: UNFINISHED_STATUSES,
+        // Earliest deadlines first, so a page cap never hides the urgent ones.
+        sort: 'DEADLINE_ASC',
         limit: DEADLINE_SUMMARY_LIMIT,
       }
       return {

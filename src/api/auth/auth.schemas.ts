@@ -12,5 +12,4 @@ export const loginResponseSchema = z.object({
 })
 
 export type LoginCredentials = z.infer<typeof loginCredentialsSchema>
-export type LoginResponse = z.infer<typeof loginResponseSchema>
 export type AuthSession = { email: string; accessToken: string }
