@@ -6,12 +6,16 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import '@fontsource-variable/geist'
 import { theme } from './app/theme'
+import i18n from './i18n'
+
+document.documentElement.lang = i18n.resolvedLanguage ?? 'pl'
+document.title = i18n.t('app.name')
 
 const queryClient = new QueryClient()
 const rootElement = document.getElementById('root')
 
 if (!rootElement) {
-  throw new Error('Nie znaleziono elementu głównego aplikacji.')
+  throw new Error(i18n.t('app.missingRoot'))
 }
 
 createRoot(rootElement).render(

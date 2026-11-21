@@ -18,6 +18,10 @@ describe('App', () => {
     expect(screen.getByLabelText('Login')).toHaveValue('')
     expect(screen.getByLabelText('Hasło')).toHaveValue('')
     expect(screen.getByText(/Logowanie jest symulowane/)).toBeInTheDocument()
+    expect(screen.getByText('demo', { selector: 'code' })).toBeInTheDocument()
+    expect(
+      screen.getByText('demo123', { selector: 'code' }),
+    ).toBeInTheDocument()
   })
 
   it('wymaga loginu i hasła', async () => {
@@ -83,6 +87,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Zaloguj się' }))
     expect(
       await screen.findByRole('heading', { name: 'Sprawy' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Sesja demonstracyjna · Urzędnik demonstracyjny'),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Wyloguj się' }))
     expect(screen.getByLabelText('Hasło')).toHaveValue('')

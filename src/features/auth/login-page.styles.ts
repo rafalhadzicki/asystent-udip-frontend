@@ -1,4 +1,4 @@
-import { Button, Chip } from '@mui/material'
+import { Chip } from '@mui/material'
 import { styled } from '@mui/material/styles'
 
 export const LoginLayout = styled('main')(({ theme }) => ({
@@ -59,26 +59,9 @@ export const LoginFields = styled('fieldset')(({ theme }) => ({
   gap: theme.spacing(2.5),
 }))
 
-export const SubmitButton = styled(Button)({
-  minHeight: 48,
-  fontSize: '1rem',
-})
-
 export const LoginFooter = styled('footer')(({ theme }) => ({
   marginTop: theme.spacing(3),
   textAlign: 'center',
   color: theme.palette.text.secondary,
   overflowWrap: 'anywhere',
 }))
-
-export const ScreenReaderText = styled('span')({
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: 'hidden',
-  clipPath: 'inset(50%)',
-  whiteSpace: 'nowrap',
-  border: 0,
-})

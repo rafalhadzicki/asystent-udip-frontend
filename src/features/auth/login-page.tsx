@@ -1,14 +1,10 @@
-import {
-  Alert,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
-  TextField,
-  Typography,
-} from '@mui/material'
-import { ArrowRight, Circle, Eye, EyeOff, Landmark } from 'lucide-react'
-import { useState } from 'react'
+import { Alert, Button, Typography } from '@mui/material'
+import { ArrowRight, Circle, Landmark } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { Trans, useTranslation } from 'react-i18next'
+import { FormPasswordField } from '@/components/form/form-password-field'
+import { FormTextField } from '@/components/form/form-text-field'
+import { ScreenReaderText } from '@/components/ui/screen-reader-text'
 import {
   BrandIcon,
   DemoChip,
@@ -18,8 +14,6 @@ import {
   LoginForm,
   LoginHeader,
   LoginLayout,
-  ScreenReaderText,
-  SubmitButton,
 } from './login-page.styles'
 import { demoCredentials, mockLogin, type DemoUser } from './mock-auth'
 
@@ -33,9 +27,10 @@ export const LoginPage = ({
 }: {
   onLogin: (user: DemoUser) => void
 }) => {
-  const [showPassword, setShowPassword] = useState(false)
+  const { t } = useTranslation()
+  const { t: authT } = useTranslation('translation', { keyPrefix: 'auth' })
   const {
-    register,
+    control,
     handleSubmit,
     setError,
     clearErrors,
@@ -44,19 +39,11 @@ export const LoginPage = ({
     defaultValues: { login: '', password: '' },
   })
 
-  const { ref: loginRef, ...loginField } = register('login', {
-    required: 'Podaj login.',
-    validate: (value) => value.trim().length > 0 || 'Podaj login.',
-  })
-  const { ref: passwordRef, ...passwordField } = register('password', {
-    required: 'Podaj hasło.',
-  })
-
   const onSubmit = async (values: LoginValues) => {
     clearErrors('root')
     const result = await mockLogin(values.login, values.password)
     if (!result.ok) {
-      setError('root', { message: result.message })
+      setError('root', { message: authT(`errors.${result.code}`) })
       return
     }
     onLogin(result.user)
@@ -74,17 +61,17 @@ export const LoginPage = ({
             color="text.secondary"
             sx={{ letterSpacing: '0.1em' }}
           >
-            Urząd Miasta Bydgoszczy
+            {t('app.organization')}
           </Typography>
           <Typography variant="h1" sx={{ mt: 1 }}>
-            Asystent UDIP
+            {t('app.name')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-            Obsługa wniosków o dostęp do informacji publicznej
+            {t('app.description')}
           </Typography>
           <DemoChip
             icon={<Circle fill="currentColor" aria-hidden="true" />}
-            label="Wersja demonstracyjna"
+            label={t('app.demoVersion')}
             size="small"
           />
         </LoginHeader>
@@ -92,20 +79,25 @@ export const LoginPage = ({
         <LoginForm
           noValidate
           onSubmit={handleSubmit(onSubmit)}
-          aria-label="Logowanie"
+          aria-label={authT('formLabel')}
           aria-busy={isSubmitting}
         >
           <LoginFields disabled={isSubmitting}>
-            <ScreenReaderText as="legend">Dane logowania</ScreenReaderText>
-            <TextField
-              {...loginField}
-              inputRef={loginRef}
+            <ScreenReaderText as="legend">
+              {authT('credentialsLegend')}
+            </ScreenReaderText>
+            <FormTextField
+              control={control}
+              name="login"
+              rules={{
+                required: authT('validation.loginRequired'),
+                validate: (value) =>
+                  value.trim().length > 0 || authT('validation.loginRequired'),
+              }}
               id="login"
-              label="Login"
+              label={authT('loginLabel')}
               autoComplete="username"
               disabled={isSubmitting}
-              error={Boolean(errors.login)}
-              helperText={errors.login?.message}
               slotProps={{
                 htmlInput: {
                   autoCapitalize: 'none',
@@ -114,80 +106,51 @@ export const LoginPage = ({
                 },
               }}
             />
-            <TextField
-              {...passwordField}
-              inputRef={passwordRef}
+            <FormPasswordField
+              control={control}
+              name="password"
+              rules={{ required: authT('validation.passwordRequired') }}
               id="password"
-              label="Hasło"
-              type={showPassword ? 'text' : 'password'}
+              label={authT('passwordLabel')}
               autoComplete="current-password"
               disabled={isSubmitting}
-              error={Boolean(errors.password)}
-              helperText={errors.password?.message}
               slotProps={{
                 htmlInput: { 'aria-required': true },
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        type="button"
-                        edge="end"
-                        disabled={isSubmitting}
-                        aria-label={
-                          showPassword ? 'Ukryj hasło' : 'Pokaż hasło'
-                        }
-                        aria-pressed={showPassword}
-                        onClick={() => setShowPassword((value) => !value)}
-                      >
-                        {showPassword ? (
-                          <EyeOff size={20} aria-hidden="true" />
-                        ) : (
-                          <Eye size={20} aria-hidden="true" />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
               }}
             />
             {errors.root && (
               <Alert severity="error">{errors.root.message}</Alert>
             )}
-            <SubmitButton
+            <Button
               type="submit"
               variant="contained"
               fullWidth
-              disabled={isSubmitting}
+              size="large"
+              loading={isSubmitting}
               endIcon={
                 isSubmitting ? undefined : <ArrowRight aria-hidden="true" />
               }
-              startIcon={
-                isSubmitting ? (
-                  <CircularProgress
-                    size={18}
-                    color="inherit"
-                    aria-hidden="true"
-                  />
-                ) : undefined
-              }
             >
-              {isSubmitting ? 'Logowanie…' : 'Zaloguj się'}
-            </SubmitButton>
+              {authT(isSubmitting ? 'submitting' : 'submit')}
+            </Button>
           </LoginFields>
           <ScreenReaderText role="status">
-            {isSubmitting ? 'Trwa logowanie.' : ''}
+            {isSubmitting ? authT('submittingAnnouncement') : ''}
           </ScreenReaderText>
         </LoginForm>
 
         <LoginFooter>
           <Typography variant="body2">
-            Konto testowe: <code>{demoCredentials.login}</code> /{' '}
-            <code>{demoCredentials.password}</code>
+            <Trans
+              i18nKey="auth.demo.credentials"
+              values={demoCredentials}
+              components={{ login: <code />, password: <code /> }}
+            />
           </Typography>
           <Typography variant="caption" component="p" sx={{ mt: 1 }}>
-            Logowanie jest symulowane. Nie wpisuj rzeczywistych danych.
+            {authT('demo.notice')}
             <br />
-            Odświeżenie strony kończy sesję demonstracyjną.
+            {authT('demo.sessionNotice')}
           </Typography>
         </LoginFooter>
       </LoginContainer>

@@ -4,10 +4,11 @@ export const demoCredentials = {
 }
 
 export type DemoUser = {
-  name: string
+  nameKey: 'auth.demo.userName'
 }
 
-type LoginResult = { ok: true; user: DemoUser } | { ok: false; message: string }
+type LoginResult =
+  { ok: true; user: DemoUser } | { ok: false; code: 'invalidCredentials' }
 
 export const mockLogin = async (
   login: string,
@@ -19,8 +20,8 @@ export const mockLogin = async (
     login.trim() !== demoCredentials.login ||
     password !== demoCredentials.password
   ) {
-    return { ok: false, message: 'Nieprawidłowy login lub hasło.' }
+    return { ok: false, code: 'invalidCredentials' }
   }
 
-  return { ok: true, user: { name: 'Urzędnik demonstracyjny' } }
+  return { ok: true, user: { nameKey: 'auth.demo.userName' } }
 }

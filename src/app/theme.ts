@@ -14,7 +14,10 @@ export const theme = createTheme({
   components: {
     MuiButton: {
       defaultProps: { disableElevation: true },
-      styleOverrides: { root: { textTransform: 'none', fontWeight: 600 } },
+      styleOverrides: {
+        root: { textTransform: 'none', fontWeight: 600 },
+        sizeLarge: { minHeight: 48, fontSize: '1rem' },
+      },
     },
     MuiTextField: { defaultProps: { variant: 'outlined', fullWidth: true } },
   },

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { Button, Typography } from '@mui/material'
 import { styled } from '@mui/material/styles'
@@ -24,29 +25,28 @@ const CasesPlaceholder = ({
   user: DemoUser
   onLogout: () => void
 }) => {
+  const { t } = useTranslation()
   return (
     <PageLayout>
       <Typography variant="body2" color="text.secondary">
-        Sesja demonstracyjna · {user.name}
+        {t('auth.demo.session', { name: t(user.nameKey) })}
       </Typography>
-      <Typography variant="h1">Sprawy</Typography>
-      <Typography color="text.secondary">
-        To szkielet aplikacji. Widoki obsługi spraw zostaną dodane po
-        zatwierdzeniu projektu interfejsu.
-      </Typography>
+      <Typography variant="h1">{t('cases.title')}</Typography>
+      <Typography color="text.secondary">{t('cases.placeholder')}</Typography>
       <Button variant="outlined" onClick={onLogout}>
-        Wyloguj się
+        {t('auth.logout')}
       </Button>
     </PageLayout>
   )
 }
 
 const NotFoundPage = () => {
+  const { t } = useTranslation()
   return (
     <PageLayout>
-      <Typography variant="h1">Nie znaleziono strony</Typography>
+      <Typography variant="h1">{t('notFound.title')}</Typography>
       <Button component={Link} variant="text" to="/">
-        Wróć do strony głównej
+        {t('notFound.back')}
       </Button>
     </PageLayout>
   )
