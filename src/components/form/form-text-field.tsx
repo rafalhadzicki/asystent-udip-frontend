@@ -2,16 +2,13 @@ import { TextField, type TextFieldProps } from '@mui/material'
 import { useId } from 'react'
 import {
   useController,
+  type Control,
   type FieldPath,
   type FieldValues,
   type UseControllerProps,
 } from 'react-hook-form'
 
-export type FormTextFieldProps<
-  TValues extends FieldValues,
-  TName extends FieldPath<TValues> = FieldPath<TValues>,
-> = Omit<
-  TextFieldProps,
+type RhfManagedProps =
   | 'name'
   | 'value'
   | 'defaultValue'
@@ -20,20 +17,23 @@ export type FormTextFieldProps<
   | 'inputRef'
   | 'error'
   | 'select'
-> &
-  Pick<UseControllerProps<TValues, TName>, 'control' | 'name' | 'rules'>
 
-export const FormTextField = <
-  TValues extends FieldValues,
-  TName extends FieldPath<TValues> = FieldPath<TValues>,
->({
+type MuiFieldProps = Omit<TextFieldProps, RhfManagedProps>
+
+export type FormTextFieldProps<T extends FieldValues> = MuiFieldProps & {
+  control: Control<T>
+  name: FieldPath<T>
+  rules?: UseControllerProps<T>['rules']
+}
+
+export const FormTextField = <T extends FieldValues>({
   control,
   name,
   rules,
   id,
   helperText,
   ...props
-}: FormTextFieldProps<TValues, TName>) => {
+}: FormTextFieldProps<T>) => {
   const generatedId = useId()
   const { field, fieldState } = useController({ control, name, rules })
 

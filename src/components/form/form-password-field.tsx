@@ -1,28 +1,24 @@
-import { IconButton, InputAdornment } from '@mui/material'
+import { IconButton, InputAdornment, type TextFieldProps } from '@mui/material'
 import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
-import { type FieldPath, type FieldValues } from 'react-hook-form'
+import { type FieldValues } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { FormTextField, type FormTextFieldProps } from './form-text-field'
 
-type FormPasswordFieldProps<
-  TValues extends FieldValues,
-  TName extends FieldPath<TValues>,
-> = Omit<FormTextFieldProps<TValues, TName>, 'type' | 'slotProps'> & {
-  slotProps?: Omit<
-    NonNullable<FormTextFieldProps<TValues, TName>['slotProps']>,
-    'input'
-  >
+type PasswordSlotProps = Omit<NonNullable<TextFieldProps['slotProps']>, 'input'>
+
+type FormPasswordFieldProps<T extends FieldValues> = Omit<
+  FormTextFieldProps<T>,
+  'type' | 'slotProps'
+> & {
+  slotProps?: PasswordSlotProps
 }
 
-export const FormPasswordField = <
-  TValues extends FieldValues,
-  TName extends FieldPath<TValues> = FieldPath<TValues>,
->({
+export const FormPasswordField = <T extends FieldValues>({
   disabled,
   slotProps,
   ...props
-}: FormPasswordFieldProps<TValues, TName>) => {
+}: FormPasswordFieldProps<T>) => {
   const { t } = useTranslation('translation', { keyPrefix: 'form.password' })
   const [visible, setVisible] = useState(false)
 
