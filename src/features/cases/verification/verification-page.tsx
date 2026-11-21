@@ -7,14 +7,17 @@ import {
   SourceText,
   Actions,
 } from './verification-page.styles'
-import { Alert, Button, Typography } from '@mui/material'
-import { useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Alert, Button, TextField, Typography } from '@mui/material'
+import { useEffect, useRef, useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
+import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
 import { useDemoStore } from '@/features/demo/demo-store'
 import type { UploadDraft } from '@/features/demo/types'
+import type { CaseNumberConflict } from '@/api/cases/cases.schemas'
+import { useGetDeadlinePreview } from '@/api/cases/cases.queries'
 import { getApiErrorKind } from '@/api/errors'
 import {
   useCreateCaseFromDraft,
@@ -25,10 +28,15 @@ import {
   toSubmitError,
   type SubmitError,
 } from './verification-utils'
+import {
+  getCaseNumberConflict,
+  useCaseNumberConflict,
+} from '../use-case-number-check'
 import { validIsoDate } from '@/features/demo/date-utils'
 import { caseTabs, routes } from '@/app/routes'
 
 const validDate = validIsoDate
+const validEmail = (value: string) => z.email().safeParse(value).success
 
 export const VerificationPage = () => {
   const { uploadDraft } = useDemoStore()
@@ -55,16 +63,38 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
   const [submitError, setSubmitError] = useState<SubmitError | null>(null)
   const navigate = useNavigate()
   const submitted = useRef(false)
-  const { control, handleSubmit, setError } = useForm<VerifiedCaseValues>({
-    defaultValues: {
-      applicant: draft.applicant,
-      reference: draft.reference ?? '',
-      subject: draft.subject,
-      writtenAt: draft.writtenAt,
-      receivedAt: draft.receivedAt,
-      requestText: draft.requestText,
-    },
+  const { control, handleSubmit, setError, trigger } =
+    useForm<VerifiedCaseValues>({
+      defaultValues: {
+        applicant: draft.applicant,
+        applicantEmail: draft.applicantEmail,
+        applicantAddress: draft.applicantAddress,
+        reference: draft.reference ?? '',
+        subject: draft.subject,
+        writtenAt: draft.writtenAt,
+        receivedAt: draft.receivedAt,
+        requestText: draft.requestText,
+      },
+    })
+  const [reference, receivedAt] = useWatch({
+    control,
+    name: ['reference', 'receivedAt'],
   })
+  const conflict = useCaseNumberConflict({
+    caseNumber: reference,
+    receivedAt,
+  })
+  const { deadlinePreview } = useGetDeadlinePreview(
+    validDate(receivedAt) && !isFutureDate(receivedAt) ? receivedAt : undefined,
+  )
+  useEffect(() => {
+    // Show (or clear) the backend's verdict as soon as the check returns.
+    if (reference.trim()) void trigger('reference')
+  }, [conflict, reference, trigger])
+  const conflictMessage = (code: CaseNumberConflict) =>
+    code === 'SEQUENCE_NUMBER_TAKEN'
+      ? t('duplicateSequence')
+      : t('duplicateReference')
   const required = (value: string) => value.trim().length > 0 || t('required')
   const dateRequired = (value: string) =>
     (required(value) === true && validDate(value)) ||
@@ -80,7 +110,11 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
       submitted.current = false
       const kind = getApiErrorKind(error)
       if (kind === 'conflict')
-        setError('reference', { message: t('duplicateReference') })
+        setError('reference', {
+          message: conflictMessage(
+            getCaseNumberConflict(error) ?? 'CASE_NUMBER_TAKEN',
+          ),
+        })
       else if (kind === 'invalid' && isFutureDate(values.receivedAt.trim()))
         setError('receivedAt', { message: t('receivedAtInFuture') })
       else setSubmitError(toSubmitError(error))
@@ -148,7 +182,12 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
                 name="reference"
                 label={t('reference')}
                 required
-                rules={{ validate: required }}
+                rules={{
+                  validate: {
+                    required,
+                    available: () => !conflict || conflictMessage(conflict),
+                  },
+                }}
               />
               <FormTextField
                 control={control}
@@ -157,6 +196,27 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
                 required
                 rules={{ validate: required }}
               />
+              <FormTextField
+                control={control}
+                name="applicantEmail"
+                label={t('applicantEmail')}
+                type="email"
+                helperText={t('optional')}
+                rules={{
+                  validate: (value) =>
+                    !value.trim() ||
+                    validEmail(value.trim()) ||
+                    t('invalidEmail'),
+                }}
+              />
+              <FullWidth>
+                <FormTextField
+                  control={control}
+                  name="applicantAddress"
+                  label={t('applicantAddress')}
+                  helperText={t('optional')}
+                />
+              </FullWidth>
               <FormTextField
                 control={control}
                 name="writtenAt"
@@ -180,9 +240,16 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
                 slotProps={{ inputLabel: { shrink: true } }}
                 rules={{ validate: dateRequired }}
               />
-              <FullWidth>
-                <Alert severity="info">{t('deadlineFromServer')}</Alert>
-              </FullWidth>
+              <TextField
+                label={t('deadline')}
+                type="date"
+                value={deadlinePreview?.dueAt ?? ''}
+                helperText={t('deadlineFromServer')}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  input: { readOnly: true },
+                }}
+              />
               <FullWidth>
                 <FormTextField
                   control={control}

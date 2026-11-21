@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { getErrorStatus } from './client'
 
 export type ApiErrorKind =
@@ -24,4 +25,13 @@ export const getApiErrorKind = (error: unknown): ApiErrorKind => {
     default:
       return 'unknown'
   }
+}
+
+// Machine-readable `code` of an error body, e.g. CASE_NUMBER_TAKEN on a 409.
+export const getApiErrorCode = (error: unknown): string | undefined => {
+  if (!axios.isAxiosError(error)) return undefined
+  const data: unknown = error.response?.data
+  if (typeof data !== 'object' || data === null || !('code' in data))
+    return undefined
+  return typeof data.code === 'string' ? data.code : undefined
 }

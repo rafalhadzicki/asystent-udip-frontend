@@ -114,9 +114,11 @@ export const UploadPage = () => {
           requestText: result.extractedText ?? '',
           reference: result.suggestions.caseNumber?.value ?? '',
           subject: result.suggestions.subject?.value ?? '',
-          applicant: '',
+          applicant: result.suggestions.requesterName?.value ?? '',
+          applicantEmail: result.suggestions.requesterEmail?.value ?? '',
+          applicantAddress: result.suggestions.requesterAddress?.value ?? '',
           receivedAt: result.suggestions.receivedAt?.value ?? '',
-          writtenAt: '',
+          writtenAt: result.suggestions.writtenAt?.value ?? '',
           warnings: result.warnings,
           textExtractionStatus: result.textExtractionStatus,
         })

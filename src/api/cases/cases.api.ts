@@ -2,9 +2,12 @@ import { apiClient } from '../client'
 import {
   caseDetailSchema,
   caseListSchema,
+  caseNumberCheckSchema,
+  deadlinePreviewSchema,
   caseYearsSchema,
   requestAnalysisSchema,
   type CaseListParams,
+  type CaseNumberCheckParams,
   type CaseSummary,
   type ChangeCaseStatusInput,
   type CreateCaseInput,
@@ -67,6 +70,28 @@ export const getCaseYears = async (signal?: AbortSignal) =>
   caseYearsSchema.parse(
     await apiClient.get<unknown>('/api/cases/years', { signal }),
   ).years
+
+export const getDeadlinePreview = async (
+  receivedAt: string,
+  signal?: AbortSignal,
+) =>
+  deadlinePreviewSchema.parse(
+    await apiClient.get<unknown>('/api/cases/deadline-preview', {
+      params: { receivedAt },
+      signal,
+    }),
+  )
+
+export const checkCaseNumber = async (
+  params: CaseNumberCheckParams,
+  signal?: AbortSignal,
+) =>
+  caseNumberCheckSchema.parse(
+    await apiClient.get<unknown>('/api/cases/case-number-check', {
+      params,
+      signal,
+    }),
+  )
 
 export const getCase = async (id: string, signal?: AbortSignal) =>
   caseDetailSchema.parse(await apiClient.get<unknown>(caseUrl(id), { signal }))

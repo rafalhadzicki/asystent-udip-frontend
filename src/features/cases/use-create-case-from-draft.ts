@@ -5,6 +5,8 @@ import { splitQuestions } from './verification/verification-utils'
 
 export type VerifiedCaseValues = {
   applicant: string
+  applicantEmail: string
+  applicantAddress: string
   reference: string
   subject: string
   writtenAt: string
@@ -13,7 +15,7 @@ export type VerifiedCaseValues = {
 }
 
 // Creates the case on the backend, then keeps the fields the API does not
-// store yet (writing date, preliminary questions) locally under the new id.
+// store yet (preliminary questions) locally under the new id.
 // Rejects with the original error so the caller can map it to the form.
 export const useCreateCaseFromDraft = (draft: UploadDraft) => {
   const { updateCase, setUploadDraft } = useDemoStore()
@@ -25,14 +27,14 @@ export const useCreateCaseFromDraft = (draft: UploadDraft) => {
       file: draft.file,
       caseNumber: values.reference.trim(),
       requesterName: values.applicant.trim(),
+      requesterEmail: values.applicantEmail.trim() || undefined,
+      requesterAddress: values.applicantAddress.trim() || undefined,
       subject: values.subject.trim(),
       receivedAt: values.receivedAt.trim(),
+      writtenAt: values.writtenAt.trim() || undefined,
       requestText,
     })
-    updateCase(created.id, {
-      writtenAt: values.writtenAt.trim(),
-      questions: splitQuestions(requestText),
-    })
+    updateCase(created.id, { questions: splitQuestions(requestText) })
     setUploadDraft(null)
     return created.id
   }

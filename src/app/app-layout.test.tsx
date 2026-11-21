@@ -20,6 +20,8 @@ const Draft = () => {
             applicant: '',
             receivedAt: '',
             writtenAt: '',
+            applicantEmail: '',
+            applicantAddress: '',
           })
         }
       >

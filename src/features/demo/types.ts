@@ -67,6 +67,8 @@ export type UploadDraft = {
   applicant: string
   receivedAt: string
   writtenAt: string
+  applicantEmail: string
+  applicantAddress: string
 }
 
 export type KnowledgeItem = {

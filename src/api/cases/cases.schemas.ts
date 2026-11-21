@@ -59,6 +59,10 @@ export const requestAnalysisSchema = z.object({
     caseNumber: suggestionSchema(z.string()),
     receivedAt: suggestionSchema(isoDate),
     subject: suggestionSchema(z.string()),
+    writtenAt: suggestionSchema(isoDate),
+    requesterName: suggestionSchema(z.string()),
+    requesterEmail: suggestionSchema(z.string()),
+    requesterAddress: suggestionSchema(z.string()),
   }),
   warnings: z.array(analysisWarningSchema),
 })
@@ -90,7 +94,25 @@ export const caseListSchema = z.object({
 
 export const caseYearsSchema = z.object({ years: z.array(z.number()) })
 
+export const caseNumberConflictSchema = z.enum([
+  'CASE_NUMBER_TAKEN',
+  'SEQUENCE_NUMBER_TAKEN',
+])
+
+export const deadlinePreviewSchema = z.object({
+  receivedAt: isoDate,
+  dueAt: isoDate,
+  maxExtendedDueAt: isoDate,
+})
+
+export const caseNumberCheckSchema = z.object({
+  caseNumber: z.string(),
+  available: z.boolean(),
+  conflict: caseNumberConflictSchema.nullish(),
+})
+
 export const caseDetailSchema = caseSummarySchema.extend({
+  writtenAt: isoDate.nullish(),
   requestText: z.string().nullish(),
   extensionReason: z.string().nullish(),
   requesterName: z.string().nullish(),
@@ -144,6 +166,15 @@ export type RequestAnalysis = z.infer<typeof requestAnalysisSchema>
 export type CaseSummary = z.infer<typeof caseSummarySchema>
 export type CaseList = z.infer<typeof caseListSchema>
 export type CaseDetail = z.infer<typeof caseDetailSchema>
+export type CaseNumberConflict = z.infer<typeof caseNumberConflictSchema>
+export type DeadlinePreview = z.infer<typeof deadlinePreviewSchema>
+export type CaseNumberCheck = z.infer<typeof caseNumberCheckSchema>
+
+export type CaseNumberCheckParams = {
+  caseNumber: string
+  year?: number
+  exceptId?: string
+}
 
 export type CaseListParams = {
   year?: number
@@ -159,6 +190,7 @@ export type CaseListParams = {
 export type CaseFields = {
   subject: string
   receivedAt: string
+  writtenAt?: string
   requestText?: string
   caseNumber?: string
   handlerInitials?: string

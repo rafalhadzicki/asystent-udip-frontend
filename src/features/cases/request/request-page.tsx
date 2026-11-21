@@ -12,7 +12,7 @@ import {
   FieldGrid,
   Actions,
 } from './request-page.styles'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert, Button } from '@mui/material'
 import { ArrowRight, FileText, Pencil } from 'lucide-react'
 import { useForm, useWatch } from 'react-hook-form'
@@ -20,7 +20,14 @@ import { useTranslation } from 'react-i18next'
 import { Link, useOutletContext } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
 import { displayDate, validIsoDate } from '@/features/demo/date-utils'
+import type { CaseNumberConflict } from '@/api/cases/cases.schemas'
+import { useGetDeadlinePreview } from '@/api/cases/cases.queries'
 import { getApiErrorKind } from '@/api/errors'
+import { isFutureDate } from '../verification/verification-utils'
+import {
+  getCaseNumberConflict,
+  useCaseNumberConflict,
+} from '../use-case-number-check'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { useSaveCase } from '../use-save-case'
 import type { CaseItem } from '@/features/demo/types'
@@ -95,15 +102,50 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
   const readOnly = item.status === 'completed'
-  const { control, handleSubmit, reset, setValue, setError, getValues } =
-    useForm<RequestValues>({
-      mode: 'onBlur',
-      defaultValues: toValues(item),
-    })
-  const [receivedAt, deadline, subject, requestText] = useWatch({
+  const {
     control,
-    name: ['receivedAt', 'deadline', 'subject', 'requestText'],
+    handleSubmit,
+    reset,
+    setValue,
+    setError,
+    getValues,
+    trigger,
+  } = useForm<RequestValues>({
+    mode: 'onBlur',
+    defaultValues: toValues(item),
   })
+  const [reference, receivedAt, deadline, subject, requestText] = useWatch({
+    control,
+    name: ['reference', 'receivedAt', 'deadline', 'subject', 'requestText'],
+  })
+
+  // Saved cases: the backend checks the number and computes the deadline.
+  const checksWithApi = isRemote && editing
+  const conflict = useCaseNumberConflict({
+    caseNumber: checksWithApi ? reference : '',
+    receivedAt,
+    exceptId: item.id,
+  })
+  const receivedAtChanged = receivedAt !== item.receivedAt
+  const { deadlinePreview } = useGetDeadlinePreview(
+    checksWithApi &&
+      receivedAtChanged &&
+      isDate(receivedAt) &&
+      !isFutureDate(receivedAt)
+      ? receivedAt
+      : undefined,
+  )
+  const apiDeadline = receivedAtChanged ? deadlinePreview?.dueAt : item.deadline
+  useEffect(() => {
+    if (apiDeadline) setValue('deadline', apiDeadline)
+  }, [apiDeadline, setValue])
+  useEffect(() => {
+    if (checksWithApi && reference.trim()) void trigger('reference')
+  }, [checksWithApi, conflict, reference, trigger])
+  const conflictMessage = (code: CaseNumberConflict) =>
+    code === 'SEQUENCE_NUMBER_TAKEN'
+      ? t('errors.sequenceTaken')
+      : t('errors.referenceTaken')
 
   const proposal = suggestedDeadline(receivedAt)
   const scopeChanged =
@@ -148,7 +190,11 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
       )
     } catch (error) {
       if (getApiErrorKind(error) === 'conflict')
-        setError('reference', { message: t('errors.referenceTaken') })
+        setError('reference', {
+          message: conflictMessage(
+            getCaseNumberConflict(error) ?? 'CASE_NUMBER_TAKEN',
+          ),
+        })
       else setNotice('saveFailed')
       return
     }
@@ -211,15 +257,17 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
               rules={{
                 validate: {
                   required,
-                  unique: (value) =>
-                    isRemote ||
-                    !cases.some(
-                      (other) =>
-                        other.id !== item.id &&
-                        normalizeReference(other.reference) ===
-                          normalizeReference(value),
-                    ) ||
-                    t('errors.referenceTaken'),
+                  unique: (value) => {
+                    if (isRemote) return !conflict || conflictMessage(conflict)
+                    return (
+                      !cases.some(
+                        (other) =>
+                          other.id !== item.id &&
+                          normalizeReference(other.reference) ===
+                            normalizeReference(value),
+                      ) || t('errors.referenceTaken')
+                    )
+                  },
                 },
               }}
             />

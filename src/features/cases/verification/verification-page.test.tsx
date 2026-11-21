@@ -14,22 +14,28 @@ import { detail } from '@/test/case-detail'
 import { createTestQueryClient } from '@/test/query-client'
 import { VerificationPage } from './verification-page'
 
-vi.mock('@/api/cases/cases.api', () => ({ createCase: vi.fn() }))
+vi.mock('@/api/cases/cases.api', () => ({
+  createCase: vi.fn(),
+  getDeadlinePreview: vi.fn(),
+  checkCaseNumber: vi.fn(),
+}))
 
 const draft: UploadDraft = {
   file: new File(['abc'], 'wniosek.pdf', { type: 'application/pdf' }),
   applicant: 'Jan Testowy',
   subject: 'Testowy temat',
   writtenAt: '2026-11-20',
+  applicantEmail: '',
+  applicantAddress: '',
   receivedAt: '2026-11-21',
   requestText: 'Pierwsze pytanie.\nDrugie pytanie?',
 }
 
 const submitLabel = 'Utwórz sprawę i przejdź do analizy'
 
-const failWith = (status: number) =>
+const failWith = (status: number, data: unknown = {}) =>
   new AxiosError('Failed', undefined, undefined, null, {
-    data: {},
+    data,
     status,
     statusText: 'Error',
     headers: {},
@@ -80,7 +86,17 @@ const renderPage = (value?: UploadDraft) =>
 const submit = async (user: ReturnType<typeof userEvent.setup>) =>
   user.click(await screen.findByRole('button', { name: submitLabel }))
 
-beforeEach(() => localStorage.clear())
+beforeEach(() => {
+  localStorage.clear()
+  vi.mocked(casesApi.getDeadlinePreview).mockResolvedValue({
+    receivedAt: '2026-11-21',
+    dueAt: '2026-12-05',
+    maxExtendedDueAt: '2027-01-04',
+  })
+  vi.mocked(casesApi.checkCaseNumber).mockImplementation(
+    async ({ caseNumber }) => ({ caseNumber, available: true }),
+  )
+})
 afterEach(() => vi.clearAllMocks())
 
 describe('weryfikacja wniosku', () => {
@@ -101,8 +117,14 @@ describe('weryfikacja wniosku', () => {
     const user = userEvent.setup()
     renderPage(draft)
     expect(await screen.findByText('wniosek.pdf')).toBeInTheDocument()
-    expect(screen.getByText(/Termin odpowiedzi wylicza serwer/)).toBeVisible()
-    expect(screen.queryByLabelText(/Termin \*/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Termin wylicza serwer/)).toBeVisible()
+    expect(await screen.findByLabelText('Termin odpowiedzi')).toHaveValue(
+      '2026-12-05',
+    )
+    expect(casesApi.getDeadlinePreview).toHaveBeenCalledWith(
+      '2026-11-21',
+      expect.anything(),
+    )
     await user.type(
       screen.getByLabelText('Znak / numer sprawy *'),
       '  NOWA/1  ',
@@ -119,12 +141,12 @@ describe('weryfikacja wniosku', () => {
       requesterName: 'Jan Testowy',
       subject: 'Testowy temat',
       receivedAt: '2026-11-21',
+      writtenAt: '2026-11-20',
       requestText: 'Pierwsze pytanie.\nDrugie pytanie?',
     })
     const data = JSON.parse(screen.getByTestId('snapshot').textContent || '{}')
     expect(data.uploadDraft).toBeNull()
     expect(data.overlays['server-id']).toMatchObject({
-      writtenAt: '2026-11-20',
       questions: [
         { text: 'Pierwsze pytanie.', selected: false },
         { text: 'Drugie pytanie?', selected: false },
@@ -189,6 +211,41 @@ describe('weryfikacja wniosku', () => {
       ).toBeGreaterThanOrEqual(3),
     )
     expect(casesApi.createCase).not.toHaveBeenCalled()
+  })
+
+  it('podpowiada numer zajęty według case-number-check i blokuje zapis', async () => {
+    vi.mocked(casesApi.checkCaseNumber).mockResolvedValue({
+      caseNumber: 'A/1',
+      available: false,
+      conflict: 'SEQUENCE_NUMBER_TAKEN',
+    })
+    const user = userEvent.setup()
+    renderPage(draft)
+    await user.type(
+      await screen.findByLabelText('Znak / numer sprawy *'),
+      'A/1',
+    )
+    expect(
+      await screen.findByText('Ten numer kolejny w roku jest już zajęty.'),
+    ).toBeInTheDocument()
+    await submit(user)
+    expect(casesApi.createCase).not.toHaveBeenCalled()
+  })
+
+  it('409 z kodem SEQUENCE_NUMBER_TAKEN pokazuje komunikat o numerze kolejnym', async () => {
+    vi.mocked(casesApi.createCase).mockRejectedValue(
+      failWith(409, { code: 'SEQUENCE_NUMBER_TAKEN' }),
+    )
+    const user = userEvent.setup()
+    renderPage(draft)
+    await user.type(
+      await screen.findByLabelText('Znak / numer sprawy *'),
+      'A/1',
+    )
+    await submit(user)
+    expect(
+      await screen.findByText('Ten numer kolejny w roku jest już zajęty.'),
+    ).toBeInTheDocument()
   })
 
   it('409 oznacza zajęty numer sprawy przy polu numeru', async () => {

@@ -47,7 +47,6 @@ const documentMeta = (document: ApiDocument): DocumentMeta => ({
 
 // Starting point of the local workflow, used until the user changes something.
 const localDefaults = (detail: CaseDetail) => ({
-  writtenAt: '',
   status: localStatus[detail.status],
   questions: [],
   departments: detail.departmentRequests.map(({ department }) => ({
@@ -84,6 +83,7 @@ export const composeApiCase = (
     subject: detail.subject,
     applicant: detail.requesterName ?? '',
     receivedAt: detail.receivedAt,
+    writtenAt: detail.writtenAt ?? '',
     deadline: detail.effectiveDueAt,
     owner: detail.assignee?.email ?? detail.handlerInitials ?? '',
     requestText: detail.requestText ?? '',

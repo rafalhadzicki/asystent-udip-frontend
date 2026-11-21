@@ -1,4 +1,7 @@
-import type { CaseListParams } from './cases/cases.schemas'
+import type {
+  CaseListParams,
+  CaseNumberCheckParams,
+} from './cases/cases.schemas'
 
 // Every key starts with the signed-in user so cached data never leaks between accounts.
 const userScope = (email: string) => ['user', email] as const
@@ -13,6 +16,10 @@ export const queryKeys = {
     list: (email: string, params: CaseListParams) =>
       [...queryKeys.cases.lists(email), params] as const,
     years: (email: string) => [...queryKeys.cases.all(email), 'years'] as const,
+    deadlinePreview: (email: string, receivedAt: string) =>
+      [...queryKeys.cases.all(email), 'deadline-preview', receivedAt] as const,
+    numberCheck: (email: string, params: CaseNumberCheckParams) =>
+      [...queryKeys.cases.all(email), 'number-check', params] as const,
     details: (email: string) =>
       [...queryKeys.cases.all(email), 'detail'] as const,
     detail: (email: string, id: string) =>

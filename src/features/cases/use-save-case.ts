@@ -18,6 +18,8 @@ export const useSaveCase = (item: CaseItem) => {
       subject: changes.subject,
       requesterName: changes.applicant,
       receivedAt: changes.receivedAt,
+      // The API cannot clear the date, so an emptied field is simply not sent.
+      writtenAt: changes.writtenAt || undefined,
       requestText: changes.requestText,
     }
     const hasRemoteChanges = Object.values(remote).some(

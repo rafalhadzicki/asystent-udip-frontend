@@ -14,11 +14,13 @@ import {
   analyzeRequest,
   cancelExtension,
   changeCaseStatus,
+  checkCaseNumber,
   createCase,
   extendDeadline,
   getCase,
   getCaseYears,
   getCases,
+  getDeadlinePreview,
   updateCase,
 } from './cases.api'
 import {
@@ -26,9 +28,12 @@ import {
   type CaseDetail,
   type CaseList,
   type CaseListParams,
+  type CaseNumberCheck,
+  type CaseNumberCheckParams,
   type CaseUrgency,
   type ChangeCaseStatusInput,
   type CreateCaseInput,
+  type DeadlinePreview,
   type ExtendDeadlineInput,
   type RequestAnalysis,
   type UpdateCaseInput,
@@ -144,6 +149,41 @@ export const useGetCaseById = (id: string | undefined) => {
     isCaseError: isError,
     caseError: error,
     refetchCase: refetch,
+  }
+}
+
+// The statutory deadline the backend would compute; skipped without a date.
+export const useGetDeadlinePreview = (receivedAt: string | undefined) => {
+  const email = useSessionEmail()
+  const { data, isFetching, isError } = useQuery<DeadlinePreview, ApiError>({
+    queryKey: queryKeys.cases.deadlinePreview(email, receivedAt ?? ''),
+    queryFn: ({ signal }) => getDeadlinePreview(receivedAt ?? '', signal),
+    enabled: !!receivedAt,
+  })
+
+  return {
+    deadlinePreview: receivedAt ? data : undefined,
+    isDeadlinePreviewFetching: isFetching,
+    isDeadlinePreviewError: isError,
+  }
+}
+
+// Tells whether a case number is free before saving; skipped without a number.
+export const useCheckCaseNumber = (
+  params: CaseNumberCheckParams | undefined,
+) => {
+  const email = useSessionEmail()
+  const { data, isFetching } = useQuery<CaseNumberCheck, ApiError>({
+    queryKey: queryKeys.cases.numberCheck(email, params ?? { caseNumber: '' }),
+    queryFn: ({ signal }) =>
+      checkCaseNumber(params ?? { caseNumber: '' }, signal),
+    enabled: !!params?.caseNumber,
+    staleTime: 0,
+  })
+
+  return {
+    caseNumberCheck: params?.caseNumber ? data : undefined,
+    isCaseNumberChecking: isFetching,
   }
 }
 

@@ -211,8 +211,14 @@
     "required": "To pole jest wymagane.",
     "invalidDate": "Podaj prawidłową datę.",
     "duplicateReference": "Sprawa o takim znaku już istnieje.",
+    "duplicateSequence": "Ten numer kolejny w roku jest już zajęty.",
+    "applicantEmail": "E-mail wnioskodawcy",
+    "applicantAddress": "Adres wnioskodawcy",
+    "optional": "Pole opcjonalne.",
+    "invalidEmail": "Podaj prawidłowy adres e-mail.",
+    "deadline": "Termin odpowiedzi",
     "questionsNotice": "Początkowe pytania w analizie powstaną z treści wniosku jako sugestie demonstracyjne i wymagają weryfikacji.",
-    "deadlineFromServer": "Termin odpowiedzi wylicza serwer po zapisaniu sprawy. Sprawdź go w widoku sprawy; w razie potrzeby można go zmienić.",
+    "deadlineFromServer": "Termin wylicza serwer na podstawie daty wpływu; po utworzeniu sprawy można go przedłużyć osobną akcją.",
     "receivedAtInFuture": "Data wpływu nie może być z przyszłości.",
     "submitErrors": {
       "tooLarge": "Plik jest zbyt duży.",
@@ -249,7 +255,7 @@
       "next": "Przejdź do analizy",
       "applyDeadline": "Ustaw proponowany termin {{date}}"
     },
-    "deadlineFromServer": "Termin liczy serwer (14 dni od daty wpływu); przedłużenie wymaga osobnej akcji.",
+    "deadlineFromServer": "Termin liczy serwer na podstawie daty wpływu; przedłużenie wymaga osobnej akcji.",
     "deadlineProposal": "Proponowany termin: 14 dni od daty wpływu ({{date}}). Termin zmieni się dopiero po kliknięciu.",
     "readOnly": "Sprawa jest zakończona, a odpowiedź została wysłana. Dane wniosku są tylko do odczytu.",
     "scopeWarning": "Zmieniasz treść lub przedmiot wniosku. Po zapisie ewentualny projekt odpowiedzi i anonimizacja zostaną usunięte, a sprawa wróci do analizy. Przejrzyj istniejące pytania.",
@@ -263,6 +269,7 @@
       "required": "To pole jest wymagane.",
       "date": "Podaj poprawną datę.",
       "referenceTaken": "Sprawa o tej sygnaturze już istnieje.",
+      "sequenceTaken": "Ten numer kolejny w roku jest już zajęty.",
       "writtenAfterReceived": "Data sporządzenia nie może być późniejsza niż data wpływu.",
       "deadlineBeforeReceived": "Termin nie może być wcześniejszy niż data wpływu."
     }

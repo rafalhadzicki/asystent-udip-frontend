@@ -46,6 +46,16 @@ describe('composeApiCase', () => {
     })
   })
 
+  it('takes the writing date from the API, not from the local overlay', () => {
+    const withDate = { ...detail, writtenAt: '2026-01-10' }
+    expect(
+      composeApiCase(withDate, { writtenAt: '1999-01-01' }).writtenAt,
+    ).toBe('2026-01-10')
+    expect(composeApiCase({ ...detail, writtenAt: null }, {}).writtenAt).toBe(
+      '',
+    )
+  })
+
   it('layers local data over the defaults but never over server fields', () => {
     const item = composeApiCase(detail, {
       status: 'redaction',
