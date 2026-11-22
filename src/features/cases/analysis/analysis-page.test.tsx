@@ -433,7 +433,7 @@ describe('analiza sprawy', () => {
     const user = userEvent.setup()
     renderPage(item)
     expect(
-      screen.getByText(/Treść lub temat wniosku zmieniły się/),
+      screen.getByText(/Przejrzyj pytania i jednostki/),
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
     expect(savedCase().analysisNeedsReview).toBe(false)
@@ -483,7 +483,7 @@ describe('analiza sprawy', () => {
         await screen.findByText(/Nie udało się zapisać pytań i jednostek/),
       ).toBeInTheDocument()
       expect(
-        screen.getByText(/Treść lub temat wniosku zmieniły się/),
+        screen.getByText(/Przejrzyj pytania i jednostki/),
       ).toBeInTheDocument()
     })
 

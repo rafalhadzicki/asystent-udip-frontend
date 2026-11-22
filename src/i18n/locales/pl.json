@@ -282,7 +282,7 @@
     "intro": "Sprawdź zakres wniosku i wybierz jednostki, które mogą dysponować potrzebnymi materiałami.",
     "saveFailed": "Nie udało się zapisać pytań i jednostek. Spróbuj ponownie.",
     "departmentUnknown": "Wybierz jednostkę z listy podpowiedzi – można wskazać tylko jednostki ze słownika.",
-    "reviewRequired": "Treść lub temat wniosku zmieniły się. Przejrzyj istniejące pytania i jednostki, popraw je w razie potrzeby i zapisz ustalenia przed dalszą pracą.",
+    "reviewRequired": "Przejrzyj pytania i jednostki, popraw je w razie potrzeby i zapisz ustalenia przed dalszą pracą.",
     "questionsTitle": "Zakres wniosku",
     "questionsDescription": "Zaznacz pytania, które mają znaleźć się w zakresie sprawy. Możesz zmienić ich treść lub dodać własne.",
     "questionLabel": "Treść pytania {{number}}",
@@ -324,7 +324,7 @@
     "exampleScore": "Podobieństwo: {{percent}}%"
   },
   "materials": {
-    "analysisReviewRequired": "Przed dalszą pracą przejrzyj i zapisz analizę zmienionego wniosku.",
+    "analysisReviewRequired": "Przed dalszą pracą przejrzyj i zapisz analizę wniosku.",
     "goToAnalysis": "Przejdź do analizy",
     "title": "Materiały i odpowiedź",
     "subtitle": "Zbierz informacje od wybranych jednostek i przygotuj projekt odpowiedzi.",
@@ -374,7 +374,7 @@
     "generateNeedsQuestions": "Projekt wymaga treści wniosku i co najmniej jednego pytania. Uzupełnij je w zakładce Analiza."
   },
   "redaction": {
-    "analysisReviewRequired": "Przed dalszą pracą przejrzyj i zapisz analizę zmienionego wniosku.",
+    "analysisReviewRequired": "Przed dalszą pracą przejrzyj i zapisz analizę wniosku.",
     "goToAnalysis": "Przejdź do analizy",
     "title": "Anonimizacja odpowiedzi",
     "subtitle": "Pracujesz na treści odpowiedzi zapisanej w tej sprawie.",
