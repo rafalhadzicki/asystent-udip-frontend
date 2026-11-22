@@ -84,9 +84,6 @@ describe('UploadPage', () => {
     renderPage()
     const next = screen.getByRole('button', { name: /Dalej: Weryfikacja/ })
     expect(next).toBeDisabled()
-    expect(
-      screen.getByText(/Wybrany plik zostanie wysłany do API/),
-    ).toBeInTheDocument()
     select(pdf())
     expect(
       await screen.findByText('Plik gotowy do weryfikacji'),

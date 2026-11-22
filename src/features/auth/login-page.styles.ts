@@ -1,4 +1,3 @@
-import { Chip } from '@mui/material'
 import { styled } from '@mui/material/styles'
 
 export const LoginLayout = styled('main')(({ theme }) => ({
@@ -31,13 +30,6 @@ export const BrandIcon = styled('div')(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   '& svg': { width: 28, height: 28 },
-}))
-
-export const DemoChip = styled(Chip)(({ theme }) => ({
-  marginTop: theme.spacing(2),
-  color: theme.palette.text.secondary,
-  backgroundColor: '#e9eef4',
-  '& .MuiChip-icon': { color: '#2563eb', width: 8, height: 8 },
 }))
 
 export const LoginForm = styled('form')(({ theme }) => ({

@@ -1,5 +1,5 @@
 import { Alert, Button, Typography } from '@mui/material'
-import { ArrowRight, Circle, Landmark } from 'lucide-react'
+import { ArrowRight, Landmark } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { FormPasswordField } from '@/components/form/form-password-field'
@@ -10,7 +10,6 @@ import { getApiErrorKind } from '@/api/errors'
 import { ScreenReaderText } from './screen-reader-text'
 import {
   BrandIcon,
-  DemoChip,
   LoginContainer,
   LoginFields,
   LoginFooter,
@@ -77,11 +76,6 @@ export const LoginPage = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
             {t('app.description')}
           </Typography>
-          <DemoChip
-            icon={<Circle fill="currentColor" aria-hidden="true" />}
-            label={t('app.demoVersion')}
-            size="small"
-          />
         </LoginHeader>
 
         <LoginForm
@@ -152,8 +146,6 @@ export const LoginPage = () => {
 
         <LoginFooter>
           <Typography variant="caption" component="p" sx={{ mt: 1 }}>
-            {authT('migrationNotice')}
-            <br />
             {authT('sessionNotice')}
           </Typography>
         </LoginFooter>

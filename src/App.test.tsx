@@ -24,7 +24,7 @@ const render = (ui: ReactNode) => {
 describe('App', () => {
   beforeEach(() => localStorage.clear())
   afterEach(() => vi.restoreAllMocks())
-  it('wyświetla puste logowanie i informację o migracji', () => {
+  it('wyświetla puste logowanie', () => {
     render(
       <MemoryRouter>
         <App />
@@ -36,7 +36,6 @@ describe('App', () => {
     ).toBeInTheDocument()
     expect(screen.getByLabelText('E-mail')).toHaveValue('')
     expect(screen.getByLabelText('Hasło')).toHaveValue('')
-    expect(screen.getByText(/Logowanie korzysta z API/)).toBeInTheDocument()
   })
 
   it('wymaga loginu i hasła', async () => {

@@ -240,10 +240,6 @@ export const UploadPage = () => {
             </>
           )}
         </DropZone>
-        <Alert severity="info" role="note" sx={{ mt: 2 }}>
-          <Typography sx={{ fontWeight: 600 }}>{t('demoTitle')}</Typography>
-          <Typography variant="body2">{t('demoNotice')}</Typography>
-        </Alert>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           sx={{
