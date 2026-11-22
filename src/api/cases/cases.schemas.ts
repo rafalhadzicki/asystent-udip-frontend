@@ -313,6 +313,7 @@ export type UploadCaseDocumentInput = {
   departmentId?: string
 }
 export type DeleteCaseDocumentInput = { caseId: string; documentId: string }
+export type DownloadCaseDocumentInput = DeleteCaseDocumentInput
 export type DraftResponseInput = {
   id: string
   questionIds?: string[]

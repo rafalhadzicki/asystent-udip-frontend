@@ -35,9 +35,9 @@ import type {
   RedactionDecision,
 } from '@/features/cases/types'
 import { caseTabs, routes } from '@/app/routes'
+import { downloadBlob } from '@/features/cases/download-blob'
 import {
   buildExportBlob,
-  downloadBlob,
   exportFormats,
   type ExportFormat,
 } from './redaction-export'

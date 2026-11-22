@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@mui/material/styles'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -13,13 +13,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { theme } from '@/app/theme'
 import { LocalStoreProvider, useLocalStore } from '@/features/cases/local-store'
+import { downloadBlob } from '@/features/cases/download-blob'
 import { createDemoCases } from '@/test/demo-cases'
 import { detail } from '@/test/case-detail'
 import { readSavedCase } from '@/test/saved-case'
 import { createTestQueryClient } from '@/test/query-client'
 import { RequestPage } from './request-page'
 
-vi.mock('@/api/cases/cases.api', () => ({ updateCase: vi.fn() }))
+vi.mock('@/api/cases/cases.api', () => ({
+  updateCase: vi.fn(),
+  downloadCaseDocument: vi.fn(),
+}))
+vi.mock('@/features/cases/download-blob', () => ({ downloadBlob: vi.fn() }))
 
 let cases = createDemoCases()
 
@@ -62,12 +67,23 @@ describe('RequestPage', () => {
     vi.mocked(casesApi.updateCase).mockReset().mockResolvedValue(detail)
   })
 
-  it('pokazuje metadane źródła i uczciwą informację o pliku', () => {
+  it('pokazuje metadane źródła i pozwala pobrać oryginał', async () => {
+    const original = new Blob(['pdf'])
+    vi.mocked(casesApi.downloadCaseDocument).mockResolvedValue(original)
+    const user = userEvent.setup()
     renderPage('demo-1')
     expect(screen.getByText('Wniosek_demonstracyjny.pdf')).toBeInTheDocument()
-    expect(
-      screen.getByText(/oryginalny plik nie jest przechowywany/),
-    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Pobierz oryginał' }))
+    expect(casesApi.downloadCaseDocument).toHaveBeenCalledWith(
+      { caseId: 'demo-1', documentId: expect.any(String) },
+      expect.anything(),
+    )
+    await waitFor(() =>
+      expect(downloadBlob).toHaveBeenCalledWith(
+        original,
+        'Wniosek_demonstracyjny.pdf',
+      ),
+    )
     expect(
       screen.getByRole('link', { name: 'Przejdź do analizy' }),
     ).toHaveAttribute('href', '/sprawy/demo-1/analiza')

@@ -14,14 +14,18 @@ import {
 } from './request-page.styles'
 import { useEffect, useState } from 'react'
 import { Alert, Button } from '@mui/material'
-import { ArrowRight, FileText, Pencil } from 'lucide-react'
+import { ArrowRight, Download, FileText, Pencil } from 'lucide-react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useOutletContext } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
 import { displayDate, validIsoDate } from '@/features/cases/date-utils'
 import type { CaseNumberConflict } from '@/api/cases/cases.schemas'
-import { useGetDeadlinePreview } from '@/api/cases/cases.queries'
+import {
+  useDownloadCaseDocument,
+  useGetDeadlinePreview,
+} from '@/api/cases/cases.queries'
+import { downloadBlob } from '@/features/cases/download-blob'
 import { getApiErrorKind } from '@/api/errors'
 import { isFutureDate } from '../verification/verification-utils'
 import {
@@ -61,6 +65,20 @@ const SourceSection = ({ item }: { item: CaseItem }) => {
   const size = new Intl.NumberFormat('pl-PL', {
     maximumFractionDigits: 0,
   }).format(item.source.size / 1024)
+  const {
+    downloadCaseDocumentAsync,
+    isDownloadingCaseDocument,
+    isDownloadCaseDocumentError,
+  } = useDownloadCaseDocument()
+  // Cases without an uploaded request file have no original to download.
+  const hasFile = item.source.name !== ''
+  const downloadOriginal = async () => {
+    const blob = await downloadCaseDocumentAsync({
+      caseId: item.id,
+      documentId: item.source.id,
+    }).catch(() => null)
+    if (blob) downloadBlob(blob, item.source.name)
+  }
   return (
     <Section aria-labelledby="request-source-title">
       <SourceIcon>
@@ -87,7 +105,19 @@ const SourceSection = ({ item }: { item: CaseItem }) => {
           <Description>{item.source.unit || t('details.empty')}</Description>
         </Detail>
       </Details>
-      <Alert severity="info">{t('source.notPersisted')}</Alert>
+      {hasFile && (
+        <Button
+          variant="outlined"
+          startIcon={<Download aria-hidden="true" size={16} />}
+          loading={isDownloadingCaseDocument}
+          onClick={() => void downloadOriginal()}
+        >
+          {t('source.download')}
+        </Button>
+      )}
+      {isDownloadCaseDocumentError && (
+        <Alert severity="error">{t('source.downloadError')}</Alert>
+      )}
     </Section>
   )
 }

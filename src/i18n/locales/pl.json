@@ -235,7 +235,8 @@
       "sizeValue": "{{value}} KB",
       "addedAt": "Dodano",
       "unit": "Jednostka",
-      "notPersisted": "W wersji demonstracyjnej oryginalny plik nie jest przechowywany — zapisano tylko jego metadane i odczytaną treść. Podgląd PDF jest niedostępny."
+      "download": "Pobierz oryginał",
+      "downloadError": "Nie udało się pobrać pliku. Spróbuj ponownie."
     },
     "details": {
       "title": "Treść i dane wniosku",

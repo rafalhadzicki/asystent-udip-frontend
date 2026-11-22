@@ -16,6 +16,7 @@ import {
   type CaseSummary,
   type ChangeCaseStatusInput,
   type DeleteCaseDocumentInput,
+  type DownloadCaseDocumentInput,
   type DraftResponseInput,
   type RedactionSuggestionsInput,
   type SetCaseDepartmentsInput,
@@ -171,6 +172,15 @@ export const uploadCaseDocument = async ({
       `${caseUrl(caseId)}/documents`,
       toFormData(fields),
     ),
+  )
+
+export const downloadCaseDocument = ({
+  caseId,
+  documentId,
+}: DownloadCaseDocumentInput) =>
+  apiClient.get<Blob>(
+    `${caseUrl(caseId)}/documents/${encodeURIComponent(documentId)}/download`,
+    { responseType: 'blob' },
   )
 
 export const deleteCaseDocument = async ({

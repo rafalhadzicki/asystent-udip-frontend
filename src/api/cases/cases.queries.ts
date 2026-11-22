@@ -17,6 +17,7 @@ import {
   checkCaseNumber,
   createCase,
   deleteCaseDocument,
+  downloadCaseDocument,
   draftResponse,
   extendDeadline,
   getCase,
@@ -44,6 +45,7 @@ import {
   type CaseDocument,
   type CreateCaseInput,
   type DeleteCaseDocumentInput,
+  type DownloadCaseDocumentInput,
   type DraftResponse,
   type DraftResponseInput,
   type RedactionSuggestion,
@@ -400,6 +402,21 @@ export const useDeleteCaseDocument = () => {
   return {
     deleteCaseDocumentAsync: mutateAsync,
     isDeletingCaseDocument: isPending,
+  }
+}
+
+// The original file is not kept in the cache, so nothing is invalidated.
+export const useDownloadCaseDocument = () => {
+  const { mutateAsync, isPending, isError, reset } = useMutation<
+    Blob,
+    ApiError,
+    DownloadCaseDocumentInput
+  >({ mutationFn: downloadCaseDocument, gcTime: 0 })
+  return {
+    downloadCaseDocumentAsync: mutateAsync,
+    isDownloadingCaseDocument: isPending,
+    isDownloadCaseDocumentError: isError,
+    resetDownloadCaseDocument: reset,
   }
 }
 

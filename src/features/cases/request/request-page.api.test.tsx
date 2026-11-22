@@ -13,7 +13,11 @@ import { createTestQueryClient } from '@/test/query-client'
 import { composeApiCase } from '../case-from-api'
 import { RequestPage } from './request-page'
 
-vi.mock('@/api/cases/cases.api', () => ({ updateCase: vi.fn() }))
+vi.mock('@/api/cases/cases.api', () => ({
+  updateCase: vi.fn(),
+  downloadCaseDocument: vi.fn(),
+}))
+vi.mock('@/features/cases/download-blob', () => ({ downloadBlob: vi.fn() }))
 
 const renderPage = () =>
   render(
