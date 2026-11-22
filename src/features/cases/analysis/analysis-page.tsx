@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import { ArrowRight, Plus, Trash2 } from 'lucide-react'
+import { StepBackButton } from '../step-back-button'
 import { useGetKnowledgeList } from '@/api/knowledge/knowledge.queries'
 import type { KnowledgeDocument } from '@/api/knowledge/knowledge.schemas'
 import { KnowledgePreviewDialog } from '@/features/knowledge/knowledge-dialogs'
@@ -485,6 +486,9 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
         </Panel>
       </Layout>
       <Actions>
+        <Box sx={{ mr: 'auto' }}>
+          <StepBackButton to={routes.caseTab(item.id, caseTabs.request)} />
+        </Box>
         {!readonly && (
           <Button
             variant="outlined"

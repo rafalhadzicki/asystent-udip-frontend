@@ -9,6 +9,7 @@ import {
   type ChangeEvent,
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { StepBackButton } from '../step-back-button'
 import { Link, useOutletContext } from 'react-router-dom'
 import {
   Alert,
@@ -479,19 +480,22 @@ export const MaterialsPage = () => {
           <Typography variant="body2" color="text.secondary">
             {t('nextHelp')}
           </Typography>
-          {item.responseText.trim() && !stale && !generating ? (
-            <Button
-              component={Link}
-              to={routes.caseTab(item.id, caseTabs.redaction)}
-              variant="contained"
-            >
-              {t('next')}
-            </Button>
-          ) : (
-            <Button variant="contained" disabled>
-              {t('next')}
-            </Button>
-          )}
+          <Stack direction="row" sx={{ gap: 1, flexShrink: 0 }}>
+            <StepBackButton to={routes.caseTab(item.id, caseTabs.analysis)} />
+            {item.responseText.trim() && !stale && !generating ? (
+              <Button
+                component={Link}
+                to={routes.caseTab(item.id, caseTabs.redaction)}
+                variant="contained"
+              >
+                {t('next')}
+              </Button>
+            ) : (
+              <Button variant="contained" disabled>
+                {t('next')}
+              </Button>
+            )}
+          </Stack>
         </Stack>
       </Card>
     </Layout>

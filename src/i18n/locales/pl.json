@@ -51,7 +51,8 @@
     "newCase": "Nowy wniosek"
   },
   "common": {
-    "cancel": "Anuluj"
+    "cancel": "Anuluj",
+    "back": "Wstecz"
   },
   "demo": {
     "notice": "Demo · data odniesienia: {{date}}. Analiza pytań i projekt odpowiedzi są symulowane. Używaj wyłącznie danych testowych: rejestr i podstawowe dane spraw pochodzą z API, wybrany plik jest wysyłany do API w celu odczytu, a analiza, materiały, odpowiedź i anonimizacja pozostają w tej przeglądarce.",

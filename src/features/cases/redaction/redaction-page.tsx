@@ -26,6 +26,7 @@ import {
 } from '@/api/cases/cases.queries'
 import type { RedactionSuggestion } from '@/api/cases/cases.schemas'
 import { useAiErrorMessage } from '../use-ai-error-message'
+import { StepBackButton } from '../step-back-button'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { validIsoDate } from '@/features/demo/date-utils'
 import type {
@@ -396,6 +397,9 @@ export const RedactionPage = () => {
             {t('sent.openDialog')}
           </Button>
         )}
+        <Box>
+          <StepBackButton to={routes.caseTab(item.id, caseTabs.materials)} />
+        </Box>
       </Stack>
 
       <Dialog
