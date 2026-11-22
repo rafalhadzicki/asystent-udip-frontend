@@ -1,92 +1,63 @@
 # Asystent UDIP — frontend
 
-Aplikacja React i TypeScript dla narzędzia wspierającego urzędników w obsłudze
-wniosków o dostęp do informacji publicznej (Hacknation 2026, Urząd Miasta
-Bydgoszczy). Wszystkie sprawy, terminy, dokumenty, analiza, projekt odpowiedzi,
-sugestie anonimizacji i baza wiedzy pochodzą z backendu (NestJS, `/api`).
-Aplikacja niczego nie wysyła na zewnątrz: wysyłkę odpowiedzi urzędnik
-odnotowuje ręcznie, a ostateczną decyzję zawsze podejmuje człowiek.
+Aplikacja React i TypeScript wspierająca urzędników w obsłudze wniosków o
+informację publiczną (Hacknation 2026, Urząd Miasta Bydgoszczy). Sprawy,
+terminy, analiza, projekt odpowiedzi, sugestie anonimizacji i baza wiedzy
+pochodzą z backendu (NestJS, `/api`). Aplikacja niczego nie wysyła na zewnątrz:
+wysyłkę odpowiedzi urzędnik odnotowuje ręcznie, a decyzję zawsze podejmuje
+człowiek.
 
 ## Przepływ pracy
 
-Rejestr → nowy wniosek (PDF lub DOCX) → weryfikacja odczytanych danych →
-analiza pytań i podpowiedź wydziałów → materiały z wydziałów i projekt
-odpowiedzi → anonimizacja → pobranie TXT lub DOCX → odnotowanie wysyłki.
+Rejestr → nowy wniosek (PDF, DOC lub DOCX) → weryfikacja odczytanych danych →
+analiza pytań i wybór jednostek → materiały i projekt odpowiedzi →
+anonimizacja → pobranie TXT lub DOCX → odnotowanie wysyłki.
 
-- `/sprawy`: rejestr z `GET /api/cases` — numer porządkowy, numer sprawy, temat,
-  data wpływu, termin (z oznaczeniem kwerendy i liczbą dodatkowych dni),
-  data odpowiedzi, pilność, etap (z postępem odpowiedzi wydziałów) i inicjały
-  osoby prowadzącej. Wyszukiwanie, rok, etap, sortowanie (domyślnie od
-  najstarszych) i paginacja są po stronie serwera, filtry w URL. API listuje
-  jeden rok wpływu naraz. Eksport CSV obejmuje te same kolumny.
-- `/kalendarz`: siatka miesiąca z `GET /api/cases/calendar`; sprawy z terminem
-  dziś i jutro są wyróżnione.
-- `/sprawy/nowy` i `/sprawy/nowy/weryfikacja`: wgranie pliku do
-  `POST /api/cases/analyze`, weryfikacja tekstu i dat, kontrola numeru sprawy,
-  utworzenie sprawy w backendzie.
-- `/sprawy/:caseId/wniosek`: metryka i treść wniosku, zmiana terminu przez
-  kwerendę z powodem (można ją wycofać), powrót do poprzednich kroków.
-- `/sprawy/:caseId/analiza`: pytania, podpowiedź wydziałów (`/api/departments`)
-  i podobne odpowiedzi z archiwum (`POST /api/knowledge/search`) z procentem
-  podobieństwa.
-- `/sprawy/:caseId/materialy`: odpowiedzi wydziałów (pliki lub tekst),
-  jawne generowanie projektu odpowiedzi i jego edycja. Projekt wymaga
-  weryfikacji przez człowieka.
-- `/sprawy/:caseId/anonimizacja`: sugestie danych do ukrycia (szare), decyzje
-  urzędnika (po akceptacji czarne) i eksport, który naprawdę zastępuje tekst.
-  Nierozstrzygnięte sugestie blokują potwierdzenie.
-- `/baza-wiedzy`: dodawanie, edycja, ponowna indeksacja i usuwanie ustaw,
-  wzorów odpowiedzi i wytycznych (PDF, DOCX, TXT).
+| Adres                          | Widok                                                      |
+| ------------------------------ | ---------------------------------------------------------- |
+| `/sprawy`                      | rejestr z filtrami w URL i eksportem CSV                   |
+| `/kalendarz`                   | terminy spraw w siatce miesiąca                            |
+| `/sprawy/nowy`                 | wgranie pisma, odczyt AI, weryfikacja, utworzenie sprawy   |
+| `/sprawy/:caseId/wniosek`      | treść wniosku, zmiana terminu (kwerenda), usunięcie sprawy |
+| `/sprawy/:caseId/analiza`      | pytania, jednostki, podobne odpowiedzi z archiwum          |
+| `/sprawy/:caseId/materialy`    | odpowiedzi jednostek, generowanie i edycja projektu        |
+| `/sprawy/:caseId/anonimizacja` | decyzje o ukryciu fragmentów, eksport, odnotowanie wysyłki |
+| `/baza-wiedzy`                 | ustawy, wzory odpowiedzi i wytyczne (PDF, DOCX, TXT)       |
 
-Anonimizacja dotyczy tekstu odpowiedzi. Nie anonimizuje oryginalnego pliku
-PDF/DOCX ani załączników i nie zastępuje przeglądu przez człowieka. Aplikacja
-nie integruje się z EZD, ePUAP ani SIDAS.
+Anonimizacja dotyczy tekstu odpowiedzi, nie oryginalnego pliku ani załączników,
+i nie zastępuje przeglądu przez człowieka. Aplikacja nie integruje się z EZD,
+ePUAP ani SIDAS.
 
 ## Dane lokalne
 
 Backend nie przechowuje jeszcze części pól (tekst odpowiedzi, decyzje
-anonimizacji, notatki do materiałów, powody wyboru jednostek, lokalny etap
-pracy). Te pola zapisujemy w LocalStorage (`asystent-udip-demo-v1:<e-mail>`)
-jako nakładkę na dane z API, osobno dla każdego konta. Nie zapisujemy plików,
-haseł ani tokenów. Klucz `asystent-udip-session` trzyma tylko identyfikator
-i e-mail zalogowanego użytkownika (podpowiedź do pierwszego renderu); sesją jest
-ciasteczko httpOnly ustawiane przez serwer.
-Dane lokalne nie są szyfrowane. Używaj wyłącznie danych testowych.
-Jeżeli dane zmienią się w innej karcie, zapis w bieżącej zostaje wstrzymany,
-żeby nie nadpisać tamtych zmian.
-
-## Wdrożenie i model AI
-
-Frontend jest statyczną aplikacją (`npm run build`) i nie korzysta z usług
-zewnętrznych: font jest lokalną zależnością, teksty są w `pl.json`. Praca bez
-Internetu zależy od backendu, który docelowo powinien używać lokalnego modelu
-językowego i lokalnej bazy wektorowej (propozycja modelu: do ustalenia z
-zespołem backendowym).
+anonimizacji, notatki do materiałów, powody wyboru jednostek). Zapisujemy je w
+LocalStorage (`asystent-udip-demo-v1:<e-mail>`) jako nakładkę na dane z API,
+osobno dla każdego konta; wylogowanie je czyści. Nie zapisujemy plików ani
+haseł. Klucz `asystent-udip-session` trzyma tylko id i e-mail użytkownika jako
+podpowiedź do pierwszego renderu; sesją jest ciasteczko httpOnly z backendu.
+Dane lokalne nie są szyfrowane, używaj wyłącznie danych testowych.
 
 ## Uruchomienie
 
-Wymagany jest Node.js zgodny z wymaganiami Vite oraz npm.
+Wymagane: Node.js zgodny z Vite i npm.
 
 ```bash
 npm ci
+cp .env.example .env.local   # ustaw BACKEND_URL
 npm run dev
 ```
 
-Przed uruchomieniem skopiuj `.env.example` do `.env.local` i ustaw adres backendu
-bez końcowego `/api`:
-
-```env
-VITE_API_BASE_URL=http://localhost:5173
-BACKEND_URL=https://adres-backendu
-```
-
 Sesja to ciasteczko, więc frontend i API muszą być w jednej witrynie. W trybie
-deweloperskim serwer Vite przekazuje `/api` do `BACKEND_URL`, a aplikacja woła
-własny adres (`VITE_API_BASE_URL`). Bez proxy (np. backend na tym samym
-hoście) ustaw `VITE_API_BASE_URL` na adres backendu; backend musi wtedy mieć
-nasz adres w `CORS_ORIGINS`. W produkcji frontend i API powinny być pod jedną
-domeną lub subdomenami jednej domeny. Zmienne Vite są publiczne: nie umieszczaj
-w nich haseł ani tokenów. Adres serwera deweloperskiego pojawi się w terminalu.
+deweloperskim Vite przekazuje `/api` do `BACKEND_URL` (adres bez końcowego
+`/api`), a aplikacja woła własny adres (`VITE_API_BASE_URL=http://localhost:5173`).
+Bez proxy ustaw `VITE_API_BASE_URL` na adres backendu i dodaj nasz adres do jego
+`CORS_ORIGINS`; przy tunelu ngrok ustaw też `VITE_API_NGROK=true`. W produkcji
+frontend i API powinny być pod jedną domeną lub jej subdomenami. Zmienne
+`VITE_*` są publiczne: nie wpisuj w nich sekretów.
+
+Frontend to statyczna aplikacja (`npm run build`) bez usług zewnętrznych: font
+jest lokalną zależnością, a teksty są w `pl.json`.
 
 ## Weryfikacja
 
@@ -97,44 +68,32 @@ npm run build
 npm run format:check
 ```
 
-## Stack
+CircleCI uruchamia te same kroki, a z gałęzi `main` wdraża też build.
 
-- Vite, React, TypeScript, React Router i TanStack Query.
-- MUI z silnikiem styled-components i Lucide.
-- React Hook Form z walidacją w `rules`; date-fns do pracy z datami.
-- Axios z interceptorami i TanStack Query; odpowiedzi API walidujemy schematami Zod.
-- i18next i react-i18next — teksty pod typowanymi kluczami tłumaczeń.
-- Vitest, Testing Library, ESLint i Prettier.
+## Stack i konwencje
 
-Alias `@/` wskazuje na `src/`. Font jest lokalną zależnością, a nie zasobem
-pobieranym z CDN. Motyw MUI znajduje się w `src/app/theme.ts`, a style
-logowania w `src/features/auth/login-page.styles.ts`.
-Ścieżki i funkcja budująca adresy spraw znajdują się w `src/app/routes.ts`.
-Każdy widok sprawy ma własny folder z komponentem, stylami i testami;
-wspólne dla kilku widoków funkcje pozostają w `src/features/cases`.
+- Vite, React, TypeScript, React Router, TanStack Query.
+- MUI ze styled-components (`@mui/styled-engine-sc`) i Lucide; bez Emotion,
+  Tailwinda i shadcn.
+- React Hook Form (walidacja w `rules`), date-fns, Axios, Zod, i18next.
+- Vitest, Testing Library, ESLint, Prettier.
 
-Komponenty definiujemy jako `const Component = (...) => ...`. Stylowane
-komponenty tworzymy przez `styled` z MUI, korzystające z silnika
-`@mui/styled-engine-sc`. Alias silnika jest skonfigurowany w Vite i TypeScript,
-a npm override zapewnia ten sam silnik dla zależności uruchamianych przez
-Vitest. Nie używamy Emotion, Tailwind ani shadcn.
-`sx` stosujemy do drobnych, lokalnych korekt; większe układy i bardziej
-rozbudowane style umieszczamy w plikach `.styles.ts` danego widoku.
+Zasady:
 
-## Wspólne komponenty i formularze
-
-`src/components/form` zawiera `FormTextField` i `FormPasswordField`.
-Pola korzystają z `useController`: nazwa jest sprawdzana względem typu
-formularza, a wartość, ref, onBlur i komunikaty błędów są podłączane raz.
-`defaultValues` ustawiamy w `useForm`, nie w pojedynczych polach.
-Walidację deklarujemy w `rules` przy użyciu pola; nie używamy generatora formularzy.
-Pole hasła zarządza wyłącznie widocznością, nie regułami logowania.
-
-Ogólne style przycisków pozostają w motywie MUI. Do ładowania używamy
-wbudowanego `Button loading`, a do większej akcji `size="large"`,
-bez dodatkowego wrappera. `ScreenReaderText` znajduje się przy logowaniu;
-wspólny kontener sekcji `SectionCard` znajduje się w `components/ui`.
-Layout logowania pozostaje lokalny w feature `auth`.
+- Alias `@/` wskazuje na `src/`; ścieżki widoków są w `src/app/routes.ts`,
+  motyw MUI w `src/app/theme.ts`.
+- Komponenty to `const Component = (...) => ...`. Większe style niż drobne
+  korekty (`sx`) trafiają do plików `.styles.ts` obok widoku.
+- Każdy widok sprawy ma własny folder (komponent, style, testy); kod wspólny
+  dla kilku widoków leży w `src/features/cases`.
+- Wspólne pola formularzy (`FormTextField`, `FormPasswordField`) są w
+  `src/components/form`, a `SectionCard` i `FileDropArea` w `src/components/ui`.
+  `defaultValues` ustawiamy w `useForm`.
+- Wszystkie teksty interfejsu są w `src/i18n/locales/pl.json` i używane przez
+  `t('klucz')` (`Trans` dla tekstu z JSX). Typy kluczy wynikają ze słownika.
+  Tytuły testów piszemy po angielsku.
+- Nie umieszczaj w repozytorium prawdziwych dokumentów, danych osobowych ani
+  sekretów.
 
 ## Warstwa API
 
@@ -142,45 +101,20 @@ Cała komunikacja z backendem leży w `src/api/`:
 
 ```
 src/api/
-  client.ts          # Axios: adres API, timeout, ciasteczka, obsługa 401
-  session.ts         # sesja (id + e-mail jako podpowiedź w LocalStorage), useSession()
-  query-client.ts    # QueryClient z domyślnymi opcjami i globalnym onError
-  query-keys.ts      # fabryka kluczy Query, zakresowana e-mailem użytkownika
-  auth/        { auth.api.ts, auth.schemas.ts, auth.queries.ts }
-  departments/ { departments.api.ts, departments.schemas.ts, departments.queries.ts }
-  cases/       { cases.api.ts, cases.schemas.ts, cases.queries.ts }
+  client.ts       # Axios: adres API, timeout, ciasteczka, obsługa 401
+  session.ts      # sesja (id + e-mail jako podpowiedź), useSession()
+  query-client.ts # QueryClient z domyślnymi opcjami
+  query-keys.ts   # klucze Query zakresowane e-mailem użytkownika
+  auth/ departments/ cases/ knowledge/   # <zasób>.{api,schemas,queries}.ts
 ```
 
-- `*.schemas.ts` — schematy Zod zgodne z kontraktem backendu; typy wyprowadzamy
-  przez `z.infer`. Odpowiedź niezgodna z kontraktem kończy się `ZodError`.
-- `*.api.ts` — czyste funkcje wywołujące `apiClient` i parsujące odpowiedź.
-- `*.queries.ts` — hooki `useGetX` / `useCreateX` zwracające nazwane pola,
-  np. `{ departments, isDepartmentsLoading, isDepartmentsError }`. Mutacje spraw
-  zapisują zwrócony szczegół w cache i unieważniają listy.
+- `*.schemas.ts`: schematy Zod zgodne z kontraktem; odpowiedź niezgodna z nim
+  kończy się `ZodError`.
+- `*.api.ts`: czyste funkcje wołające `apiClient` i parsujące odpowiedź.
+- `*.queries.ts`: hooki `useGetX` / `useCreateX`; mutacje zapisują wynik w cache
+  i unieważniają listy. Komponenty nie wołają `apiClient` bezpośrednio.
 
 Klient wysyła ciasteczko sesji (`withCredentials`). 401 z każdego endpointu poza
-logowaniem i rejestracją kończy sesję (powrót do logowania); 401 z logowania
-obsługuje formularz. Po starcie zapamiętana sesja jest sprawdzana przez
-`GET /api/auth/me`; wylogowanie woła `POST /api/auth/logout`.
-Każda zmiana sesji czyści cache Query. Zapytania nie są ponawiane po błędach 4xx.
-Komponenty nie wołają `apiClient` bezpośrednio.
-
-Adres serwera ustawia `VITE_API_BASE_URL` w `.env.local`; bez niego requesty
-są odrzucane. Nie dodawaj sekretów do zmiennych `VITE_*`: są widoczne w przeglądarce.
-
-## Tłumaczenia
-
-Polskie teksty interfejsu, walidacji i dostępności znajdują się w
-`src/i18n/locales/pl.json`. Konfiguracja w `src/i18n/index.ts` ładuje je lokalnie,
-bez żądań do API. Obecnie jedynym językiem jest polski, bez przełącznika.
-Teksty widoków są pogrupowane w obiektach jednego pliku `pl.json`.
-
-W komponentach używamy `useTranslation()` i `t('auth.submit')`, a dla tekstu
-z elementami JSX — `Trans`. Typy kluczy wynikają ze słownika; nieistniejący
-klucz jest błędem TypeScript. Mock logowania zwraca kod błędu, który widok
-zamienia na tłumaczenie. Dane użytkowników z przyszłego API nie są
-tłumaczeniami — `nameKey` dotyczy wyłącznie użytkownika demonstracyjnego.
-W obrębie formularza używamy także `keyPrefix`, aby nie powtarzać prefiksów.
-
-Nie umieszczaj rzeczywistych dokumentów, danych osobowych ani sekretów
-w repozytorium lub przykładowych danych projektu.
+logowaniem i rejestracją kończy sesję; po starcie zapamiętana sesja jest
+sprawdzana przez `GET /api/auth/me`, a wylogowanie woła `POST /api/auth/logout`.
+Zmiana sesji czyści cache Query, a błędy 4xx nie są ponawiane.
