@@ -9,7 +9,11 @@ import { detail } from '@/test/case-detail'
 import { createTestQueryClient } from '@/test/query-client'
 import { CaseLayout } from './case-layout'
 
-vi.mock('@/api/cases/cases.api', () => ({ getCase: vi.fn() }))
+vi.mock('@/api/cases/cases.api', () => ({
+  getCase: vi.fn(),
+  extendDeadline: vi.fn(),
+  cancelExtension: vi.fn(),
+}))
 
 const renderCase = (id: string) =>
   render(

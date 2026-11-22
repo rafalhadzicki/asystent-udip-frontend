@@ -15,6 +15,7 @@ import { useGetCaseById } from '@/api/cases/cases.queries'
 import { composeApiCase } from '@/features/cases/case-from-api'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { displayDate } from '@/features/demo/date-utils'
+import { DeadlineExtension } from '@/features/cases/extension/deadline-extension'
 import { caseTabs, routes } from './routes'
 
 export const CaseLayout = () => {
@@ -90,6 +91,7 @@ export const CaseLayout = () => {
             }
           />
         </Stack>
+        <DeadlineExtension item={item} />
         {item.status === 'completed' && (
           <Alert severity="success" sx={{ mb: 2 }}>
             {t('caseDetail.completed', { date: displayDate(item.sentAt) })}

@@ -110,6 +110,12 @@ export const composeApiCase = (
     owner: detail.assignee?.email ?? detail.handlerInitials ?? '',
     requestText: detail.requestText ?? '',
     apiStatus: detail.status,
+    extension: {
+      dueAt: detail.dueAt,
+      extendedDueAt: detail.extendedDueAt ?? null,
+      reason: detail.extensionReason ?? '',
+      maxDate: detail.maxExtendedDueAt,
+    },
     source: request
       ? documentMeta(request)
       : {

@@ -612,5 +612,23 @@
       "cancel": "Anuluj",
       "confirm": "Usuń dokument"
     }
+  },
+  "extension": {
+    "open": "Przedłuż termin (kwerenda)",
+    "change": "Zmień przedłużenie terminu",
+    "withdraw": "Cofnij przedłużenie",
+    "title": "Przedłużenie terminu odpowiedzi (kwerenda)",
+    "info": "Termin ustawowy: {{from}}. Wnioskodawca musi zostać poinformowany o powodzie zwłoki (art. 13 ust. 2 UDIP) – aplikacja niczego nie wysyła, informację trzeba przekazać samodzielnie.",
+    "date": "Nowy termin",
+    "dateRange": "Dozwolony zakres: od {{from}} do {{to}} (maksymalnie 2 miesiące od wpływu).",
+    "reason": "Powód zwłoki",
+    "reasonHelp": "Wymagany, do 1000 znaków.",
+    "reasonRequired": "Podaj powód zwłoki.",
+    "active": "Termin przedłużony z {{from}} do {{to}}. Powód: {{reason}}",
+    "save": "Zapisz przedłużenie",
+    "cancel": "Anuluj",
+    "invalid": "Serwer odrzucił datę: musi być po terminie ustawowym i najwyżej 2 miesiące od wpływu.",
+    "conflict": "Nie można zmienić terminu: odpowiedź została już wysłana lub sprawa zmieniła się w międzyczasie. Odśwież stronę.",
+    "unknown": "Nie udało się zapisać zmiany terminu. Spróbuj ponownie."
   }
 }

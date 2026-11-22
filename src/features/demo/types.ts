@@ -36,6 +36,15 @@ export type Redaction = {
   decision: RedactionDecision
 }
 
+export type CaseExtension = {
+  // Statutory deadline, before any extension.
+  dueAt: string
+  extendedDueAt: string | null
+  reason: string
+  // Latest date the extended deadline may have.
+  maxDate: string
+}
+
 export type CaseItem = {
   id: string
   reference: string
@@ -51,6 +60,8 @@ export type CaseItem = {
   questions: Question[]
   // Only on cases composed from the API; never stored locally.
   apiStatus?: ApiCaseStatus
+  // Deadline extension (kwerenda), only on cases composed from the API.
+  extension?: CaseExtension
   analysisNeedsReview?: boolean
   departmentReasons?: Record<string, string>
   departments: Department[]
