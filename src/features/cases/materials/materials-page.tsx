@@ -1,4 +1,5 @@
 import { Layout, Columns, MaterialItem } from './materials-page.styles'
+import { FileDropArea } from '@/components/ui/file-drop-area'
 import { SectionCard as Card } from '@/components/ui/section-card'
 import {
   useEffect,
@@ -101,9 +102,7 @@ export const MaterialsPage = () => {
     })
   }
 
-  const addFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
+  const addFile = async (file: File | undefined) => {
     if (!file) return
     if (!selectedDepartments.some((department) => department.id === unit)) {
       setError(t('fileUnitError'))
@@ -368,73 +367,84 @@ export const MaterialsPage = () => {
           </Card>
         </Stack>
         <Stack spacing={3}>
-          <Card>
-            <Stack spacing={2}>
-              <Typography variant="h6" component="h3">
-                {t('materials')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('fileHelp')}
-              </Typography>
-              {item.materials.length ? (
-                <Stack component="ul" spacing={1} sx={{ p: 0, m: 0 }}>
-                  {item.materials.map((material) => (
-                    <MaterialItem key={material.id}>
-                      <Typography sx={{ fontWeight: 600 }}>
-                        {material.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {material.unit} · {material.addedAt} ·{' '}
-                        {Math.ceil(material.size / 1024)} KB
-                      </Typography>
-                      {!completed && (
-                        <Button
-                          size="small"
-                          aria-label={t('removeFile', { name: material.name })}
-                          onClick={() => void removeFile(material.id)}
-                        >
-                          {t('removeFile', { name: material.name })}
-                        </Button>
-                      )}
-                    </MaterialItem>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography color="text.secondary">
-                  {t('noMaterials')}
+          <FileDropArea
+            onFiles={([file]) => void addFile(file)}
+            disabled={completed || isUploadingCaseDocument}
+          >
+            <Card>
+              <Stack spacing={2}>
+                <Typography variant="h6" component="h3">
+                  {t('materials')}
                 </Typography>
-              )}
-              {!completed && (
-                <>
-                  <TextField
-                    select
-                    label={t('unit')}
-                    value={unit}
-                    onChange={(event) => setUnit(event.target.value)}
-                  >
-                    <MenuItem value="">
-                      <em>{t('chooseUnit')}</em>
-                    </MenuItem>
-                    {selectedDepartments.map((department) => (
-                      <MenuItem key={department.id} value={department.id}>
-                        {department.name}
-                      </MenuItem>
+                <Typography variant="body2" color="text.secondary">
+                  {t('fileHelp')}
+                </Typography>
+                {item.materials.length ? (
+                  <Stack component="ul" spacing={1} sx={{ p: 0, m: 0 }}>
+                    {item.materials.map((material) => (
+                      <MaterialItem key={material.id}>
+                        <Typography sx={{ fontWeight: 600 }}>
+                          {material.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {material.unit} · {material.addedAt} ·{' '}
+                          {Math.ceil(material.size / 1024)} KB
+                        </Typography>
+                        {!completed && (
+                          <Button
+                            size="small"
+                            aria-label={t('removeFile', {
+                              name: material.name,
+                            })}
+                            onClick={() => void removeFile(material.id)}
+                          >
+                            {t('removeFile', { name: material.name })}
+                          </Button>
+                        )}
+                      </MaterialItem>
                     ))}
-                  </TextField>
-                  <Button component="label" variant="outlined">
-                    {t('addFile')}
-                    <input
-                      type="file"
-                      accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-                      hidden
-                      disabled={isUploadingCaseDocument}
-                      onChange={(event) => void addFile(event)}
-                    />
-                  </Button>
-                </>
-              )}
-            </Stack>
-          </Card>
+                  </Stack>
+                ) : (
+                  <Typography color="text.secondary">
+                    {t('noMaterials')}
+                  </Typography>
+                )}
+                {!completed && (
+                  <>
+                    <TextField
+                      select
+                      label={t('unit')}
+                      value={unit}
+                      onChange={(event) => setUnit(event.target.value)}
+                    >
+                      <MenuItem value="">
+                        <em>{t('chooseUnit')}</em>
+                      </MenuItem>
+                      {selectedDepartments.map((department) => (
+                        <MenuItem key={department.id} value={department.id}>
+                          {department.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <Button component="label" variant="outlined">
+                      {t('addFile')}
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                        hidden
+                        disabled={isUploadingCaseDocument}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          const [file] = event.target.files ?? []
+                          event.target.value = ''
+                          void addFile(file)
+                        }}
+                      />
+                    </Button>
+                  </>
+                )}
+              </Stack>
+            </Card>
+          </FileDropArea>
           <Card>
             <Stack spacing={2}>
               <Typography variant="h6" component="h3">

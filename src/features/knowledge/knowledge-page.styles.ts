@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material'
 import { styled } from '@mui/material/styles'
+import { FileDropArea } from '@/components/ui/file-drop-area'
 import type { KnowledgeCategory } from '@/api/knowledge/knowledge.schemas'
 
 const PageRoot = styled('section')(({ theme }) => ({
@@ -141,7 +142,7 @@ const FormStack = styled('div')(({ theme }) => ({
   paddingTop: theme.spacing(1),
 }))
 
-const FilePicker = styled('div')(({ theme }) => ({
+const FilePicker = styled(FileDropArea)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-start',

@@ -192,7 +192,9 @@ export const KnowledgeFormDialog = ({
                     ? `${fileHelpId}-error`
                     : fileHelpId
                   return (
-                    <FilePicker>
+                    <FilePicker
+                      onFiles={([file]) => field.onChange(file ?? null)}
+                    >
                       <FileLabel htmlFor={fileInputId}>
                         {t('form.file')} *
                       </FileLabel>

@@ -1,5 +1,6 @@
 import { Box, Paper } from '@mui/material'
 import { styled } from '@mui/material/styles'
+import { FileDropArea } from '@/components/ui/file-drop-area'
 
 const Page = styled(Box)(({ theme }) => ({
   maxWidth: 1220,
@@ -14,7 +15,7 @@ const Card = styled(Paper)(({ theme }) => ({
   [theme.breakpoints.down('sm')]: { padding: theme.spacing(2) },
 }))
 
-const DropZone = styled(Box)(({ theme }) => ({
+const DropZone = styled(FileDropArea)(({ theme }) => ({
   minHeight: 310,
   border: '2px dashed #91a5bd',
   borderRadius: theme.shape.borderRadius,

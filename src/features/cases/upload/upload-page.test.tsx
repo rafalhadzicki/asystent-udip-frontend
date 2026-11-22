@@ -185,12 +185,15 @@ describe('UploadPage', () => {
     const zone = screen.getByText(
       'Przeciągnij plik PDF lub DOCX tutaj',
     ).parentElement!
-    fireEvent.drop(zone, { dataTransfer: { files: [pdf(), pdf()] } })
+    fireEvent.drop(zone, {
+      dataTransfer: { types: ['Files'], files: [pdf(), pdf()] },
+    })
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Wybierz tylko jeden plik',
     )
     fireEvent.drop(zone, {
       dataTransfer: {
+        types: ['Files'],
         files: [
           new File(['abc'], 'wniosek.docx', {
             type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

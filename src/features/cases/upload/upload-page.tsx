@@ -5,13 +5,7 @@ import {
   IconBox,
   HiddenInput,
 } from './upload-page.styles'
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type DragEvent,
-} from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import {
   Alert,
   Button,
@@ -144,10 +138,6 @@ export const UploadPage = () => {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) selectFiles(event.target.files)
   }
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    selectFiles(event.dataTransfer.files)
-  }
   const goBack = () => {
     reset()
     navigate(routes.cases)
@@ -179,8 +169,7 @@ export const UploadPage = () => {
       </Typography>
       <Card elevation={0}>
         <DropZone
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={handleDrop}
+          onFiles={selectFiles}
           aria-busy={state.status === 'processing'}
         >
           <HiddenInput
