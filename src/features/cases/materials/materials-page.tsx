@@ -21,10 +21,18 @@ import {
   Typography,
 } from '@mui/material'
 import { useDemoStore } from '@/features/demo/demo-store'
-import type { CaseItem, DocumentMeta } from '@/features/demo/types'
+import type { CaseItem } from '@/features/demo/types'
 import { caseTabs, routes } from '@/app/routes'
 import { DEMO_TODAY } from '@/features/demo/demo-data'
 import { validIsoDate } from '@/features/demo/date-utils'
+import {
+  useDeleteCaseDocument,
+  useDraftResponse,
+  useUploadCaseDocument,
+} from '@/api/cases/cases.queries'
+import type { DraftResponse } from '@/api/cases/cases.schemas'
+import { getApiErrorKind } from '@/api/errors'
+import { useAiErrorMessage } from '../use-ai-error-message'
 import { validateMaterialFile } from './materials-utils'
 
 const today = () => DEMO_TODAY
@@ -44,9 +52,16 @@ export const MaterialsPage = () => {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [sources, setSources] = useState<DraftResponse['sources']>([])
+  const { uploadCaseDocumentAsync, isUploadingCaseDocument } =
+    useUploadCaseDocument()
+  const { deleteCaseDocumentAsync } = useDeleteCaseDocument()
+  const { draftResponseAsync } = useDraftResponse()
+  const toAiErrorMessage = useAiErrorMessage()
   const [confirmReplace, setConfirmReplace] = useState(false)
   const [editorCaseId, setEditorCaseId] = useState<string | null>(null)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Identifies the running generation; a cancelled or outdated one is ignored.
+  const generationId = useRef(0)
   const selectedDepartments = item.departments.filter(
     (department) => department.selected,
   )
@@ -69,14 +84,13 @@ export const MaterialsPage = () => {
 
   useEffect(
     () => () => {
-      if (timer.current) clearTimeout(timer.current)
+      generationId.current += 1
     },
     [],
   )
 
   const cancelGeneration = () => {
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = null
+    generationId.current += 1
     setGenerating(false)
     setConfirmReplace(false)
   }
@@ -101,11 +115,11 @@ export const MaterialsPage = () => {
     invalidate({ contactedAt: contactDate })
   }
 
-  const addFile = (event: ChangeEvent<HTMLInputElement>) => {
+  const addFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!selectedDepartments.some((department) => department.name === unit)) {
+    if (!selectedDepartments.some((department) => department.id === unit)) {
       setError(t('fileUnitError'))
       return
     }
@@ -114,15 +128,39 @@ export const MaterialsPage = () => {
       setError(t(fileErrorKeys[fileError]))
       return
     }
-    const material: DocumentMeta = {
-      id: crypto.randomUUID(),
-      name: file.name,
-      size: file.size,
-      unit,
-      addedAt: today(),
+    try {
+      await uploadCaseDocumentAsync({
+        caseId: item.id,
+        file,
+        kind: 'DEPARTMENT_RESPONSE',
+        departmentId: unit,
+      })
+    } catch (uploadError) {
+      const kind = getApiErrorKind(uploadError)
+      setError(
+        t(
+          kind === 'tooLarge'
+            ? 'fileSizeError'
+            : kind === 'unsupported'
+              ? 'fileTypeError'
+              : 'uploadError',
+        ),
+      )
+      return
     }
     setError('')
-    invalidate({ materials: [...item.materials, material] })
+    invalidate({})
+  }
+
+  const removeFile = async (documentId: string) => {
+    try {
+      await deleteCaseDocumentAsync({ caseId: item.id, documentId })
+    } catch {
+      setError(t('deleteError'))
+      return
+    }
+    setError('')
+    invalidate({})
   }
 
   const changeResponse = (responseText: string) => {
@@ -137,8 +175,9 @@ export const MaterialsPage = () => {
     })
   }
 
-  const generate = () => {
-    if (!item.materialNotes.trim()) {
+  const generate = async () => {
+    const notes = item.materialNotes.trim()
+    if (!notes && item.materials.length === 0) {
       setError(t('notesRequired'))
       return
     }
@@ -146,29 +185,30 @@ export const MaterialsPage = () => {
     setConfirmReplace(false)
     setSaved(false)
     setGenerating(true)
+    generationId.current += 1
+    const requestId = generationId.current
     const signature = inputSignature
-    const response = [
-      t('draftHeading'),
-      t('draftGreeting', { applicant: item.applicant }),
-      `${t('draftQuestions')}\n${item.questions
-        .filter((question) => question.selected)
-        .map((question) => `• ${question.text}`)
-        .join('\n')}`,
-      `${t('draftMaterials')}\n${item.materialNotes.trim()}`,
-      t('draftReview'),
-    ].join('\n\n')
-    timer.current = setTimeout(() => {
-      timer.current = null
-      setGenerating(false)
-      if (latestSignature.current !== signature) return
+    try {
+      const draft = await draftResponseAsync({ id: item.id, notes })
+      if (
+        requestId !== generationId.current ||
+        latestSignature.current !== signature
+      )
+        return
+      setSources(draft.sources)
       setEditorCaseId(item.id)
       updateCase(item.id, {
-        responseText: response,
+        responseText: draft.text,
         status: 'draft',
         redactions: [],
         redactionConfirmed: false,
       })
-    }, 800)
+    } catch (generateError) {
+      if (requestId === generationId.current)
+        setError(toAiErrorMessage(generateError, t('generateError')))
+    } finally {
+      if (requestId === generationId.current) setGenerating(false)
+    }
   }
 
   const saveResponse = () => {
@@ -274,7 +314,6 @@ export const MaterialsPage = () => {
                   }
                 />
               </Stack>
-              <Alert severity="info">{t('demoNotice')}</Alert>
               {stale && <Alert severity="warning">{t('stale')}</Alert>}
               {!item.responseText && (
                 <Typography color="text.secondary">
@@ -295,6 +334,35 @@ export const MaterialsPage = () => {
                   },
                 }}
               />
+              {sources.length > 0 && (
+                <Stack
+                  spacing={1}
+                  component="section"
+                  aria-label={t('sources')}
+                >
+                  <Typography variant="subtitle2">{t('sources')}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('sourcesHelp')}
+                  </Typography>
+                  {sources.map((source, index) => (
+                    <MaterialItem key={`${source.documentId}-${index}`}>
+                      <Typography sx={{ fontWeight: 600 }}>
+                        {source.documentName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {source.kind === 'KNOWLEDGE' && source.category
+                          ? t(`sourceCategory.${source.category}`)
+                          : t('sourceCase', {
+                              unit: source.departmentSymbol ?? '—',
+                            })}
+                      </Typography>
+                      <Typography variant="body2">
+                        “{source.excerpt}”
+                      </Typography>
+                    </MaterialItem>
+                  ))}
+                </Stack>
+              )}
               {!completed && (
                 <>
                   {confirmReplace && (
@@ -302,7 +370,7 @@ export const MaterialsPage = () => {
                       <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
                         <Typography>{t('replacePrompt')}</Typography>
                         <Stack direction="row" spacing={1}>
-                          <Button onClick={generate}>
+                          <Button onClick={() => void generate()}>
                             {t('replaceConfirm')}
                           </Button>
                           <Button onClick={() => setConfirmReplace(false)}>
@@ -321,7 +389,9 @@ export const MaterialsPage = () => {
                       variant="contained"
                       disabled={generating}
                       onClick={() =>
-                        item.responseText ? setConfirmReplace(true) : generate()
+                        item.responseText
+                          ? setConfirmReplace(true)
+                          : void generate()
                       }
                     >
                       {generating ? (
@@ -378,13 +448,7 @@ export const MaterialsPage = () => {
                         <Button
                           size="small"
                           aria-label={t('removeFile', { name: material.name })}
-                          onClick={() =>
-                            invalidate({
-                              materials: item.materials.filter(
-                                (entry) => entry.id !== material.id,
-                              ),
-                            })
-                          }
+                          onClick={() => void removeFile(material.id)}
                         >
                           {t('removeFile', { name: material.name })}
                         </Button>
@@ -409,7 +473,7 @@ export const MaterialsPage = () => {
                       <em>{t('chooseUnit')}</em>
                     </MenuItem>
                     {selectedDepartments.map((department) => (
-                      <MenuItem key={department.id} value={department.name}>
+                      <MenuItem key={department.id} value={department.id}>
                         {department.name}
                       </MenuItem>
                     ))}
@@ -420,7 +484,8 @@ export const MaterialsPage = () => {
                       type="file"
                       accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                       hidden
-                      onChange={addFile}
+                      disabled={isUploadingCaseDocument}
+                      onChange={(event) => void addFile(event)}
                     />
                   </Button>
                 </>

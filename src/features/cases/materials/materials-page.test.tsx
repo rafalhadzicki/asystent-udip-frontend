@@ -1,7 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { AxiosError, AxiosHeaders } from 'axios'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as casesApi from '@/api/cases/cases.api'
+import { createTestQueryClient } from '@/test/query-client'
 import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
 import {
   DEMO_STORAGE_KEY,
@@ -10,6 +14,12 @@ import {
 } from '@/features/demo/demo-store'
 import type { CaseItem } from '@/features/demo/types'
 import { MaterialsPage } from './materials-page'
+
+vi.mock('@/api/cases/cases.api', () => ({
+  uploadCaseDocument: vi.fn(),
+  deleteCaseDocument: vi.fn(),
+  draftResponse: vi.fn(),
+}))
 
 const CaseOutlet = () => {
   const { cases } = useDemoStore()
@@ -24,19 +34,21 @@ const renderPage = (changes: Partial<CaseItem> = {}) => {
     JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
   )
   return render(
-    <DemoProvider>
-      <MemoryRouter initialEntries={['/sprawy/demo-1/materialy']}>
-        <Routes>
-          <Route path="/sprawy/demo-1" element={<CaseOutlet />}>
-            <Route path="materialy" element={<MaterialsPage />} />
-            <Route
-              path="anonimizacja"
-              element={<div>Anonimizacja testowa</div>}
-            />
-          </Route>
-        </Routes>
-      </MemoryRouter>
-    </DemoProvider>,
+    <QueryClientProvider client={createTestQueryClient()}>
+      <DemoProvider>
+        <MemoryRouter initialEntries={['/sprawy/demo-1/materialy']}>
+          <Routes>
+            <Route path="/sprawy/demo-1" element={<CaseOutlet />}>
+              <Route path="materialy" element={<MaterialsPage />} />
+              <Route
+                path="anonimizacja"
+                element={<div>Anonimizacja testowa</div>}
+              />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </DemoProvider>
+    </QueryClientProvider>,
   )
 }
 
@@ -45,7 +57,12 @@ const savedCase = (): CaseItem =>
     .cases[0] as CaseItem
 
 describe('MaterialsPage', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    localStorage.clear()
+    vi.mocked(casesApi.uploadCaseDocument).mockReset()
+    vi.mocked(casesApi.deleteCaseDocument).mockReset()
+    vi.mocked(casesApi.draftResponse).mockReset()
+  })
 
   it('blokuje dalszą pracę do czasu przeglądu zmienionego wniosku', () => {
     renderPage({ analysisNeedsReview: true })
@@ -58,69 +75,82 @@ describe('MaterialsPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('does not create a response when materials are received and requires entered content', async () => {
+  it('does not create a response without materials and notes', async () => {
     const user = userEvent.setup()
-    renderPage({
-      materials: [
-        {
-          id: 'm',
-          name: 'dane.pdf',
-          size: 10,
-          unit: 'ZDMiKP',
-          addedAt: '2026-11-21',
-        },
-      ],
-    })
-    expect(screen.getByText('Materiały otrzymane')).toBeInTheDocument()
+    renderPage({ materials: [], materialNotes: '' })
+    expect(screen.getByText('Oczekiwanie na materiały')).toBeInTheDocument()
     expect(screen.getByLabelText('Treść odpowiedzi')).toHaveValue('')
     expect(screen.getByLabelText('Treść odpowiedzi')).toHaveAttribute(
       'readonly',
     )
     await user.click(screen.getByRole('button', { name: 'Generuj projekt' }))
     expect(
-      screen.getByText(
-        'Wpisz lub wklej treść materiałów przed wygenerowaniem projektu.',
-      ),
+      screen.getByText(/Dodaj materiał z jednostki albo wpisz/),
     ).toBeInTheDocument()
+    expect(casesApi.draftResponse).not.toHaveBeenCalled()
     expect(savedCase().responseText).toBe('')
     expect(
       screen.getByRole('button', { name: 'Przejdź do anonimizacji' }),
     ).toBeDisabled()
   })
 
-  it('generates only from selected scope and entered material, then saves exactly that response', async () => {
-    const user = userEvent.setup()
-    renderPage({
-      questions: [
-        { id: 'one', text: 'Zakres pierwszy', selected: true },
-        { id: 'two', text: 'Zakres pominięty', selected: false },
+  it('generates the draft on the server, shows its sources and saves exactly that response', async () => {
+    vi.mocked(casesApi.draftResponse).mockResolvedValue({
+      text: 'Szkic z serwera [UZUPEŁNIJ: data]',
+      sources: [
+        {
+          kind: 'KNOWLEDGE',
+          documentId: 'k-1',
+          documentName: 'Ustawa o dostępie',
+          category: 'LAW',
+          excerpt: 'Art. 1 ust. 1',
+        },
       ],
     })
+    const user = userEvent.setup()
+    renderPage()
     fireEvent.change(screen.getByLabelText('Treść materiałów'), {
       target: { value: 'Informacja z wydziału.' },
     })
     await user.click(screen.getByRole('button', { name: 'Generuj projekt' }))
     expect(
-      screen.getByRole('button', { name: /Generowanie projektu/ }),
-    ).toBeDisabled()
+      await screen.findByDisplayValue('Szkic z serwera [UZUPEŁNIJ: data]'),
+    ).toBeInTheDocument()
+    expect(vi.mocked(casesApi.draftResponse).mock.calls[0][0]).toEqual({
+      id: 'demo-1',
+      notes: 'Informacja z wydziału.',
+    })
+    expect(screen.getByText('Ustawa o dostępie')).toBeInTheDocument()
+    expect(screen.getByText(/Art\. 1 ust\. 1/)).toBeInTheDocument()
     await waitFor(() =>
-      expect(
-        (screen.getByLabelText('Treść odpowiedzi') as HTMLTextAreaElement)
-          .value,
-      ).toContain('Informacja z wydziału.'),
+      expect(savedCase().responseText).toBe(
+        'Szkic z serwera [UZUPEŁNIJ: data]',
+      ),
     )
-    const response = screen.getByLabelText(
-      'Treść odpowiedzi',
-    ) as HTMLTextAreaElement
-    expect(response.value).toContain('Zakres pierwszy')
-    expect(response.value).not.toContain('Zakres pominięty')
-    expect(response.value).toContain('Jan Demonstracyjny')
-    await waitFor(() => expect(savedCase().responseText).toBe(response.value))
     expect(savedCase().status).toBe('draft')
     await user.click(
       screen.getByRole('link', { name: 'Przejdź do anonimizacji' }),
     )
     expect(screen.getByText('Anonimizacja testowa')).toBeInTheDocument()
+  })
+
+  it('shows a message when the AI is not configured', async () => {
+    vi.mocked(casesApi.draftResponse).mockRejectedValue(
+      new AxiosError('x', undefined, undefined, null, {
+        data: { code: 'AI_NOT_CONFIGURED' },
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      }),
+    )
+    const user = userEvent.setup()
+    renderPage({ materialNotes: 'Treść' })
+    await user.click(screen.getByRole('button', { name: 'Generuj projekt' }))
+    expect(
+      await screen.findByText(/Funkcje AI nie są skonfigurowane/),
+    ).toBeInTheDocument()
+    expect(savedCase().responseText).toBe('')
   })
 
   it('preserves stale edits and invalidates decisions after changing materials', async () => {
@@ -155,14 +185,21 @@ describe('MaterialsPage', () => {
     expect(savedCase().status).toBe('draft')
   })
 
-  it('cancels a pending generation when notes change', async () => {
+  it('ignores a generation finished after the notes changed', async () => {
+    let finish: (value: { text: string; sources: [] }) => void = () => undefined
+    vi.mocked(casesApi.draftResponse).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+    )
     const user = userEvent.setup()
     renderPage({ materialNotes: 'Pierwsza treść' })
     await user.click(screen.getByRole('button', { name: 'Generuj projekt' }))
     fireEvent.change(screen.getByLabelText('Treść materiałów'), {
       target: { value: 'Nowa treść' },
     })
-    await new Promise((resolve) => setTimeout(resolve, 900))
+    finish({ text: 'Spóźniony szkic', sources: [] })
+    await new Promise((resolve) => setTimeout(resolve, 50))
     expect(screen.getByLabelText('Treść odpowiedzi')).toHaveValue('')
     expect(savedCase().materialNotes).toBe('Nowa treść')
     expect(savedCase().responseText).toBe('')
@@ -185,7 +222,18 @@ describe('MaterialsPage', () => {
     ).toBeDisabled()
   })
 
-  it('validates files and stores only metadata with the selected unit', async () => {
+  it('validates files and sends them to the server with the selected unit', async () => {
+    vi.mocked(casesApi.uploadCaseDocument).mockResolvedValue({
+      id: 'doc-9',
+      kind: 'DEPARTMENT_RESPONSE',
+      department: null,
+      originalName: 'dane.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 3,
+      textExtractionStatus: 'EXTRACTED',
+      uploadedBy: { id: 'u', email: 'u@example.test' },
+      createdAt: '2026-11-21T10:00:00.000Z',
+    })
     const user = userEvent.setup({ applyAccept: false })
     const { container } = renderPage()
     const input =
@@ -212,19 +260,45 @@ describe('MaterialsPage', () => {
       }),
     )
     expect(screen.getByText('Plik przekracza limit 25 MB.')).toBeInTheDocument()
+    expect(casesApi.uploadCaseDocument).not.toHaveBeenCalled()
     await user.upload(
       input!,
       new File(['abc'], 'dane.pdf', { type: 'application/pdf' }),
     )
-    expect(screen.getByText('dane.pdf')).toBeInTheDocument()
-    await waitFor(() => expect(savedCase().materials).toHaveLength(1))
-    expect(savedCase().materials[0]).toMatchObject({
-      name: 'dane.pdf',
-      size: 3,
-      unit: 'ZDMiKP',
+    await waitFor(() => expect(casesApi.uploadCaseDocument).toHaveBeenCalled())
+    const sent = vi.mocked(casesApi.uploadCaseDocument).mock.calls[0][0]
+    expect(sent).toMatchObject({
+      caseId: 'demo-1',
+      kind: 'DEPARTMENT_RESPONSE',
     })
-    expect(JSON.stringify(savedCase().materials)).not.toContain('abc')
+    expect(sent.departmentId).toEqual(expect.any(String))
+    expect(sent.file.name).toBe('dane.pdf')
+    await waitFor(() => expect(savedCase().status).toBe('waiting'))
     expect(savedCase().responseText).toBe('')
+  })
+
+  it('removes a material on the server', async () => {
+    vi.mocked(casesApi.deleteCaseDocument).mockResolvedValue()
+    const user = userEvent.setup()
+    renderPage({
+      materials: [
+        {
+          id: 'm1',
+          name: 'dane.pdf',
+          size: 10,
+          unit: 'ZDMiKP',
+          addedAt: '2026-11-21',
+        },
+      ],
+    })
+    await user.click(
+      screen.getByRole('button', { name: 'Usuń materiał dane.pdf' }),
+    )
+    await waitFor(() => expect(casesApi.deleteCaseDocument).toHaveBeenCalled())
+    expect(vi.mocked(casesApi.deleteCaseDocument).mock.calls[0][0]).toEqual({
+      caseId: 'demo-1',
+      documentId: 'm1',
+    })
   })
 
   it('clears redaction decisions on response editing and asks before replacement', async () => {

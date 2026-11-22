@@ -70,9 +70,6 @@ const departmentsOf = (
 // Starting point of the local workflow, used until the user changes something.
 const localDefaults = (detail: CaseDetail) => ({
   status: localStatus[detail.status],
-  materials: detail.documents
-    .filter(({ kind }) => kind !== 'REQUEST')
-    .map(documentMeta),
   materialNotes: detail.notes ?? '',
   contactedAt: '',
   responseText: '',
@@ -93,6 +90,9 @@ export const composeApiCase = (
     ...localDefaults(detail),
     ...overlay,
     status: resolveStatus(detail, overlay),
+    materials: detail.documents
+      .filter(({ kind }) => kind !== 'REQUEST')
+      .map(documentMeta),
     questions: questionsOf(detail),
     departments: departmentsOf(detail, overlay.departmentReasons),
     id: detail.id,

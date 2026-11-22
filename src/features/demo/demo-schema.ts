@@ -19,7 +19,6 @@ export const caseLocalSchema = z.object({
   analysisNeedsReview: z.boolean().optional(),
   // The AI reason of a department; the API stores only the department itself.
   departmentReasons: z.record(z.string(), z.string()).optional(),
-  materials: z.array(documentSchema),
   materialNotes: z.string(),
   contactedAt: optionalIsoDate,
   responseText: z.string(),
@@ -47,6 +46,7 @@ export const pickLocalFields = (changes: object): CaseOverlay =>
   )
 
 const localCaseSchema = caseLocalSchema.extend({
+  materials: z.array(documentSchema),
   writtenAt: optionalIsoDate,
   questions: z.array(
     z.object({
