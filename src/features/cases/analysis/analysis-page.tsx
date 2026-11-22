@@ -1,6 +1,11 @@
 import { Layout, Item, Actions } from './analysis-page.styles'
 import { SectionCard as Panel } from '@/components/ui/section-card'
-import { selectedDepartments, selectedQuestions } from './analysis-utils'
+import { useAiErrorMessage } from '../use-ai-error-message'
+import {
+  bestMatchPerDocument,
+  selectedDepartments,
+  selectedQuestions,
+} from './analysis-utils'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useOutletContext } from 'react-router-dom'
@@ -17,8 +22,10 @@ import {
 } from '@mui/material'
 import { ArrowRight, Plus, Trash2 } from 'lucide-react'
 import { StepBackButton } from '../step-back-button'
-import { useGetKnowledgeList } from '@/api/knowledge/knowledge.queries'
-import type { KnowledgeDocument } from '@/api/knowledge/knowledge.schemas'
+import {
+  useGetKnowledgeDocument,
+  useSearchKnowledge,
+} from '@/api/knowledge/knowledge.queries'
 import { KnowledgePreviewDialog } from '@/features/knowledge/knowledge-dialogs'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { caseTabs, routes } from '@/app/routes'
@@ -30,10 +37,27 @@ import {
 } from '@/api/cases/cases.queries'
 
 const EXAMPLES_LIMIT = 5
+// The search endpoint accepts at most 2000 characters of the query.
+const MAX_QUERY_LENGTH = 2000
 
 const newId = () => globalThis.crypto.randomUUID()
 
+// The search finds fragments; the preview needs the whole document.
+const ExamplePreview = ({
+  id,
+  onClose,
+}: {
+  id: string
+  onClose: () => void
+}) => {
+  const { knowledgeDocument } = useGetKnowledgeDocument(id)
+  return knowledgeDocument ? (
+    <KnowledgePreviewDialog item={knowledgeDocument} onClose={onClose} />
+  ) : null
+}
+
 const AnalysisEditor = ({ item }: { item: CaseItem }) => {
+  const aiErrorMessage = useAiErrorMessage()
   const { t } = useTranslation('translation', { keyPrefix: 'analysis' })
   const { updateCase } = useDemoStore()
   const navigate = useNavigate()
@@ -53,7 +77,7 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
     useSetCaseQuestions()
   const { setCaseDepartmentsAsync, isSettingCaseDepartments } =
     useSetCaseDepartments()
-  const [example, setExample] = useState<KnowledgeDocument | null>(null)
+  const [exampleId, setExampleId] = useState<string | null>(null)
   const readonly = item.status === 'completed'
   const { departments: departmentOptions, isDepartmentsError } =
     useGetDepartments()
@@ -79,12 +103,18 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const departmentsInvalid = !departments.some(
     (department) => department.selected,
   )
-  const { knowledgeList } = useGetKnowledgeList({
-    category: 'RESPONSE',
-    limit: EXAMPLES_LIMIT,
-    offset: 0,
-  })
-  const examples = knowledgeList?.items ?? []
+  const searchText = item.requestText.trim().slice(0, MAX_QUERY_LENGTH)
+  const {
+    knowledgeMatches,
+    isSearchingKnowledge,
+    isKnowledgeSearchError,
+    knowledgeSearchError,
+    refetchKnowledgeSearch,
+  } = useSearchKnowledge(
+    { query: searchText, k: EXAMPLES_LIMIT, categories: ['RESPONSE'] },
+    Boolean(searchText),
+  )
+  const examples = bestMatchPerDocument(knowledgeMatches ?? [])
 
   const updateQuestion = (id: string, changes: Partial<Question>) => {
     setQuestions((current) =>
@@ -466,17 +496,49 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
                 {t('examplesDescription')}
               </Typography>
             </Box>
-            {examples.length === 0 && (
+            {!searchText && (
+              <Typography variant="body2">{t('examplesNoText')}</Typography>
+            )}
+            {isSearchingKnowledge && (
+              <Typography role="status" variant="body2">
+                {t('examplesSearching')}
+              </Typography>
+            )}
+            {isKnowledgeSearchError && (
+              <Alert
+                severity="error"
+                action={
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => void refetchKnowledgeSearch()}
+                  >
+                    {t('examplesRetry')}
+                  </Button>
+                }
+              >
+                {aiErrorMessage(knowledgeSearchError, t('examplesError'))}
+              </Alert>
+            )}
+            {knowledgeMatches && examples.length === 0 && (
               <Typography variant="body2">{t('examplesEmpty')}</Typography>
             )}
             {examples.map((entry) => (
-              <Item key={entry.id}>
+              <Item key={entry.documentId}>
                 <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
-                  <Typography sx={{ fontWeight: 600 }}>{entry.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('exampleFile', { name: entry.originalName })}
+                  <Typography sx={{ fontWeight: 600 }}>
+                    {entry.documentName}
                   </Typography>
-                  <Button size="small" onClick={() => setExample(entry)}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('exampleScore', {
+                      percent: Math.round(entry.score * 100),
+                    })}
+                  </Typography>
+                  <Typography variant="body2">{entry.content}</Typography>
+                  <Button
+                    size="small"
+                    onClick={() => setExampleId(entry.documentId)}
+                  >
                     {t('exampleOpen')}
                   </Button>
                 </Stack>
@@ -507,11 +569,8 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
           {t(readonly ? 'viewMaterials' : 'continue')}
         </Button>
       </Actions>
-      {example && (
-        <KnowledgePreviewDialog
-          item={example}
-          onClose={() => setExample(null)}
-        />
+      {exampleId && (
+        <ExamplePreview id={exampleId} onClose={() => setExampleId(null)} />
       )}
     </Stack>
   )

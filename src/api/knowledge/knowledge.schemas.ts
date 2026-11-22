@@ -34,6 +34,21 @@ export const knowledgeListSchema = z.object({
   total: z.number(),
 })
 
+export const knowledgeSearchSchema = z.object({
+  matches: z.array(
+    z.object({
+      chunkId: z.string(),
+      documentId: z.string(),
+      documentName: z.string(),
+      category: knowledgeCategorySchema,
+      position: z.number(),
+      content: z.string(),
+      // Cosine similarity to the query, 1 = identical.
+      score: z.number(),
+    }),
+  ),
+})
+
 export type KnowledgeCategory = z.infer<typeof knowledgeCategorySchema>
 export type KnowledgeIndexStatus = z.infer<typeof knowledgeIndexStatusSchema>
 export type KnowledgeDocument = z.infer<typeof knowledgeDocumentSchema>
@@ -42,6 +57,14 @@ export type KnowledgeDocumentDetail = z.infer<
 >
 export type KnowledgeList = z.infer<typeof knowledgeListSchema>
 
+export type KnowledgeMatch = z.infer<
+  typeof knowledgeSearchSchema
+>['matches'][number]
+export type KnowledgeSearchParams = {
+  query: string
+  k?: number
+  categories?: KnowledgeCategory[]
+}
 export type KnowledgeListParams = {
   q?: string
   category?: KnowledgeCategory

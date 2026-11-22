@@ -307,10 +307,9 @@
     "departmentDuplicate": "Ta jednostka jest już na liście.",
     "contact": "Skontaktuj się z wybranymi jednostkami poza aplikacją. Otrzymane materiały dodaj w kolejnym etapie.",
     "examplesTitle": "Przykłady z bazy wiedzy",
-    "examplesDescription": "Ostatnio dodane wzory odpowiedzi z bazy wiedzy. Ich przydatność dla tej sprawy wymaga samodzielnej oceny.",
-    "examplesEmpty": "Brak odpowiedzi w bazie wiedzy.",
+    "examplesDescription": "Fragmenty odpowiedzi z bazy wiedzy najbardziej zbliżone do treści wniosku. To materiał pomocniczy, nie dowód aktualnych faktów – przydatność dla tej sprawy ocenia urzędnik.",
+    "examplesEmpty": "Nie znaleziono podobnych odpowiedzi w bazie wiedzy.",
     "exampleOpen": "Zobacz treść",
-    "exampleFile": "Plik: {{name}}",
     "close": "Zamknij",
     "questionRequired": "Wybierz co najmniej jedno pytanie i uzupełnij treść każdego wybranego pytania.",
     "departmentRequired": "Wybierz co najmniej jedną jednostkę.",
@@ -320,7 +319,12 @@
     "readonly": "Sprawa jest zakończona. Analiza jest dostępna tylko do odczytu.",
     "save": "Zapisz ustalenia",
     "continue": "Zapisz i przejdź do materiałów",
-    "viewMaterials": "Przejdź do materiałów"
+    "viewMaterials": "Przejdź do materiałów",
+    "examplesNoText": "Uzupełnij treść wniosku, aby wyszukać podobne odpowiedzi.",
+    "examplesSearching": "Szukam podobnych odpowiedzi…",
+    "examplesError": "Nie udało się wyszukać podobnych odpowiedzi.",
+    "examplesRetry": "Spróbuj ponownie",
+    "exampleScore": "Podobieństwo: {{percent}}%"
   },
   "materials": {
     "analysisReviewRequired": "Przed dalszą pracą przejrzyj i zapisz analizę zmienionego wniosku.",

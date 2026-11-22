@@ -1,4 +1,7 @@
-import type { KnowledgeListParams } from './knowledge/knowledge.schemas'
+import type {
+  KnowledgeListParams,
+  KnowledgeSearchParams,
+} from './knowledge/knowledge.schemas'
 import type {
   CaseListParams,
   CaseNumberCheckParams,
@@ -17,6 +20,8 @@ export const queryKeys = {
       [...queryKeys.knowledge.all(email), 'list', params] as const,
     detail: (email: string, id: string) =>
       [...queryKeys.knowledge.all(email), 'detail', id] as const,
+    search: (email: string, params: KnowledgeSearchParams) =>
+      [...queryKeys.knowledge.all(email), 'search', params] as const,
   },
   cases: {
     all: (email: string) => [...userScope(email), 'cases'] as const,

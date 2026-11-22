@@ -9,6 +9,7 @@ import {
   DemoProvider,
   useDemoStore,
 } from '@/features/demo/demo-store'
+import type { KnowledgeMatch } from '@/api/knowledge/knowledge.schemas'
 import type { CaseItem } from '@/features/demo/types'
 import { AnalysisPage } from './analysis-page'
 import * as knowledgeApi from '@/api/knowledge/knowledge.api'
@@ -24,7 +25,7 @@ vi.mock('@/api/cases/cases.api', () => ({
 }))
 
 vi.mock('@/api/knowledge/knowledge.api', () => ({
-  getKnowledgeList: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+  searchKnowledge: vi.fn().mockResolvedValue({ matches: [] }),
   getKnowledgeDocument: vi.fn().mockResolvedValue({
     id: 'x',
     name: 'Przykład',
@@ -98,6 +99,9 @@ describe('analiza sprawy', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.mocked(departmentApi.getDepartments).mockReset().mockResolvedValue([])
+    vi.mocked(knowledgeApi.searchKnowledge)
+      .mockReset()
+      .mockResolvedValue({ matches: [] })
   })
 
   it('podpowiada jednostki z API i zapisuje wybór lokalnie', async () => {
@@ -237,27 +241,8 @@ describe('analiza sprawy', () => {
     ).toBeInTheDocument()
   })
 
-  it('adds and removes a custom unit and displays stored response descriptions only', async () => {
+  it('adds and removes a custom unit', async () => {
     const user = userEvent.setup()
-    vi.mocked(knowledgeApi.getKnowledgeList).mockResolvedValue({
-      total: 1,
-      items: [
-        {
-          id: 'x',
-          name: 'Przykład',
-          category: 'RESPONSE',
-          originalName: 'odpowiedz.txt',
-          mimeType: 'text/plain',
-          sizeBytes: 10,
-          textExtractionStatus: 'EXTRACTED',
-          indexStatus: 'INDEXED',
-          chunkCount: 1,
-          uploadedBy: { id: 'u', email: 'u@example.test' },
-          createdAt: '2026-01-01T10:00:00.000Z',
-          updatedAt: '2026-01-01T10:00:00.000Z',
-        },
-      ],
-    })
     renderPage(createDemoCases()[0])
     await user.type(screen.getByLabelText('Nazwa jednostki'), 'Archiwum')
     await user.type(
@@ -285,16 +270,105 @@ describe('analiza sprawy', () => {
         ),
       ).toBe(false),
     )
-    expect(await screen.findByText('Przykład')).toBeInTheDocument()
-    expect(vi.mocked(knowledgeApi.getKnowledgeList).mock.calls[0][0]).toEqual({
+  })
+
+  describe('similar responses', () => {
+    const match = (
+      overrides: Partial<KnowledgeMatch> = {},
+    ): KnowledgeMatch => ({
+      chunkId: 'c1',
+      documentId: 'doc-1',
+      documentName: 'Odpowiedź o uczniach',
       category: 'RESPONSE',
-      limit: 5,
-      offset: 0,
+      position: 0,
+      content: 'Liczba uczniów cudzoziemców wynosi 12.',
+      score: 0.82,
+      ...overrides,
     })
-    await user.click(screen.getByRole('button', { name: 'Zobacz treść' }))
-    expect(
-      await within(screen.getByRole('dialog')).findByText('Treść wzoru'),
-    ).toBeInTheDocument()
+
+    it('searches with the request text and shows the best fragment per document', async () => {
+      vi.mocked(knowledgeApi.searchKnowledge).mockResolvedValue({
+        matches: [
+          match({ chunkId: 'c2', score: 0.4, content: 'Słabszy fragment' }),
+          match(),
+          match({
+            chunkId: 'c3',
+            documentId: 'doc-2',
+            documentName: 'Inna odpowiedź',
+            score: 0.6,
+            content: 'Fragment drugiego dokumentu',
+          }),
+        ],
+      })
+      const item = createDemoCases()[0]
+      renderPage(item)
+
+      expect(
+        await screen.findByText('Odpowiedź o uczniach'),
+      ).toBeInTheDocument()
+      expect(screen.getByText('Podobieństwo: 82%')).toBeInTheDocument()
+      expect(
+        screen.getByText('Liczba uczniów cudzoziemców wynosi 12.'),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('Słabszy fragment')).not.toBeInTheDocument()
+      expect(screen.getByText('Inna odpowiedź')).toBeInTheDocument()
+      expect(vi.mocked(knowledgeApi.searchKnowledge).mock.calls[0][0]).toEqual({
+        query: item.requestText.trim(),
+        k: 5,
+        categories: ['RESPONSE'],
+      })
+    })
+
+    it('says so when nothing similar was found', async () => {
+      renderPage(createDemoCases()[0])
+      expect(
+        await screen.findByText(
+          'Nie znaleziono podobnych odpowiedzi w bazie wiedzy.',
+        ),
+      ).toBeInTheDocument()
+    })
+
+    it('does not search without a request text', () => {
+      renderPage({ ...createDemoCases()[0], requestText: '  ' })
+      expect(
+        screen.getByText(
+          'Uzupełnij treść wniosku, aby wyszukać podobne odpowiedzi.',
+        ),
+      ).toBeInTheDocument()
+      expect(knowledgeApi.searchKnowledge).not.toHaveBeenCalled()
+    })
+
+    it('shows an error with a retry', async () => {
+      const user = userEvent.setup()
+      vi.mocked(knowledgeApi.searchKnowledge).mockRejectedValueOnce(
+        new Error('network'),
+      )
+      renderPage(createDemoCases()[0])
+      expect(
+        await screen.findByText('Nie udało się wyszukać podobnych odpowiedzi.'),
+      ).toBeInTheDocument()
+      vi.mocked(knowledgeApi.searchKnowledge).mockResolvedValue({
+        matches: [match()],
+      })
+      await user.click(screen.getByRole('button', { name: 'Spróbuj ponownie' }))
+      expect(
+        await screen.findByText('Odpowiedź o uczniach'),
+      ).toBeInTheDocument()
+    })
+
+    it('opens the whole document', async () => {
+      const user = userEvent.setup()
+      vi.mocked(knowledgeApi.searchKnowledge).mockResolvedValue({
+        matches: [match()],
+      })
+      renderPage(createDemoCases()[0])
+      await user.click(
+        await screen.findByRole('button', { name: 'Zobacz treść' }),
+      )
+      expect(
+        await within(screen.getByRole('dialog')).findByText('Treść wzoru'),
+      ).toBeInTheDocument()
+    })
   })
 
   it('keeps completed cases read-only', async () => {

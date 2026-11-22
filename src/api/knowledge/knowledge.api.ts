@@ -3,8 +3,10 @@ import {
   knowledgeDocumentDetailSchema,
   knowledgeDocumentSchema,
   knowledgeListSchema,
+  knowledgeSearchSchema,
   type CreateKnowledgeInput,
   type KnowledgeListParams,
+  type KnowledgeSearchParams,
   type UpdateKnowledgeInput,
 } from './knowledge.schemas'
 
@@ -16,6 +18,15 @@ export const getKnowledgeList = async (
 ) =>
   knowledgeListSchema.parse(
     await apiClient.get<unknown>('/api/knowledge', { params, signal }),
+  )
+
+// The fragments the AI would get as context for the query, most similar first.
+export const searchKnowledge = async (
+  params: KnowledgeSearchParams,
+  signal?: AbortSignal,
+) =>
+  knowledgeSearchSchema.parse(
+    await apiClient.post<unknown>('/api/knowledge/search', params, { signal }),
   )
 
 export const getKnowledgeDocument = async (id: string, signal?: AbortSignal) =>

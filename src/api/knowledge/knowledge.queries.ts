@@ -13,6 +13,7 @@ import {
   getKnowledgeDocument,
   getKnowledgeList,
   reindexKnowledgeDocument,
+  searchKnowledge,
   updateKnowledgeDocument,
 } from './knowledge.api'
 import type {
@@ -21,6 +22,8 @@ import type {
   KnowledgeDocumentDetail,
   KnowledgeList,
   KnowledgeListParams,
+  KnowledgeMatch,
+  KnowledgeSearchParams,
   UpdateKnowledgeInput,
 } from './knowledge.schemas'
 
@@ -41,6 +44,29 @@ export const useGetKnowledgeList = (params: KnowledgeListParams) => {
     isKnowledgeError: isError,
     knowledgeError: error,
     refetchKnowledge: refetch,
+  }
+}
+
+export const useSearchKnowledge = (
+  params: KnowledgeSearchParams,
+  enabled: boolean,
+) => {
+  const email = useSessionEmail()
+  const { data, isLoading, isError, error, refetch } = useQuery<
+    KnowledgeMatch[],
+    ApiError
+  >({
+    queryKey: queryKeys.knowledge.search(email, params),
+    queryFn: async ({ signal }) =>
+      (await searchKnowledge(params, signal)).matches,
+    enabled,
+  })
+  return {
+    knowledgeMatches: data,
+    isSearchingKnowledge: isLoading,
+    isKnowledgeSearchError: isError,
+    knowledgeSearchError: error,
+    refetchKnowledgeSearch: refetch,
   }
 }
 
