@@ -1,6 +1,6 @@
 import { isValid, parseISO } from 'date-fns'
 import type { CaseSummary, CaseUrgency } from '@/api/cases/cases.schemas'
-import { displayDate } from '@/features/demo/date-utils'
+import { displayDate } from '@/features/cases/date-utils'
 
 export const urgencyTones = {
   DONE: 'completed',

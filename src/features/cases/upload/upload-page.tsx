@@ -16,7 +16,7 @@ import {
 import { ArrowLeft, ArrowRight, CheckCircle2, FileUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { useDemoStore } from '@/features/demo/demo-store'
+import { useLocalStore } from '@/features/cases/local-store'
 import { routes } from '@/app/routes'
 import { useAnalyzeRequest } from '@/api/cases/cases.queries'
 import { getApiErrorKind } from '@/api/errors'
@@ -70,7 +70,7 @@ const toUploadError = (error: unknown): UploadError => {
 export const UploadPage = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'upload' })
   const navigate = useNavigate()
-  const { setUploadDraft } = useDemoStore()
+  const { setUploadDraft } = useLocalStore()
   const [state, setState] = useState<UploadState>({ status: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
   const { analyzeRequest, cancelAnalyzeRequest } = useAnalyzeRequest()

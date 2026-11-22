@@ -7,7 +7,7 @@ import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { theme } from '@/app/theme'
-import { DemoProvider } from '@/features/demo/demo-store'
+import { LocalStoreProvider } from '@/features/cases/local-store'
 import { detail } from '@/test/case-detail'
 import { createTestQueryClient } from '@/test/query-client'
 import { composeApiCase } from '../case-from-api'
@@ -19,7 +19,7 @@ const renderPage = () =>
   render(
     <ThemeProvider theme={theme}>
       <QueryClientProvider client={createTestQueryClient()}>
-        <DemoProvider>
+        <LocalStoreProvider>
           <MemoryRouter initialEntries={['/sprawy/case-1/wniosek']}>
             <Routes>
               <Route
@@ -30,7 +30,7 @@ const renderPage = () =>
               </Route>
             </Routes>
           </MemoryRouter>
-        </DemoProvider>
+        </LocalStoreProvider>
       </QueryClientProvider>
     </ThemeProvider>,
   )

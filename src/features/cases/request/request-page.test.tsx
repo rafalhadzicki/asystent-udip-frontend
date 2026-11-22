@@ -12,7 +12,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { theme } from '@/app/theme'
-import { DemoProvider, useDemoStore } from '@/features/demo/demo-store'
+import { LocalStoreProvider, useLocalStore } from '@/features/cases/local-store'
 import { createDemoCases } from '@/test/demo-cases'
 import { detail } from '@/test/case-detail'
 import { readSavedCase } from '@/test/saved-case'
@@ -26,7 +26,7 @@ let cases = createDemoCases()
 // Stands in for CaseLayout: the server case merged with the local overlay.
 const CaseOutlet = () => {
   const { caseId } = useParams()
-  const { overlays } = useDemoStore()
+  const { overlays } = useLocalStore()
   const base = cases.find((c) => c.id === caseId)
   const item = base && { ...base, ...overlays[base.id] }
   return item ? (
@@ -42,7 +42,7 @@ const renderPage = (caseId: string) =>
   render(
     <ThemeProvider theme={theme}>
       <QueryClientProvider client={createTestQueryClient()}>
-        <DemoProvider>
+        <LocalStoreProvider>
           <MemoryRouter initialEntries={[`/sprawy/${caseId}/wniosek`]}>
             <Routes>
               <Route path="/sprawy/:caseId" element={<CaseOutlet />}>
@@ -50,7 +50,7 @@ const renderPage = (caseId: string) =>
               </Route>
             </Routes>
           </MemoryRouter>
-        </DemoProvider>
+        </LocalStoreProvider>
       </QueryClientProvider>
     </ThemeProvider>,
   )

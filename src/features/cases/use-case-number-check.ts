@@ -4,7 +4,7 @@ import {
   type CaseNumberConflict,
 } from '@/api/cases/cases.schemas'
 import { getApiErrorCode } from '@/api/errors'
-import { validIsoDate } from '@/features/demo/date-utils'
+import { validIsoDate } from '@/features/cases/date-utils'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 
 const CHECK_DELAY_MS = 500

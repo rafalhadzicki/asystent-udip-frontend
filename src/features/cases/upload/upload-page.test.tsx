@@ -5,10 +5,10 @@ import { AxiosError, AxiosHeaders } from 'axios'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  DEMO_STORAGE_KEY,
-  DemoProvider,
-  useDemoStore,
-} from '@/features/demo/demo-store'
+  LOCAL_STORAGE_KEY,
+  LocalStoreProvider,
+  useLocalStore,
+} from '@/features/cases/local-store'
 import { UploadPage } from './upload-page'
 import * as casesApi from '@/api/cases/cases.api'
 import type { RequestAnalysis } from '@/api/cases/cases.schemas'
@@ -30,7 +30,7 @@ const response: RequestAnalysis = {
 }
 
 const Verification = () => {
-  const { uploadDraft } = useDemoStore()
+  const { uploadDraft } = useLocalStore()
   return (
     <div data-testid="draft">
       {JSON.stringify(
@@ -41,7 +41,7 @@ const Verification = () => {
 }
 
 const DraftStatus = () => {
-  const { uploadDraft } = useDemoStore()
+  const { uploadDraft } = useLocalStore()
   return (
     <div data-testid="draft-status">{uploadDraft?.file.name ?? 'empty'}</div>
   )
@@ -50,7 +50,7 @@ const DraftStatus = () => {
 const renderPage = () =>
   render(
     <QueryClientProvider client={createTestQueryClient()}>
-      <DemoProvider>
+      <LocalStoreProvider>
         <DraftStatus />
         <MemoryRouter initialEntries={['/sprawy/nowy']}>
           <Routes>
@@ -59,7 +59,7 @@ const renderPage = () =>
             <Route path="/sprawy" element={<div>Rejestr spraw</div>} />
           </Routes>
         </MemoryRouter>
-      </DemoProvider>
+      </LocalStoreProvider>
     </QueryClientProvider>,
   )
 
@@ -107,7 +107,7 @@ describe('UploadPage', () => {
       warnings: ['CASE_NUMBER_TAKEN'],
     })
     expect(analyze.mock.calls[0][0]).toBeInstanceOf(File)
-    expect(localStorage.getItem(DEMO_STORAGE_KEY) ?? '').not.toContain(
+    expect(localStorage.getItem(LOCAL_STORAGE_KEY) ?? '').not.toContain(
       'wniosek.pdf',
     )
   })

@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
-import { DemoProvider, useDemoStore } from '@/features/demo/demo-store'
+import { LocalStoreProvider, useLocalStore } from '@/features/cases/local-store'
 import { detail } from '@/test/case-detail'
 import { createTestQueryClient } from '@/test/query-client'
 import { composeApiCase } from './case-from-api'
@@ -13,7 +13,7 @@ vi.mock('@/api/cases/cases.api', () => ({ updateCase: vi.fn() }))
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={createTestQueryClient()}>
-    <DemoProvider>{children}</DemoProvider>
+    <LocalStoreProvider>{children}</LocalStoreProvider>
   </QueryClientProvider>
 )
 
@@ -24,7 +24,7 @@ describe('useSaveCase', () => {
     vi.mocked(casesApi.updateCase).mockResolvedValue(detail)
     const item = composeApiCase(detail)
     const { result } = renderHook(
-      () => ({ save: useSaveCase(item), store: useDemoStore() }),
+      () => ({ save: useSaveCase(item), store: useLocalStore() }),
       { wrapper },
     )
     await act(() =>
@@ -52,7 +52,7 @@ describe('useSaveCase', () => {
     const { result } = renderHook(
       () => ({
         save: useSaveCase(composeApiCase(detail)),
-        store: useDemoStore(),
+        store: useLocalStore(),
       }),
       { wrapper },
     )
@@ -68,7 +68,7 @@ describe('useSaveCase', () => {
     const { result } = renderHook(
       () => ({
         save: useSaveCase(composeApiCase(detail)),
-        store: useDemoStore(),
+        store: useLocalStore(),
       }),
       { wrapper },
     )

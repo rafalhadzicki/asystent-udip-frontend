@@ -1,20 +1,22 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import type { CaseItem, UploadDraft } from './types'
+import type { CaseItem, UploadDraft } from '../types'
 import {
   pickLocalFields,
   snapshotSchema,
-  type DemoSnapshot,
-} from './demo-schema'
-import { DemoContext } from './demo-context'
+  type LocalSnapshot,
+} from './local-store-schema'
+import { LocalStoreContext } from './local-store-context'
 import { useSessionEmail } from '@/api/session'
 
-export const DEMO_STORAGE_KEY = 'asystent-udip-demo-v1'
+export const LOCAL_STORAGE_KEY = 'asystent-udip-demo-v1'
 
 // Local data belongs to the signed-in user; without a session the base key is used.
 const storageKeyFor = (email: string) =>
-  email ? `${DEMO_STORAGE_KEY}:${email.trim().toLowerCase()}` : DEMO_STORAGE_KEY
+  email
+    ? `${LOCAL_STORAGE_KEY}:${email.trim().toLowerCase()}`
+    : LOCAL_STORAGE_KEY
 
-const freshSnapshot = (): DemoSnapshot => ({
+const freshSnapshot = (): LocalSnapshot => ({
   version: 1,
   overlays: {},
 })
@@ -57,7 +59,7 @@ const readSnapshot = (storageKey: string) => {
   }
 }
 
-const DemoStateProvider = ({
+const LocalStateProvider = ({
   storageKey,
   children,
 }: {
@@ -89,7 +91,7 @@ const DemoStateProvider = ({
     return () => window.removeEventListener('storage', handleStorage)
   }, [storageKey])
 
-  const saveSnapshot = (next: DemoSnapshot) => {
+  const saveSnapshot = (next: LocalSnapshot) => {
     currentSnapshot.current = next
     setSnapshot(next)
     try {
@@ -124,7 +126,7 @@ const DemoStateProvider = ({
   }
 
   return (
-    <DemoContext.Provider
+    <LocalStoreContext.Provider
       value={{
         overlays: snapshot.overlays,
         uploadDraft,
@@ -134,16 +136,16 @@ const DemoStateProvider = ({
       }}
     >
       {children}
-    </DemoContext.Provider>
+    </LocalStoreContext.Provider>
   )
 }
 
 // Remounting on a session change swaps the stored data and drops the upload draft.
-export const DemoProvider = ({ children }: { children: ReactNode }) => {
+export const LocalStoreProvider = ({ children }: { children: ReactNode }) => {
   const email = useSessionEmail()
   return (
-    <DemoStateProvider key={email} storageKey={storageKeyFor(email)}>
+    <LocalStateProvider key={email} storageKey={storageKeyFor(email)}>
       {children}
-    </DemoStateProvider>
+    </LocalStateProvider>
   )
 }

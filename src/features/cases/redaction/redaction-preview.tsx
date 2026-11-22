@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import type { Redaction } from '@/features/demo/types'
+import type { Redaction } from '@/features/cases/types'
 import { Mark, Preview, PreviewPanel } from './redaction-page.styles'
 import { segmentText } from './redaction-utils'
 

@@ -22,8 +22,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useDemoStore } from '@/features/demo/demo-store'
-import type { CaseItem } from '@/features/demo/types'
+import { useLocalStore } from '@/features/cases/local-store'
+import type { CaseItem } from '@/features/cases/types'
 import { caseTabs, routes } from '@/app/routes'
 import {
   useDeleteCaseDocument,
@@ -43,7 +43,7 @@ const fileErrorKeys = {
 
 export const MaterialsPage = () => {
   const item = useOutletContext<CaseItem>()
-  const { updateCase, storageError } = useDemoStore()
+  const { updateCase, storageError } = useLocalStore()
   const { t } = useTranslation('translation', { keyPrefix: 'materials' })
   const [unit, setUnit] = useState('')
   const [error, setError] = useState('')

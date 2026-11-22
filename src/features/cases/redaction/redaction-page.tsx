@@ -27,13 +27,13 @@ import {
 import type { RedactionSuggestion } from '@/api/cases/cases.schemas'
 import { useAiErrorMessage } from '../use-ai-error-message'
 import { StepBackButton } from '../step-back-button'
-import { useDemoStore } from '@/features/demo/demo-store'
-import { validIsoDate } from '@/features/demo/date-utils'
+import { useLocalStore } from '@/features/cases/local-store'
+import { validIsoDate } from '@/features/cases/date-utils'
 import type {
   CaseItem,
   Redaction,
   RedactionDecision,
-} from '@/features/demo/types'
+} from '@/features/cases/types'
 import { caseTabs, routes } from '@/app/routes'
 import {
   buildExportBlob,
@@ -54,7 +54,7 @@ const makeId = () =>
 
 export const RedactionPage = () => {
   const item = useOutletContext<CaseItem>()
-  const { updateCase } = useDemoStore()
+  const { updateCase } = useLocalStore()
   const { t } = useTranslation('translation', { keyPrefix: 'redaction' })
   const completed = item.status === 'completed'
   const responseNeedsSaving =

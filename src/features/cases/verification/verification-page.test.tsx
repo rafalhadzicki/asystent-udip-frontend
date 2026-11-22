@@ -8,8 +8,8 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { theme } from '@/app/theme'
-import { DemoProvider, useDemoStore } from '@/features/demo/demo-store'
-import type { UploadDraft } from '@/features/demo/types'
+import { LocalStoreProvider, useLocalStore } from '@/features/cases/local-store'
+import type { UploadDraft } from '@/features/cases/types'
 import { detail } from '@/test/case-detail'
 import { createTestQueryClient } from '@/test/query-client'
 import { VerificationPage } from './verification-page'
@@ -50,7 +50,7 @@ const failWith = (status: number, data: unknown = {}) =>
   })
 
 const Seed = ({ value }: { value: UploadDraft }) => {
-  const { setUploadDraft } = useDemoStore()
+  const { setUploadDraft } = useLocalStore()
   useEffect(() => {
     setUploadDraft(value)
   }, [setUploadDraft, value])
@@ -58,7 +58,7 @@ const Seed = ({ value }: { value: UploadDraft }) => {
 }
 
 const Destination = () => {
-  const { overlays, uploadDraft } = useDemoStore()
+  const { overlays, uploadDraft } = useLocalStore()
   const location = useLocation()
   return (
     <div>
@@ -75,7 +75,7 @@ const renderPage = (value?: UploadDraft) =>
     <ThemeProvider theme={theme}>
       <QueryClientProvider client={createTestQueryClient()}>
         <MemoryRouter initialEntries={['/sprawy/nowy/weryfikacja']}>
-          <DemoProvider>
+          <LocalStoreProvider>
             {value && <Seed value={value} />}
             <Routes>
               <Route
@@ -84,7 +84,7 @@ const renderPage = (value?: UploadDraft) =>
               />
               <Route path="/sprawy/:id/analiza" element={<Destination />} />
             </Routes>
-          </DemoProvider>
+          </LocalStoreProvider>
         </MemoryRouter>
       </QueryClientProvider>
     </ThemeProvider>,

@@ -3,8 +3,8 @@ import {
   useSetCaseDepartments,
   useSetCaseQuestions,
 } from '@/api/cases/cases.queries'
-import { useDemoStore } from '@/features/demo/demo-store'
-import type { UploadDraft } from '@/features/demo/types'
+import { useLocalStore } from '@/features/cases/local-store'
+import type { UploadDraft } from '@/features/cases/types'
 import { splitQuestions } from './verification/verification-utils'
 
 export type VerifiedCaseValues = {
@@ -24,7 +24,7 @@ export type VerifiedCaseValues = {
 // A failure after the case exists is not fatal: the analysis page lets the user
 // set both lists again. Rejects with the original error of the creation only.
 export const useCreateCaseFromDraft = (draft: UploadDraft) => {
-  const { updateCase, setUploadDraft } = useDemoStore()
+  const { updateCase, setUploadDraft } = useLocalStore()
   const { createCaseAsync, isCreatingCase } = useCreateCase()
   const { setCaseQuestionsAsync } = useSetCaseQuestions()
   const { setCaseDepartmentsAsync } = useSetCaseDepartments()

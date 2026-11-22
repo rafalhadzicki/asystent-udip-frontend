@@ -17,8 +17,8 @@ import {
   useExtendDeadline,
 } from '@/api/cases/cases.queries'
 import { getApiErrorKind } from '@/api/errors'
-import { displayDate } from '@/features/demo/date-utils'
-import type { CaseItem } from '@/features/demo/types'
+import { displayDate } from '@/features/cases/date-utils'
+import type { CaseItem } from '@/features/cases/types'
 
 const MAX_REASON_LENGTH = 1000
 

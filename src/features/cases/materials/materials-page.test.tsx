@@ -7,10 +7,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { createTestQueryClient } from '@/test/query-client'
 import { createDemoCases } from '@/test/demo-cases'
-import { DemoProvider } from '@/features/demo/demo-store'
+import { LocalStoreProvider } from '@/features/cases/local-store'
 import { TestCaseOutlet } from '@/test/case-outlet'
 import { readSavedCase } from '@/test/saved-case'
-import type { CaseItem } from '@/features/demo/types'
+import type { CaseItem } from '@/features/cases/types'
 import { MaterialsPage } from './materials-page'
 
 vi.mock('@/api/cases/cases.api', () => ({
@@ -27,7 +27,7 @@ const renderPage = (changes: Partial<CaseItem> = {}) => {
   current = { ...createDemoCases()[0], ...changes }
   return render(
     <QueryClientProvider client={createTestQueryClient()}>
-      <DemoProvider>
+      <LocalStoreProvider>
         <MemoryRouter initialEntries={['/sprawy/demo-1/materialy']}>
           <Routes>
             <Route path="/sprawy/demo-1" element={<CaseOutlet />}>
@@ -39,7 +39,7 @@ const renderPage = (changes: Partial<CaseItem> = {}) => {
             </Route>
           </Routes>
         </MemoryRouter>
-      </DemoProvider>
+      </LocalStoreProvider>
     </QueryClientProvider>,
   )
 }

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { validIsoDate } from './date-utils'
+import { validIsoDate } from '../date-utils'
 
 const isoDate = z.string().refine(validIsoDate)
 const optionalIsoDate = z.union([z.literal(''), isoDate])
@@ -42,4 +42,4 @@ export const snapshotSchema = z.object({
   overlays: z.record(z.string(), caseOverlaySchema).default({}),
 })
 
-export type DemoSnapshot = z.infer<typeof snapshotSchema>
+export type LocalSnapshot = z.infer<typeof snapshotSchema>

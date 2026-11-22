@@ -27,9 +27,9 @@ import {
   useSearchKnowledge,
 } from '@/api/knowledge/knowledge.queries'
 import { KnowledgePreviewDialog } from '@/features/knowledge/knowledge-dialogs'
-import { useDemoStore } from '@/features/demo/demo-store'
+import { useLocalStore } from '@/features/cases/local-store'
 import { caseTabs, routes } from '@/app/routes'
-import type { CaseItem, Department, Question } from '@/features/demo/types'
+import type { CaseItem, Department, Question } from '@/features/cases/types'
 import { useGetDepartments } from '@/api/departments/departments.queries'
 import {
   useSetCaseDepartments,
@@ -59,7 +59,7 @@ const ExamplePreview = ({
 const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const aiErrorMessage = useAiErrorMessage()
   const { t } = useTranslation('translation', { keyPrefix: 'analysis' })
-  const { updateCase } = useDemoStore()
+  const { updateCase } = useLocalStore()
   const navigate = useNavigate()
   const [questions, setQuestions] = useState<Question[]>(() =>
     item.questions.map((question) => ({ ...question })),

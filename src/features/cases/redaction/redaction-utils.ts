@@ -1,4 +1,4 @@
-import type { Redaction, RedactionDecision } from '@/features/demo/types'
+import type { Redaction, RedactionDecision } from '@/features/cases/types'
 
 export type TextRange = { start: number; end: number }
 

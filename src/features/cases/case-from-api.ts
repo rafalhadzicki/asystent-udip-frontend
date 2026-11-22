@@ -1,10 +1,10 @@
 import type { CaseDetail, CaseStatus } from '@/api/cases/cases.schemas'
-import type { CaseOverlay } from '@/features/demo/demo-schema'
+import type { CaseOverlay } from '@/features/cases/local-store/local-store-schema'
 import type {
   CaseItem,
   CaseStatus as LocalStatus,
   DocumentMeta,
-} from '@/features/demo/types'
+} from '@/features/cases/types'
 
 // Stage of the local workflow that corresponds to the backend status.
 const localStatus: Record<CaseStatus, LocalStatus> = {

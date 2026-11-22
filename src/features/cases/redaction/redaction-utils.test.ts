@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Redaction } from '@/features/demo/types'
+import type { Redaction } from '@/features/cases/types'
 import {
   canExportRedactedText,
   findExactOccurrences,

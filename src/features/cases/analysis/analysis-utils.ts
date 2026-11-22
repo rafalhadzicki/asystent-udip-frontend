@@ -1,5 +1,5 @@
 import type { KnowledgeMatch } from '@/api/knowledge/knowledge.schemas'
-import type { Department, Question } from '@/features/demo/types'
+import type { Department, Question } from '@/features/cases/types'
 
 export const selectedQuestions = (questions: Question[]) =>
   questions

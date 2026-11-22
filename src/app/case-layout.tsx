@@ -13,14 +13,14 @@ import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useGetCaseById } from '@/api/cases/cases.queries'
 import { composeApiCase } from '@/features/cases/case-from-api'
-import { useDemoStore } from '@/features/demo/demo-store'
-import { displayDate } from '@/features/demo/date-utils'
+import { useLocalStore } from '@/features/cases/local-store'
+import { displayDate } from '@/features/cases/date-utils'
 import { DeadlineExtension } from '@/features/cases/extension/deadline-extension'
 import { caseTabs, routes } from './routes'
 
 export const CaseLayout = () => {
   const { caseId } = useParams()
-  const { overlays } = useDemoStore()
+  const { overlays } = useLocalStore()
   const { t } = useTranslation()
   const location = useLocation()
   const { caseDetail, isCaseLoading } = useGetCaseById(caseId)

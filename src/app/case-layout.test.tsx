@@ -4,7 +4,10 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
-import { DEMO_STORAGE_KEY, DemoProvider } from '@/features/demo/demo-store'
+import {
+  LOCAL_STORAGE_KEY,
+  LocalStoreProvider,
+} from '@/features/cases/local-store'
 import { detail } from '@/test/case-detail'
 import { createTestQueryClient } from '@/test/query-client'
 import { CaseLayout } from './case-layout'
@@ -18,7 +21,7 @@ vi.mock('@/api/cases/cases.api', () => ({
 const renderCase = (id: string) =>
   render(
     <QueryClientProvider client={createTestQueryClient()}>
-      <DemoProvider>
+      <LocalStoreProvider>
         <MemoryRouter initialEntries={[`/sprawy/${id}/wniosek`]}>
           <Routes>
             <Route path="/sprawy/:caseId" element={<CaseLayout />}>
@@ -26,7 +29,7 @@ const renderCase = (id: string) =>
             </Route>
           </Routes>
         </MemoryRouter>
-      </DemoProvider>
+      </LocalStoreProvider>
     </QueryClientProvider>,
   )
 
@@ -43,7 +46,7 @@ describe('CaseLayout', () => {
     expect(screen.getByText('BKS.IV.1431.1.2026')).toBeInTheDocument()
     expect(screen.getByText('Oczekuje na materiały')).toBeInTheDocument()
     expect(casesApi.getCase).toHaveBeenCalledWith('case-1', expect.anything())
-    expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBeNull()
+    expect(localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull()
   })
 
   it('reports a case that does not exist in the API', async () => {

@@ -53,11 +53,6 @@
   "common": {
     "back": "Wstecz"
   },
-  "demo": {
-    "restoreError": "Nie udało się odczytać zapisanych danych demo. Pokazujemy dane początkowe.",
-    "saveError": "Nie udało się zapisać zmian w przeglądarce. Zmiany są dostępne tylko do odświeżenia strony.",
-    "conflictError": "Dane demo zmieniły się w innej karcie. Zapis w tej karcie został wstrzymany, aby nie nadpisać tamtych zmian. Skopiuj potrzebne niezapisane treści, a następnie odśwież stronę."
-  },
   "status": {
     "analysis": "W analizie",
     "waiting": "Oczekuje na materiały",
@@ -626,5 +621,10 @@
     "invalid": "Serwer odrzucił datę: musi być po terminie ustawowym i najwyżej 2 miesiące od wpływu.",
     "conflict": "Nie można zmienić terminu: odpowiedź została już wysłana lub sprawa zmieniła się w międzyczasie. Odśwież stronę.",
     "unknown": "Nie udało się zapisać zmiany terminu. Spróbuj ponownie."
+  },
+  "localStore": {
+    "restoreError": "Nie udało się odczytać zapisanych danych lokalnych. Pokazujemy dane początkowe.",
+    "saveError": "Nie udało się zapisać zmian w przeglądarce. Zmiany są dostępne tylko do odświeżenia strony.",
+    "conflictError": "Dane lokalne zmieniły się w innej karcie. Zapis w tej karcie został wstrzymany, aby nie nadpisać tamtych zmian. Skopiuj potrzebne niezapisane treści, a następnie odśwież stronę."
   }
 }

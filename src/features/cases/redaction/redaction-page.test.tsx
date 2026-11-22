@@ -8,9 +8,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { createTestQueryClient } from '@/test/query-client'
 import { theme } from '@/app/theme'
-import type { CaseItem } from '@/features/demo/types'
+import type { CaseItem } from '@/features/cases/types'
 import { createDemoCases } from '@/test/demo-cases'
-import { DemoProvider } from '@/features/demo/demo-store'
+import { LocalStoreProvider } from '@/features/cases/local-store'
 import { TestCaseOutlet } from '@/test/case-outlet'
 import { readSavedCase } from '@/test/saved-case'
 import { RedactionPage } from './redaction-page'
@@ -41,7 +41,7 @@ const renderPage = () =>
   render(
     <ThemeProvider theme={theme}>
       <QueryClientProvider client={createTestQueryClient()}>
-        <DemoProvider>
+        <LocalStoreProvider>
           <MemoryRouter initialEntries={['/anonimizacja']}>
             <Routes>
               <Route element={<CurrentCase />}>
@@ -49,7 +49,7 @@ const renderPage = () =>
               </Route>
             </Routes>
           </MemoryRouter>
-        </DemoProvider>
+        </LocalStoreProvider>
       </QueryClientProvider>
     </ThemeProvider>,
   )

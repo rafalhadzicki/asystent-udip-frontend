@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import type { Redaction, RedactionDecision } from '@/features/demo/types'
+import type { Redaction, RedactionDecision } from '@/features/cases/types'
 
 type RedactionListProps = {
   redactions: Redaction[]

@@ -1,12 +1,12 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DemoProvider, DEMO_STORAGE_KEY, useDemoStore } from './demo-store'
+import { LocalStoreProvider, LOCAL_STORAGE_KEY, useLocalStore } from '.'
 import { createDemoCases } from '@/test/demo-cases'
 import { clearSession, setSession } from '@/api/session'
 
 const Probe = () => {
-  const store = useDemoStore()
+  const store = useLocalStore()
   return (
     <div>
       <span data-testid="overlay">
@@ -29,9 +29,9 @@ const Probe = () => {
 
 const renderProbe = () =>
   render(
-    <DemoProvider>
+    <LocalStoreProvider>
       <Probe />
-    </DemoProvider>,
+    </LocalStoreProvider>,
   )
 
 const silenceErrors = () =>
@@ -53,7 +53,7 @@ describe('local data store', () => {
       '{"responseText":"Projekt"}',
     )
     expect(
-      JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).overlays,
+      JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)!).overlays,
     ).toEqual({ 'case-1': { responseText: 'Projekt' } })
   })
 
@@ -72,14 +72,14 @@ describe('local data store', () => {
     renderProbe()
     await user.click(screen.getByRole('button', { name: 'Change' }))
     expect(
-      localStorage.getItem(`${DEMO_STORAGE_KEY}:a@example.test`),
+      localStorage.getItem(`${LOCAL_STORAGE_KEY}:a@example.test`),
     ).toContain('Projekt')
-    expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBeNull()
+    expect(localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull()
 
     act(() => setSession({ email: 'b@example.test', accessToken: 'b' }))
     expect(screen.getByTestId('overlay')).toHaveTextContent('null')
     expect(
-      localStorage.getItem(`${DEMO_STORAGE_KEY}:b@example.test`),
+      localStorage.getItem(`${LOCAL_STORAGE_KEY}:b@example.test`),
     ).toBeNull()
     clearSession()
   })
@@ -87,7 +87,7 @@ describe('local data store', () => {
   it('treats e-mail addresses that differ only in case as one user', () => {
     setSession({ email: 'User@Example.test', accessToken: 'token' })
     localStorage.setItem(
-      `${DEMO_STORAGE_KEY}:user@example.test`,
+      `${LOCAL_STORAGE_KEY}:user@example.test`,
       JSON.stringify({
         version: 1,
         overlays: { 'case-1': { responseText: 'Zapisane' } },
@@ -108,7 +108,7 @@ describe('local data store', () => {
     ],
     ['corrupt JSON structure', '{"version":1,"overlays":[{}]}'],
   ])('reports %s explicitly rather than crashing', (_name, raw) => {
-    localStorage.setItem(DEMO_STORAGE_KEY, raw)
+    localStorage.setItem(LOCAL_STORAGE_KEY, raw)
     const log = silenceErrors()
     renderProbe()
     expect(screen.getByTestId('storage-error')).toHaveTextContent('restore')
@@ -133,11 +133,11 @@ describe('local data store', () => {
 
   it('does not overwrite changes from another tab and keeps local edits in memory', () => {
     renderProbe()
-    localStorage.setItem(DEMO_STORAGE_KEY, otherTabSnapshot)
+    localStorage.setItem(LOCAL_STORAGE_KEY, otherTabSnapshot)
     act(() => {
       window.dispatchEvent(
         new StorageEvent('storage', {
-          key: DEMO_STORAGE_KEY,
+          key: LOCAL_STORAGE_KEY,
           newValue: otherTabSnapshot,
           storageArea: localStorage,
         }),
@@ -145,22 +145,22 @@ describe('local data store', () => {
     })
     expect(screen.getByTestId('storage-error')).toHaveTextContent('conflict')
     act(() => screen.getByText('Change').click())
-    expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBe(otherTabSnapshot)
+    expect(localStorage.getItem(LOCAL_STORAGE_KEY)).toBe(otherTabSnapshot)
     expect(screen.getByTestId('overlay')).toHaveTextContent('Projekt')
   })
 
   it('detects an external change before saving even without a storage event', () => {
     renderProbe()
-    localStorage.setItem(DEMO_STORAGE_KEY, otherTabSnapshot)
+    localStorage.setItem(LOCAL_STORAGE_KEY, otherTabSnapshot)
     act(() => screen.getByText('Change').click())
-    expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBe(otherTabSnapshot)
+    expect(localStorage.getItem(LOCAL_STORAGE_KEY)).toBe(otherTabSnapshot)
     expect(screen.getByTestId('overlay')).toHaveTextContent('Projekt')
     expect(screen.getByTestId('storage-error')).toHaveTextContent('conflict')
   })
 
   it('ignores local cases saved by earlier versions', () => {
     localStorage.setItem(
-      DEMO_STORAGE_KEY,
+      LOCAL_STORAGE_KEY,
       JSON.stringify({ version: 1, cases: createDemoCases() }),
     )
     renderProbe()
@@ -176,7 +176,7 @@ describe('local data store', () => {
       responseText: 'Moja odpowiedź',
     }
     localStorage.setItem(
-      DEMO_STORAGE_KEY,
+      LOCAL_STORAGE_KEY,
       JSON.stringify({ version: 1, cases: [copy] }),
     )
     renderProbe()

@@ -1,11 +1,11 @@
 import { useUpdateCase } from '@/api/cases/cases.queries'
-import { useDemoStore } from '@/features/demo/demo-store'
-import type { CaseItem } from '@/features/demo/types'
+import { useLocalStore } from '@/features/cases/local-store'
+import type { CaseItem } from '@/features/cases/types'
 
 // Cases come from the API: they save their server fields through PATCH and the
 // rest locally; the deadline is computed by the backend and cannot be edited.
 export const useSaveCase = (item: CaseItem) => {
-  const { updateCase } = useDemoStore()
+  const { updateCase } = useLocalStore()
   const { updateCaseAsync } = useUpdateCase()
 
   return async (changes: Partial<CaseItem>) => {

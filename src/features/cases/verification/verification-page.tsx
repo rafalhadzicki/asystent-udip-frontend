@@ -14,8 +14,8 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
-import { useDemoStore } from '@/features/demo/demo-store'
-import type { UploadDraft } from '@/features/demo/types'
+import { useLocalStore } from '@/features/cases/local-store'
+import type { UploadDraft } from '@/features/cases/types'
 import type { CaseNumberConflict } from '@/api/cases/cases.schemas'
 import { useGetDeadlinePreview } from '@/api/cases/cases.queries'
 import { getApiErrorKind } from '@/api/errors'
@@ -32,14 +32,14 @@ import {
   getCaseNumberConflict,
   useCaseNumberConflict,
 } from '../use-case-number-check'
-import { validIsoDate } from '@/features/demo/date-utils'
+import { validIsoDate } from '@/features/cases/date-utils'
 import { caseTabs, routes } from '@/app/routes'
 
 const validDate = validIsoDate
 const validEmail = (value: string) => z.email().safeParse(value).success
 
 export const VerificationPage = () => {
-  const { uploadDraft } = useDemoStore()
+  const { uploadDraft } = useLocalStore()
   const { t } = useTranslation('translation', { keyPrefix: 'verification' })
   if (!uploadDraft) {
     return (

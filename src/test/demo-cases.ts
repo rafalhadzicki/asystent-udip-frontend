@@ -1,4 +1,4 @@
-import type { CaseItem } from '@/features/demo/types'
+import type { CaseItem } from '@/features/cases/types'
 
 export const createDemoCases = (): CaseItem[] =>
   Array.from({ length: 10 }, (_, index) => {

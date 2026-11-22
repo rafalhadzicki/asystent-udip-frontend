@@ -4,11 +4,11 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { logout } from '@/api/auth/auth.api'
 import { getSession, setSession } from '@/api/session'
-import { DemoProvider, useDemoStore } from '@/features/demo/demo-store'
+import { LocalStoreProvider, useLocalStore } from '@/features/cases/local-store'
 import { AppLayout } from './app-layout'
 
 const Draft = () => {
-  const { uploadDraft, setUploadDraft } = useDemoStore()
+  const { uploadDraft, setUploadDraft } = useLocalStore()
   return (
     <>
       <button
@@ -42,10 +42,10 @@ describe('AppLayout', () => {
     setSession(session)
     render(
       <MemoryRouter>
-        <DemoProvider>
+        <LocalStoreProvider>
           <Draft />
           <AppLayout user={session} onLogout={logout} />
-        </DemoProvider>
+        </LocalStoreProvider>
       </MemoryRouter>,
     )
     await user.click(screen.getByRole('button', { name: 'seed' }))

@@ -4,11 +4,11 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDemoCases } from '@/test/demo-cases'
-import { DemoProvider } from '@/features/demo/demo-store'
+import { LocalStoreProvider } from '@/features/cases/local-store'
 import { TestCaseOutlet } from '@/test/case-outlet'
 import { readSavedCase } from '@/test/saved-case'
 import type { KnowledgeMatch } from '@/api/knowledge/knowledge.schemas'
-import type { CaseItem } from '@/features/demo/types'
+import type { CaseItem } from '@/features/cases/types'
 import { AnalysisPage } from './analysis-page'
 import * as knowledgeApi from '@/api/knowledge/knowledge.api'
 import * as departmentApi from '@/api/departments/departments.api'
@@ -53,7 +53,7 @@ const renderPage = (item: CaseItem) => {
   current = item
   return render(
     <QueryClientProvider client={createTestQueryClient()}>
-      <DemoProvider>
+      <LocalStoreProvider>
         <MemoryRouter initialEntries={[`/sprawy/${item.id}/analiza`]}>
           <Routes>
             <Route path="/sprawy/:caseId" element={<CaseOutlet />}>
@@ -62,7 +62,7 @@ const renderPage = (item: CaseItem) => {
             </Route>
           </Routes>
         </MemoryRouter>
-      </DemoProvider>
+      </LocalStoreProvider>
     </QueryClientProvider>,
   )
 }
@@ -70,7 +70,7 @@ const renderPage = (item: CaseItem) => {
 const renderRemote = (item: CaseItem) =>
   render(
     <QueryClientProvider client={createTestQueryClient()}>
-      <DemoProvider>
+      <LocalStoreProvider>
         <MemoryRouter initialEntries={['/sprawy/x/analiza']}>
           <Routes>
             <Route path="/sprawy/:caseId" element={<Outlet context={item} />}>
@@ -78,7 +78,7 @@ const renderRemote = (item: CaseItem) =>
             </Route>
           </Routes>
         </MemoryRouter>
-      </DemoProvider>
+      </LocalStoreProvider>
     </QueryClientProvider>,
   )
 

@@ -51,7 +51,7 @@ import {
 } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { displayDate } from '@/features/demo/date-utils'
+import { displayDate } from '@/features/cases/date-utils'
 import {
   useCreateKnowledgeDocument,
   useDeleteKnowledgeDocument,

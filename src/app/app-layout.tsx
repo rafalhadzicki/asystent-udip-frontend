@@ -24,7 +24,7 @@ import {
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { AuthSession } from '@/api/auth/auth.schemas'
-import { useDemoStore } from '@/features/demo/demo-store'
+import { useLocalStore } from '@/features/cases/local-store'
 import { routes } from './routes'
 
 const Sidebar = styled('nav')(({ theme }) => ({
@@ -51,7 +51,7 @@ export const AppLayout = ({
 }) => {
   const { t } = useTranslation()
   const location = useLocation()
-  const { storageError } = useDemoStore()
+  const { storageError } = useLocalStore()
   const [menuOpen, setMenuOpen] = useState(false)
   const links = [
     {
@@ -163,10 +163,10 @@ export const AppLayout = ({
             <Alert severity="error" sx={{ mb: 2 }}>
               {t(
                 storageError === 'restore'
-                  ? 'demo.restoreError'
+                  ? 'localStore.restoreError'
                   : storageError === 'conflict'
-                    ? 'demo.conflictError'
-                    : 'demo.saveError',
+                    ? 'localStore.conflictError'
+                    : 'localStore.saveError',
               )}
             </Alert>
           )}

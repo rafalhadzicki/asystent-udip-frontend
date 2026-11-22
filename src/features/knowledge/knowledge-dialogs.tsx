@@ -20,7 +20,7 @@ import type {
   KnowledgeDocument,
 } from '@/api/knowledge/knowledge.schemas'
 import { useGetKnowledgeDocument } from '@/api/knowledge/knowledge.queries'
-import { displayDate } from '@/features/demo/date-utils'
+import { displayDate } from '@/features/cases/date-utils'
 import { CATEGORIES, MAX_KNOWLEDGE_FILE_BYTES } from './knowledge-constants'
 import {
   FormStack,

@@ -19,7 +19,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Link, useOutletContext } from 'react-router-dom'
 import { FormTextField } from '@/components/form/form-text-field'
-import { displayDate, validIsoDate } from '@/features/demo/date-utils'
+import { displayDate, validIsoDate } from '@/features/cases/date-utils'
 import type { CaseNumberConflict } from '@/api/cases/cases.schemas'
 import { useGetDeadlinePreview } from '@/api/cases/cases.queries'
 import { getApiErrorKind } from '@/api/errors'
@@ -29,7 +29,7 @@ import {
   useCaseNumberConflict,
 } from '../use-case-number-check'
 import { useSaveCase } from '../use-save-case'
-import type { CaseItem } from '@/features/demo/types'
+import type { CaseItem } from '@/features/cases/types'
 import { caseTabs, routes } from '@/app/routes'
 
 type RequestValues = Pick<
