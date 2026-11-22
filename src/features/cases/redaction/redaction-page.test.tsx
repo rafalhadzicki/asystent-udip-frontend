@@ -329,4 +329,24 @@ describe('redaction workflow', () => {
       await screen.findByText(/Funkcje AI nie są skonfigurowane/),
     ).toBeInTheDocument()
   })
+
+  it('lets the user undo a decision by clicking the selected option again', async () => {
+    const user = userEvent.setup()
+    suggest('Jan Kowalski')
+    renderPage()
+    await user.click(
+      screen.getByRole('button', { name: 'Wyszukaj dane osobowe (AI)' }),
+    )
+    const hide = await screen.findByRole('button', {
+      name: 'Ukryj w pobranym tekście',
+    })
+    await user.click(hide)
+    expect(hide).toHaveAttribute('aria-pressed', 'true')
+    await user.click(hide)
+    expect(hide).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Pozostaw' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
 })

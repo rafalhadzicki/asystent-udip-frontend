@@ -420,8 +420,7 @@
     },
     "decisions": {
       "hide": "Ukryj w pobranym tekście",
-      "keep": "Pozostaw",
-      "pending": "Wymaga decyzji"
+      "keep": "Pozostaw"
     },
     "preview": {
       "title": "Podgląd tekstu",

@@ -48,7 +48,7 @@ export const RedactionList = ({
                   {redaction.reason}
                 </Typography>
                 <Stack spacing={1}>
-                  {(['hide', 'keep', 'pending'] as const).map((decision) => (
+                  {(['hide', 'keep'] as const).map((decision) => (
                     <Button
                       key={decision}
                       fullWidth
@@ -60,7 +60,14 @@ export const RedactionList = ({
                       }
                       disabled={disabled}
                       aria-pressed={redaction.decision === decision}
-                      onClick={() => onDecide(redaction.id, decision)}
+                      onClick={() =>
+                        onDecide(
+                          redaction.id,
+                          redaction.decision === decision
+                            ? 'pending'
+                            : decision,
+                        )
+                      }
                     >
                       {t(`decisions.${decision}`)}
                     </Button>
