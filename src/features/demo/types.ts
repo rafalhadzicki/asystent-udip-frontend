@@ -56,7 +56,6 @@ export type CaseItem = {
   departments: Department[]
   materials: DocumentMeta[]
   materialNotes: string
-  contactedAt: string
   responseText: string
   redactions: Redaction[]
   redactionConfirmed: boolean

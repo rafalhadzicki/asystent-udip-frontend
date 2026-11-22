@@ -64,13 +64,12 @@ describe('demo persistence', () => {
     expect(screen.getByText(cases[0].subject)).toBeInTheDocument()
   })
 
-  it.each(['deadline', 'source', 'contactedAt', 'sentAt'])(
+  it.each(['deadline', 'source', 'sentAt'])(
     'rejects malformed persisted %s dates with a visible error',
     (field) => {
       const cases = createDemoCases()
       if (field === 'source') cases[0].source.addedAt = 'invalid'
       else if (field === 'deadline') cases[0].deadline = '2026-02-30'
-      else if (field === 'contactedAt') cases[0].contactedAt = 'invalid'
       else cases[0].sentAt = 'invalid'
       localStorage.setItem(
         DEMO_STORAGE_KEY,
@@ -261,7 +260,7 @@ describe('local data of cases stored on the server', () => {
       JSON.stringify({
         version: 1,
         cases: createDemoCases(),
-        overlays: { 'api-case': { contactedAt: 'not-a-date' } },
+        overlays: { 'api-case': { sentAt: 'not-a-date' } },
       }),
     )
     render(

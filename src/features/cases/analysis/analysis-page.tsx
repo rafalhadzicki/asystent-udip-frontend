@@ -192,7 +192,6 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
           }
         : {}),
       analysisNeedsReview: false,
-      ...(departmentsChanged ? { contactedAt: '' } : {}),
     }
     if (changedScope) {
       changes.redactions = []

@@ -64,7 +64,6 @@ export const createDemoCases = (): CaseItem[] =>
       ],
       materials: [],
       materialNotes: '',
-      contactedAt: '',
       responseText: '',
       redactions: [],
       redactionConfirmed: false,

@@ -23,8 +23,6 @@ import {
 import { useDemoStore } from '@/features/demo/demo-store'
 import type { CaseItem } from '@/features/demo/types'
 import { caseTabs, routes } from '@/app/routes'
-import { DEMO_TODAY } from '@/features/demo/demo-data'
-import { validIsoDate } from '@/features/demo/date-utils'
 import {
   useDeleteCaseDocument,
   useDraftResponse,
@@ -34,8 +32,6 @@ import type { DraftResponse } from '@/api/cases/cases.schemas'
 import { getApiErrorKind } from '@/api/errors'
 import { useAiErrorMessage } from '../use-ai-error-message'
 import { validateMaterialFile } from './materials-utils'
-
-const today = () => DEMO_TODAY
 
 const fileErrorKeys = {
   type: 'fileTypeError',
@@ -48,7 +44,6 @@ export const MaterialsPage = () => {
   const { updateCase, storageError } = useDemoStore()
   const { t } = useTranslation('translation', { keyPrefix: 'materials' })
   const [unit, setUnit] = useState('')
-  const [contactDate, setContactDate] = useState(item.contactedAt || today())
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [generating, setGenerating] = useState(false)
@@ -104,15 +99,6 @@ export const MaterialsPage = () => {
       redactions: [],
       redactionConfirmed: false,
     })
-  }
-
-  const markContacted = () => {
-    if (!selectedDepartments.length || !validIsoDate(contactDate)) {
-      setError(t('contactError'))
-      return
-    }
-    setError('')
-    invalidate({ contactedAt: contactDate })
   }
 
   const addFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -246,37 +232,6 @@ export const MaterialsPage = () => {
       {storageError === 'save' && (
         <Alert severity="error">{t('saveError')}</Alert>
       )}
-      <Card>
-        <Stack spacing={2}>
-          <Typography variant="body2" color="text.secondary">
-            {t('contactInfo')}
-          </Typography>
-          {item.contactedAt && (
-            <Typography variant="body2">
-              {t('contacted', { date: item.contactedAt })}
-            </Typography>
-          )}
-          {!completed && (
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={2}
-              sx={{ alignItems: { sm: 'center' } }}
-            >
-              <TextField
-                type="date"
-                label={t('contactDate')}
-                value={contactDate}
-                onChange={(event) => setContactDate(event.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ maxWidth: { sm: 240 } }}
-              />
-              <Button variant="outlined" onClick={markContacted}>
-                {t('markSent')}
-              </Button>
-            </Stack>
-          )}
-        </Stack>
-      </Card>
       <Columns>
         <Stack spacing={3}>
           <Card>

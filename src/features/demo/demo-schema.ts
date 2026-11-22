@@ -20,7 +20,6 @@ export const caseLocalSchema = z.object({
   // The AI reason of a department; the API stores only the department itself.
   departmentReasons: z.record(z.string(), z.string()).optional(),
   materialNotes: z.string(),
-  contactedAt: optionalIsoDate,
   responseText: z.string(),
   redactions: z.array(
     z.object({

@@ -313,23 +313,6 @@ describe('analiza sprawy', () => {
     expect(savedCase()).toEqual(item)
   })
 
-  it('unieważnia potwierdzenie kontaktu po zmianie wybranych jednostek', async () => {
-    const item = createDemoCases()[0]
-    item.contactedAt = '2026-11-20'
-    const user = userEvent.setup()
-    renderPage(item)
-    await user.click(
-      screen.getByRole('checkbox', { name: 'Wybierz jednostkę ZDMiKP' }),
-    )
-    await user.click(
-      screen.getByRole('checkbox', {
-        name: 'Wybierz jednostkę Wydział Inwestycji Miasta',
-      }),
-    )
-    await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
-    expect(savedCase().contactedAt).toBe('')
-  })
-
   it('wymaga jawnego zapisu poprawnej analizy po zmianie wniosku', async () => {
     const item = createDemoCases()[0]
     item.analysisNeedsReview = true

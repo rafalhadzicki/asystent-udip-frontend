@@ -71,7 +71,6 @@ const departmentsOf = (
 const localDefaults = (detail: CaseDetail) => ({
   status: localStatus[detail.status],
   materialNotes: detail.notes ?? '',
-  contactedAt: '',
   responseText: '',
   redactions: [],
   redactionConfirmed: false,

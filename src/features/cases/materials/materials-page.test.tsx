@@ -202,23 +202,6 @@ describe('MaterialsPage', () => {
     expect(savedCase().responseText).toBe('')
   })
 
-  it('records an externally sent inquiry and keeps a changed response only after confirmation', async () => {
-    const user = userEvent.setup()
-    renderPage({ responseText: 'Odpowiedź do zachowania', status: 'draft' })
-    fireEvent.change(screen.getByLabelText('Data wysłania zapytań'), {
-      target: { value: '2026-11-20' },
-    })
-    await user.click(
-      screen.getByRole('button', { name: 'Oznacz zapytania jako wysłane' }),
-    )
-    await waitFor(() => expect(savedCase().contactedAt).toBe('2026-11-20'))
-    expect(savedCase().status).toBe('waiting')
-    expect(savedCase().responseText).toBe('Odpowiedź do zachowania')
-    expect(
-      screen.getByRole('button', { name: 'Przejdź do anonimizacji' }),
-    ).toBeDisabled()
-  })
-
   it('validates files and sends them to the server with the selected unit', async () => {
     vi.mocked(casesApi.uploadCaseDocument).mockResolvedValue({
       id: 'doc-9',
