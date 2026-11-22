@@ -176,23 +176,29 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   // Questions and departments of a case on the server are replaced as a whole;
   // only the selected ones are kept.
   const saveScopeOnServer = async () => {
+    let status = item.apiStatus
     if (questionsChanged)
-      await setCaseQuestionsAsync({
-        id: item.id,
-        questions: questions
-          .filter((question) => question.selected)
-          .map(({ text, departmentId }) => ({
-            text: text.trim(),
-            departmentId,
-          })),
-      })
+      status = (
+        await setCaseQuestionsAsync({
+          id: item.id,
+          questions: questions
+            .filter((question) => question.selected)
+            .map(({ text, departmentId }) => ({
+              text: text.trim(),
+              departmentId,
+            })),
+        })
+      ).status
     if (departmentsChanged)
-      await setCaseDepartmentsAsync({
-        id: item.id,
-        departmentIds: departments
-          .filter((department) => department.selected)
-          .map(({ id }) => id),
-      })
+      status = (
+        await setCaseDepartmentsAsync({
+          id: item.id,
+          departmentIds: departments
+            .filter((department) => department.selected)
+            .map(({ id }) => id),
+        })
+      ).status
+    return status
   }
   const save = async (continueToMaterials: boolean) => {
     if (readonly) {
@@ -205,9 +211,10 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
       if (questionsInvalid || departmentsInvalid) return
     }
     try {
-      await saveScopeOnServer()
+      // The server moves a new case on by itself when departments are set.
+      const apiStatus = await saveScopeOnServer()
       if (continueToMaterials || invalidatesDraft)
-        await syncCaseStatus(item, 'SENT_TO_DEPARTMENTS')
+        await syncCaseStatus({ id: item.id, apiStatus }, 'SENT_TO_DEPARTMENTS')
     } catch (error) {
       console.error('Cannot save the scope of the case', error)
       setSaveFailed(true)

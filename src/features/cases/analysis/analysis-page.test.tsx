@@ -157,6 +157,14 @@ describe('analiza sprawy', () => {
     const user = userEvent.setup()
     const item = createDemoCases()[0]
     item.questions = [{ id: 'q', text: '', selected: true }]
+    vi.mocked(casesApi.setCaseQuestions).mockResolvedValue({
+      ...detail,
+      status: 'NEW',
+    })
+    vi.mocked(casesApi.setCaseDepartments).mockResolvedValue({
+      ...detail,
+      status: 'NEW',
+    })
     item.departments = item.departments.map((department) => ({
       ...department,
       selected: false,
@@ -189,6 +197,28 @@ describe('analiza sprawy', () => {
       id: item.id,
       status: 'SENT_TO_DEPARTMENTS',
     })
+  })
+
+  it('does not repeat a status change the server already made', async () => {
+    vi.mocked(casesApi.setCaseDepartments).mockResolvedValue({
+      ...detail,
+      status: 'SENT_TO_DEPARTMENTS',
+    })
+    const user = userEvent.setup()
+    const item = createDemoCases()[0]
+    item.departments = item.departments.map((department) => ({
+      ...department,
+      selected: false,
+    }))
+    renderPage(item)
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Wybierz jednostkę ZDMiKP' }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Zapisz i przejdź do materiałów' }),
+    )
+    expect(await screen.findByText('Etap materiałów')).toBeInTheDocument()
+    expect(casesApi.changeCaseStatus).not.toHaveBeenCalled()
   })
 
   it('saves local edits, preserves the later status when the selected scope is unchanged', async () => {
