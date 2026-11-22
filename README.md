@@ -30,10 +30,11 @@ ePUAP ani SIDAS.
 
 ## Dane lokalne
 
-Backend nie przechowuje jeszcze części pól (tekst odpowiedzi, decyzje
-anonimizacji, notatki do materiałów, powody wyboru jednostek). Zapisujemy je w
-LocalStorage (`asystent-udip-demo-v1:<e-mail>`) jako nakładkę na dane z API,
-osobno dla każdego konta; wylogowanie je czyści. Nie zapisujemy plików ani
+Pola bez odpowiednika w API (tekst odpowiedzi, decyzje anonimizacji, notatki do
+materiałów, powody wyboru jednostek, lokalny etap pracy, data i notatka
+wysyłki) zapisujemy w LocalStorage (`asystent-udip-demo-v1:<e-mail>`) jako
+nakładkę na dane z API, osobno dla każdego konta. Ręczne wylogowanie czyści
+dane wszystkich kont; wygaśnięcie sesji (401) ich nie usuwa. Nie zapisujemy plików ani
 haseł. Klucz `asystent-udip-session` trzyma tylko id i e-mail użytkownika jako
 podpowiedź do pierwszego renderu; sesją jest ciasteczko httpOnly z backendu.
 Dane lokalne nie są szyfrowane, używaj wyłącznie danych testowych.
