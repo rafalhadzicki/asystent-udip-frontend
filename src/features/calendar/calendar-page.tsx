@@ -21,8 +21,8 @@ import {
   format,
   isSameDay,
   isSameMonth,
-  isValid,
   parseISO,
+  startOfDay,
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
@@ -34,6 +34,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -42,13 +43,15 @@ import {
   Switch,
   Typography,
 } from '@mui/material'
-import { DEMO_TODAY } from '@/features/demo/demo-data'
-import { daysRemaining, displayDate, urgency } from '@/features/demo/date-utils'
-import { useDemoStore } from '@/features/demo/demo-store'
+import { useGetCasesOfYears, useRefetchCases } from '@/api/cases/cases.queries'
+import type { CaseStatus } from '@/api/cases/cases.schemas'
+import {
+  formatDate,
+  urgencyTones,
+} from '@/features/cases/register/register-utils'
 import { caseTabs, routes } from '@/app/routes'
-import type { CaseStatus } from '@/features/demo/types'
 
-type Urgency = ReturnType<typeof urgency>
+type Urgency = (typeof urgencyTones)[keyof typeof urgencyTones]
 
 const urgencyColors: Record<Urgency, { background: string; color: string }> = {
   overdue: { background: '#fde8e7', color: '#a51c1c' },
@@ -59,11 +62,10 @@ const urgencyColors: Record<Urgency, { background: string; color: string }> = {
 }
 
 const statusKeys: Record<CaseStatus, `status.${CaseStatus}`> = {
-  analysis: 'status.analysis',
-  waiting: 'status.waiting',
-  draft: 'status.draft',
-  redaction: 'status.redaction',
-  completed: 'status.completed',
+  NEW: 'status.NEW',
+  SENT_TO_DEPARTMENTS: 'status.SENT_TO_DEPARTMENTS',
+  RESPONSE_PREPARED: 'status.RESPONSE_PREPARED',
+  RESPONSE_SENT: 'status.RESPONSE_SENT',
 }
 
 const urgencyKeys: Record<Urgency, `urgency.${Urgency}`> = {
@@ -74,25 +76,28 @@ const urgencyKeys: Record<Urgency, `urgency.${Urgency}`> = {
   completed: 'urgency.completed',
 }
 
-const today = parseISO(DEMO_TODAY)
 const weekStartsOn = 1
 
 export const CalendarPage = () => {
   const { t } = useTranslation('translation', { keyPrefix: 'calendar' })
-  const { cases } = useDemoStore()
+  const [today] = useState(() => startOfDay(new Date()))
   const [month, setMonth] = useState(() => startOfMonth(today))
   const [selected, setSelected] = useState(today)
   const [showCompleted, setShowCompleted] = useState(false)
+  // A case received last year can still have its deadline in this year.
+  const year = month.getFullYear()
+  const {
+    items: cases,
+    isPartial,
+    isLoading,
+    isError,
+  } = useGetCasesOfYears([year, year - 1])
+  const refetchCases = useRefetchCases()
 
-  const datedCases = useMemo(
-    () =>
-      cases.filter((item) => item.deadline && isValid(parseISO(item.deadline))),
-    [cases],
-  )
   const visibleCases = useMemo(
     () =>
-      datedCases.filter((item) => showCompleted || item.status !== 'completed'),
-    [datedCases, showCompleted],
+      cases.filter((item) => showCompleted || item.status !== 'RESPONSE_SENT'),
+    [cases, showCompleted],
   )
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(month), { weekStartsOn }),
@@ -100,12 +105,12 @@ export const CalendarPage = () => {
   })
   const weekdays = days.slice(0, 7)
   const selectedCases = visibleCases.filter((item) =>
-    isSameDay(parseISO(item.deadline), selected),
+    isSameDay(parseISO(item.effectiveDueAt), selected),
   )
-  const monthCases = datedCases.filter(
+  const monthCases = cases.filter(
     (item) =>
-      item.status !== 'completed' &&
-      isSameMonth(parseISO(item.deadline), month),
+      item.status !== 'RESPONSE_SENT' &&
+      isSameMonth(parseISO(item.effectiveDueAt), month),
   )
   const summaryKinds: Urgency[] = ['overdue', 'today', 'tomorrow', 'normal']
 
@@ -137,8 +142,9 @@ export const CalendarPage = () => {
               size="small"
               label={t('summary', {
                 label: t(urgencyKeys[kind]),
-                count: monthCases.filter((item) => urgency(item) === kind)
-                  .length,
+                count: monthCases.filter(
+                  (item) => urgencyTones[item.urgency] === kind,
+                ).length,
               })}
               sx={{ ...urgencyColors[kind], fontWeight: 600 }}
             />
@@ -184,7 +190,9 @@ export const CalendarPage = () => {
               setSelected(today)
             }}
           >
-            {t('todayButton', { date: displayDate(DEMO_TODAY) })}
+            {t('todayButton', {
+              date: formatDate(format(today, 'yyyy-MM-dd')),
+            })}
           </Button>
           <FormControlLabel
             sx={{ ml: { xs: 0, sm: 'auto' }, mr: 0 }}
@@ -200,6 +208,29 @@ export const CalendarPage = () => {
         <Typography variant="caption" color="text.secondary">
           {t('summaryHint')}
         </Typography>
+        {isError && (
+          <Alert
+            severity="error"
+            sx={{ mt: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={refetchCases}>
+                {t('retry')}
+              </Button>
+            }
+          >
+            {t('loadError')}
+          </Alert>
+        )}
+        {isPartial && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            {t('partial')}
+          </Alert>
+        )}
+        {isLoading && (
+          <Typography role="status" variant="body2" sx={{ mt: 2 }}>
+            {t('loading')}
+          </Typography>
+        )}
       </Header>
 
       <Content>
@@ -212,7 +243,7 @@ export const CalendarPage = () => {
             ))}
             {days.map((day) => {
               const items = visibleCases.filter((item) =>
-                isSameDay(parseISO(item.deadline), day),
+                isSameDay(parseISO(item.effectiveDueAt), day),
               )
               const selectedDay = isSameDay(day, selected)
               return (
@@ -241,8 +272,8 @@ export const CalendarPage = () => {
                     {isSameDay(day, today) && <span>{t('today')}</span>}
                   </Box>
                   {items.slice(0, 2).map((item) => (
-                    <Reference key={item.id} title={item.reference}>
-                      {item.reference}
+                    <Reference key={item.id} title={item.caseNumber}>
+                      {item.caseNumber}
                     </Reference>
                   ))}
                   {items.length > 2 && (
@@ -287,11 +318,11 @@ export const CalendarPage = () => {
           ) : (
             <Box sx={{ display: 'grid', gap: 1.5 }}>
               {selectedCases.map((item) => {
-                const kind = urgency(item)
+                const kind = urgencyTones[item.urgency]
                 return (
                   <CaseCard key={item.id}>
                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {item.reference}
+                      {item.caseNumber}
                     </Typography>
                     <Typography
                       sx={{
@@ -322,15 +353,15 @@ export const CalendarPage = () => {
                       color="text.secondary"
                       sx={{ mt: 1.5 }}
                     >
-                      {t('receivedAt', { date: displayDate(item.receivedAt) })}
+                      {t('receivedAt', { date: formatDate(item.receivedAt) })}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {t('deadline', { date: displayDate(item.deadline) })}
+                      {t('deadline', { date: formatDate(item.effectiveDueAt) })}
                     </Typography>
                     {kind === 'normal' && (
                       <Typography variant="body2" color="text.secondary">
                         {t('daysRemaining', {
-                          count: daysRemaining(item.deadline),
+                          count: item.daysLeft,
                         })}
                       </Typography>
                     )}

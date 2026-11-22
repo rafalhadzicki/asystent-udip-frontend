@@ -459,7 +459,7 @@
   "calendar": {
     "eyebrow": "Terminarz",
     "title": "Kalendarz terminów",
-    "description": "Terminy wynikają z dat zatwierdzonych w sprawach. Widok demonstracyjny używa stałej daty bieżącej.",
+    "description": "Terminy wynikają z dat zatwierdzonych w sprawach.",
     "summary": "{{label}}: {{count}}",
     "summaryHint": "Podsumowanie dotyczy niezakończonych spraw w wyświetlanym miesiącu.",
     "previousMonth": "Poprzedni miesiąc",
@@ -479,11 +479,10 @@
     "daysRemaining_other": "Pozostało {{count}} dnia",
     "openCase": "Otwórz sprawę",
     "status": {
-      "analysis": "W analizie",
-      "waiting": "Oczekiwanie na materiały",
-      "draft": "Projekt odpowiedzi",
-      "redaction": "Anonimizacja",
-      "completed": "Zakończona"
+      "NEW": "W analizie",
+      "SENT_TO_DEPARTMENTS": "Oczekiwanie na materiały",
+      "RESPONSE_PREPARED": "Projekt odpowiedzi",
+      "RESPONSE_SENT": "Zakończona"
     },
     "urgency": {
       "overdue": "Po terminie",
@@ -491,7 +490,11 @@
       "tomorrow": "Termin jutro",
       "normal": "W terminie",
       "completed": "Zakończona"
-    }
+    },
+    "loading": "Ładowanie spraw…",
+    "loadError": "Nie udało się pobrać spraw do kalendarza.",
+    "retry": "Spróbuj ponownie",
+    "partial": "Wyświetlono tylko część spraw (limit odpowiedzi serwera), więc kalendarz może być niepełny."
   },
   "knowledge": {
     "title": "Baza wiedzy",

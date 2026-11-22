@@ -124,6 +124,35 @@ export const useGetDeadlineSummary = (years: number[]) => {
   })
 }
 
+// Every case received in the given years, nearest deadline first. The API lists
+// one receipt year at a time, so a calendar needs the previous year as well.
+export const useGetCasesOfYears = (years: number[]) => {
+  const email = useSessionEmail()
+  return useQueries({
+    queries: years.map((year) => {
+      const params: CaseListParams = {
+        year,
+        sort: 'DEADLINE_ASC',
+        limit: DEADLINE_SUMMARY_LIMIT,
+      }
+      return {
+        queryKey: queryKeys.cases.list(email, params),
+        queryFn: ({ signal }: { signal: AbortSignal }) =>
+          getCases(params, signal),
+      }
+    }),
+    combine: (results) => ({
+      items: results.flatMap(({ data }) => data?.items ?? []),
+      // The API caps a page, so a bigger year is only partially listed.
+      isPartial: results.some(
+        ({ data }) => data !== undefined && data.total > data.items.length,
+      ),
+      isLoading: results.some((result) => result.isLoading),
+      isError: results.some((result) => result.isError),
+    }),
+  })
+}
+
 // Refreshes every cases query (lists, years, deadline summary) after a failure.
 export const useRefetchCases = () => {
   const queryClient = useQueryClient()
