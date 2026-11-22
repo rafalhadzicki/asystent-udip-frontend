@@ -12,7 +12,15 @@ import {
 import type { CaseItem, KnowledgeItem } from '@/features/demo/types'
 import { AnalysisPage } from './analysis-page'
 import * as departmentApi from '@/api/departments/departments.api'
+import * as casesApi from '@/api/cases/cases.api'
+import { composeApiCase } from '@/features/cases/case-from-api'
+import { detail } from '@/test/case-detail'
 import { createTestQueryClient } from '@/test/query-client'
+
+vi.mock('@/api/cases/cases.api', () => ({
+  setCaseQuestions: vi.fn(),
+  setCaseDepartments: vi.fn(),
+}))
 
 vi.mock('@/api/departments/departments.api', () => ({
   getDepartments: vi.fn().mockResolvedValue([]),
@@ -43,6 +51,21 @@ const renderPage = (item: CaseItem, knowledge = createDemoKnowledge()) => {
     </QueryClientProvider>,
   )
 }
+
+const renderRemote = (item: CaseItem) =>
+  render(
+    <QueryClientProvider client={createTestQueryClient()}>
+      <DemoProvider>
+        <MemoryRouter initialEntries={['/sprawy/x/analiza']}>
+          <Routes>
+            <Route path="/sprawy/:caseId" element={<Outlet context={item} />}>
+              <Route path="analiza" element={<AnalysisPage />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </DemoProvider>
+    </QueryClientProvider>,
+  )
 
 const savedCase = () =>
   (
@@ -98,7 +121,7 @@ describe('analiza sprawy', () => {
       }),
     )
     expect(
-      screen.getByText(/wybór zapisuje się na razie tylko lokalnie/),
+      screen.getByText(/Podpowiedzi nazw pochodzą ze słownika serwera/),
     ).toBeInTheDocument()
   })
 
@@ -294,5 +317,62 @@ describe('analiza sprawy', () => {
     ).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
     expect(savedCase().analysisNeedsReview).toBe(false)
+  })
+
+  describe('sprawa z API', () => {
+    const remoteItem = () =>
+      composeApiCase(
+        {
+          ...detail,
+          questions: [
+            { id: 'q1', position: 1, text: 'Pytanie?', departmentId: null },
+          ],
+        },
+        {
+          analysisNeedsReview: true,
+          departmentReasons: { 'dept-1': 'Rejestr' },
+        },
+      )
+
+    it('pokazuje uzasadnienie AI i zapisuje zmienione pytania na serwerze', async () => {
+      vi.mocked(casesApi.setCaseQuestions).mockResolvedValue(detail)
+      const user = userEvent.setup()
+      const item = remoteItem()
+      renderRemote(item)
+      expect(screen.getByText('Rejestr')).toBeInTheDocument()
+      const field = screen.getByLabelText('Treść pytania 1')
+      await user.clear(field)
+      await user.type(field, 'Nowe pytanie?')
+      await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
+      await waitFor(() => expect(casesApi.setCaseQuestions).toHaveBeenCalled())
+      expect(vi.mocked(casesApi.setCaseQuestions).mock.calls[0][0]).toEqual({
+        id: item.id,
+        questions: [{ text: 'Nowe pytanie?', departmentId: null }],
+      })
+      expect(casesApi.setCaseDepartments).not.toHaveBeenCalled()
+    })
+
+    it('nie zapisuje ustaleń lokalnie, gdy serwer odrzuci zmianę', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      vi.mocked(casesApi.setCaseQuestions).mockRejectedValue(new Error('500'))
+      const user = userEvent.setup()
+      renderRemote(remoteItem())
+      await user.type(screen.getByLabelText('Treść pytania 1'), ' x')
+      await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
+      expect(
+        await screen.findByText(/Nie udało się zapisać pytań i jednostek/),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(/Treść lub temat wniosku zmieniły się/),
+      ).toBeInTheDocument()
+    })
+
+    it('odrzuca jednostkę spoza słownika serwera', async () => {
+      const user = userEvent.setup()
+      renderRemote(remoteItem())
+      await user.type(screen.getByLabelText('Nazwa jednostki'), 'Nieznana')
+      await user.click(screen.getByRole('button', { name: 'Dodaj jednostkę' }))
+      expect(screen.getByText(/Wybierz jednostkę z listy/)).toBeInTheDocument()
+    })
   })
 })

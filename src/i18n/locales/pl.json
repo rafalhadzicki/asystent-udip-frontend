@@ -281,7 +281,8 @@
   "analysis": {
     "title": "Analiza wniosku",
     "intro": "Sprawdź zakres wniosku i wybierz jednostki, które mogą dysponować potrzebnymi materiałami.",
-    "simulation": "Wersja demonstracyjna: sugestie są przykładowe, a nie wynikiem analizy AI. Sprawdź je i podejmij własną decyzję.",
+    "saveFailed": "Nie udało się zapisać pytań i jednostek na serwerze. Spróbuj ponownie.",
+    "departmentUnknown": "Wybierz jednostkę z listy podpowiedzi – serwer przyjmuje tylko jednostki ze słownika.",
     "reviewRequired": "Treść lub temat wniosku zmieniły się. Przejrzyj istniejące pytania i jednostki, popraw je w razie potrzeby i zapisz ustalenia przed dalszą pracą.",
     "questionsTitle": "Zakres wniosku",
     "questionsDescription": "Zaznacz pytania, które mają znaleźć się w zakresie sprawy. Możesz zmienić ich treść lub dodać własne.",
@@ -296,7 +297,7 @@
     "noReason": "Nie podano uzasadnienia.",
     "removeDepartment": "Usuń jednostkę {{name}}",
     "customName": "Nazwa jednostki",
-    "departmentLookupHint": "Podpowiedzi nazw pochodzą z API; wybór zapisuje się na razie tylko lokalnie.",
+    "departmentLookupHint": "Podpowiedzi nazw pochodzą ze słownika serwera; dodać można tylko jednostkę ze słownika.",
     "departmentLookupError": "Nie udało się pobrać jednostek z API. Możesz wpisać nazwę ręcznie.",
     "customReason": "Uzasadnienie wyboru (opcjonalnie)",
     "addDepartment": "Dodaj jednostkę",

@@ -29,6 +29,10 @@ import type {
   Question,
 } from '@/features/demo/types'
 import { useGetDepartments } from '@/api/departments/departments.queries'
+import {
+  useSetCaseDepartments,
+  useSetCaseQuestions,
+} from '@/api/cases/cases.queries'
 
 const newId = () => globalThis.crypto.randomUUID()
 
@@ -47,6 +51,11 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const [departmentError, setDepartmentError] = useState('')
   const [attemptedContinue, setAttemptedContinue] = useState(false)
   const [message, setMessage] = useState('')
+  const [saveFailed, setSaveFailed] = useState(false)
+  const { setCaseQuestionsAsync, isSettingCaseQuestions } =
+    useSetCaseQuestions()
+  const { setCaseDepartmentsAsync, isSettingCaseDepartments } =
+    useSetCaseDepartments()
   const [example, setExample] = useState<KnowledgeItem | null>(null)
   const readonly = item.status === 'completed'
   const { departments: departmentOptions, isDepartmentsError } =
@@ -54,9 +63,11 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const departmentsChanged =
     JSON.stringify(selectedDepartments(departments)) !==
     JSON.stringify(selectedDepartments(item.departments))
-  const changedScope =
+  const questionsChanged =
     JSON.stringify(selectedQuestions(questions)) !==
-      JSON.stringify(selectedQuestions(item.questions)) || departmentsChanged
+    JSON.stringify(selectedQuestions(item.questions))
+  const changedScope = questionsChanged || departmentsChanged
+  const isSaving = isSettingCaseQuestions || isSettingCaseDepartments
   const hasDraft = Boolean(
     item.responseText ||
     item.redactions.length ||
@@ -109,6 +120,11 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
       (department) =>
         department.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
     )
+    // The server accepts only departments from its dictionary.
+    if (item.apiStatus && !matchedDepartment) {
+      setDepartmentError(t('departmentUnknown'))
+      return
+    }
     setDepartments((current) => [
       ...current,
       {
@@ -123,7 +139,28 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
     setDepartmentError('')
     setMessage('')
   }
-  const save = (continueToMaterials: boolean) => {
+  // Questions and departments of a case on the server are replaced as a whole;
+  // only the selected ones are kept.
+  const saveScopeOnServer = async () => {
+    if (questionsChanged)
+      await setCaseQuestionsAsync({
+        id: item.id,
+        questions: questions
+          .filter((question) => question.selected)
+          .map(({ text, departmentId }) => ({
+            text: text.trim(),
+            departmentId,
+          })),
+      })
+    if (departmentsChanged)
+      await setCaseDepartmentsAsync({
+        id: item.id,
+        departmentIds: departments
+          .filter((department) => department.selected)
+          .map(({ id }) => id),
+      })
+  }
+  const save = async (continueToMaterials: boolean) => {
     if (readonly) {
       if (continueToMaterials)
         navigate(routes.caseTab(item.id, caseTabs.materials))
@@ -133,9 +170,26 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
       setAttemptedContinue(true)
       if (questionsInvalid || departmentsInvalid) return
     }
+    if (item.apiStatus) {
+      try {
+        await saveScopeOnServer()
+      } catch (error) {
+        console.error('Cannot save the scope of the case', error)
+        setSaveFailed(true)
+        return
+      }
+    }
+    setSaveFailed(false)
     const changes: Partial<CaseItem> = {
       questions,
       departments,
+      ...(item.apiStatus
+        ? {
+            departmentReasons: Object.fromEntries(
+              departments.map(({ id, reason }) => [id, reason]),
+            ),
+          }
+        : {}),
       analysisNeedsReview: false,
       ...(departmentsChanged ? { contactedAt: '' } : {}),
     }
@@ -165,7 +219,6 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
         </Typography>
         <Typography color="text.secondary">{t('intro')}</Typography>
       </Box>
-      <Alert severity="info">{t('simulation')}</Alert>
       {item.analysisNeedsReview && (
         <Alert severity="warning">{t('reviewRequired')}</Alert>
       )}
@@ -173,6 +226,7 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
       {invalidatesDraft && !readonly && (
         <Alert severity="warning">{t('invalidationWarning')}</Alert>
       )}
+      {saveFailed && <Alert severity="error">{t('saveFailed')}</Alert>}
       {message && (
         <Alert severity="success" role="status">
           {message}
@@ -432,14 +486,19 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
       </Layout>
       <Actions>
         {!readonly && (
-          <Button variant="outlined" onClick={() => save(false)}>
+          <Button
+            variant="outlined"
+            disabled={isSaving}
+            onClick={() => void save(false)}
+          >
             {t('save')}
           </Button>
         )}
         <Button
           variant="contained"
+          disabled={isSaving}
           endIcon={<ArrowRight size={18} />}
-          onClick={() => save(true)}
+          onClick={() => void save(true)}
         >
           {t(readonly ? 'viewMaterials' : 'continue')}
         </Button>
