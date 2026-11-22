@@ -1,5 +1,5 @@
 import { Box, Paper } from '@mui/material'
-import { styled } from '@mui/material/styles'
+import { alpha, styled } from '@mui/material/styles'
 
 const Page = styled('section')(({ theme }) => ({
   width: '100%',
@@ -16,6 +16,21 @@ const Preview = styled(Paper)(({ theme }) => ({
   overflowWrap: 'anywhere',
   fontFamily: 'inherit',
   lineHeight: 1.7,
+}))
+
+const Mark = styled('mark')(({ theme }) => ({
+  borderRadius: 3,
+  padding: '0 2px',
+  color: 'inherit',
+  '&[data-decision="pending"]': {
+    backgroundColor: alpha(theme.palette.warning.main, 0.35),
+  },
+  '&[data-decision="hide"]': {
+    backgroundColor: alpha(theme.palette.error.main, 0.25),
+  },
+  '&[data-decision="keep"]': {
+    backgroundColor: alpha(theme.palette.success.main, 0.25),
+  },
 }))
 
 const Grid = styled(Box)(({ theme }) => ({
@@ -40,4 +55,4 @@ const PreviewPanel = styled(Paper)(({ theme }) => ({
   },
 }))
 
-export { Grid, Page, Preview, PreviewPanel }
+export { Grid, Mark, Page, Preview, PreviewPanel }

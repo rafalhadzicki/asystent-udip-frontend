@@ -422,7 +422,8 @@
       "description": "Podgląd pokazuje wygenerowany tekst. Ukryte fragmenty są zastąpione w treści, a nie zamalowane wizualnie.",
       "showOriginal": "Pokaż oryginalną treść",
       "showSanitized": "Pokaż podgląd po anonimizacji",
-      "label": "Podgląd odpowiedzi"
+      "label": "Podgląd odpowiedzi",
+      "legend": "Zaznaczenia: żółte – wymaga decyzji, czerwone – zostanie ukryte, zielone – pozostaje w tekście."
     },
     "review": {
       "title": "Ręczny przegląd",

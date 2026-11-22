@@ -1,4 +1,4 @@
-import type { Redaction } from '@/features/demo/types'
+import type { Redaction, RedactionDecision } from '@/features/demo/types'
 
 export type TextRange = { start: number; end: number }
 
@@ -81,4 +81,44 @@ export const overlapsExistingRedaction = (
         candidate.start < existing.end && existing.start < candidate.end,
     ),
   )
+}
+
+export type TextSegment = { text: string; decision?: RedactionDecision }
+
+// Splits the text into plain parts and parts matched by a redaction, so the
+// preview can colour them. With `applyHidden` the hidden parts show the
+// replacement and kept parts are left unmarked, as in the exported text.
+export const segmentText = (
+  text: string,
+  redactions: Redaction[],
+  { applyHidden, replacement }: { applyHidden: boolean; replacement: string },
+): TextSegment[] => {
+  const matches = redactions
+    .filter((redaction) => !applyHidden || redaction.decision !== 'keep')
+    .flatMap((redaction) =>
+      findExactOccurrences(text, redaction.text).map((range) => ({
+        ...range,
+        decision: redaction.decision,
+      })),
+    )
+    .sort((left, right) => left.start - right.start || right.end - left.end)
+
+  const segments: TextSegment[] = []
+  let cursor = 0
+  for (const match of matches) {
+    if (match.start < cursor) continue
+    if (match.start > cursor) {
+      segments.push({ text: text.slice(cursor, match.start) })
+    }
+    segments.push({
+      text:
+        applyHidden && match.decision === 'hide'
+          ? replacement
+          : text.slice(match.start, match.end),
+      decision: match.decision,
+    })
+    cursor = match.end
+  }
+  if (cursor < text.length) segments.push({ text: text.slice(cursor) })
+  return segments
 }

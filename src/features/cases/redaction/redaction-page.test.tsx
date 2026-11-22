@@ -215,8 +215,9 @@ describe('redaction workflow', () => {
     expect(
       await screen.findByText(/Dodano sugestie do rozstrzygnięcia: 2/),
     ).toBeInTheDocument()
-    expect(screen.getByText('Żaneta Żółć')).toBeInTheDocument()
-    expect(screen.getByText('ŻANETA ŻÓŁĆ')).toBeInTheDocument()
+    // each fragment appears in the decision list and highlighted in the preview
+    expect(screen.getAllByText('Żaneta Żółć')).toHaveLength(2)
+    expect(screen.getAllByText('ŻANETA ŻÓŁĆ')).toHaveLength(2)
     const hideButtons = screen.getAllByRole('button', {
       name: 'Ukryj w pobranym tekście',
     })
@@ -288,7 +289,7 @@ describe('redaction workflow', () => {
     expect(
       await screen.findByText(/Dodano sugestii: 1. Pominięto/),
     ).toBeInTheDocument()
-    expect(screen.getByText('JAN KOWALSKI')).toBeInTheDocument()
+    expect(screen.getAllByText('JAN KOWALSKI')).toHaveLength(2)
     expect(
       screen.getByText(/Imię i nazwisko: Dane osobowe wnioskodawcy/),
     ).toBeInTheDocument()

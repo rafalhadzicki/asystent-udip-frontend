@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Button, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { Redaction } from '@/features/demo/types'
-import { Preview, PreviewPanel } from './redaction-page.styles'
-import { redactText } from './redaction-utils'
+import { Mark, Preview, PreviewPanel } from './redaction-page.styles'
+import { segmentText } from './redaction-utils'
 
 type RedactionPreviewProps = {
   text: string
@@ -33,8 +33,22 @@ export const RedactionPreview = ({
         >
           {t(showOriginal ? 'preview.showSanitized' : 'preview.showOriginal')}
         </Button>
+        <Typography variant="caption" color="text.secondary">
+          {t('preview.legend')}
+        </Typography>
         <Preview variant="outlined" aria-label={t('preview.label')}>
-          {showOriginal ? text : redactText(text, redactions, t('replacement'))}
+          {segmentText(text, redactions, {
+            applyHidden: !showOriginal,
+            replacement: t('replacement'),
+          }).map((segment, index) =>
+            segment.decision ? (
+              <Mark key={index} data-decision={segment.decision}>
+                {segment.text}
+              </Mark>
+            ) : (
+              segment.text
+            ),
+          )}
         </Preview>
       </Stack>
     </PreviewPanel>

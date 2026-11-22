@@ -6,6 +6,7 @@ import {
   hasUnresolvedRedactions,
   overlapsExistingRedaction,
   redactText,
+  segmentText,
 } from './redaction-utils'
 
 const redaction = (
@@ -62,5 +63,36 @@ describe('redaction utilities', () => {
     expect(overlapsExistingRedaction('abcdef', 'def', [redaction('abc')])).toBe(
       false,
     )
+  })
+})
+
+describe('segmentText', () => {
+  const redactions: Redaction[] = [
+    { id: '1', text: 'Jan', reason: '', decision: 'hide' },
+    { id: '2', text: 'Poznań', reason: '', decision: 'keep' },
+    { id: '3', text: 'PESEL', reason: '', decision: 'pending' },
+  ]
+  const text = 'Jan z Poznań, PESEL'
+
+  it('marks every fragment in the original text', () => {
+    expect(
+      segmentText(text, redactions, { applyHidden: false, replacement: 'X' }),
+    ).toEqual([
+      { text: 'Jan', decision: 'hide' },
+      { text: ' z ' },
+      { text: 'Poznań', decision: 'keep' },
+      { text: ', ' },
+      { text: 'PESEL', decision: 'pending' },
+    ])
+  })
+
+  it('replaces hidden fragments and leaves kept ones unmarked', () => {
+    expect(
+      segmentText(text, redactions, { applyHidden: true, replacement: 'X' }),
+    ).toEqual([
+      { text: 'X', decision: 'hide' },
+      { text: ' z Poznań, ' },
+      { text: 'PESEL', decision: 'pending' },
+    ])
   })
 })
