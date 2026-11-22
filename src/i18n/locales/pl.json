@@ -36,8 +36,7 @@
     }
   },
   "cases": {
-    "title": "Sprawy",
-    "placeholder": "To szkielet aplikacji. Widoki obsługi spraw zostaną dodane po zatwierdzeniu projektu interfejsu."
+    "title": "Sprawy"
   },
   "navigation": {
     "cases": "Sprawy",
@@ -347,7 +346,7 @@
     "stale": "Materiały lub ich treść zmieniły się po przygotowaniu projektu. Sprawdź i zapisz odpowiedź ponownie albo wygeneruj nowy projekt. Dotychczasowa treść została zachowana.",
     "responseLabel": "Treść odpowiedzi",
     "save": "Zapisz wersję roboczą",
-    "saved": "Wersja robocza została zapisana w stanie aplikacji.",
+    "saved": "Wersja robocza została zapisana.",
     "saveError": "Nie udało się zapisać danych w pamięci przeglądarki.",
     "next": "Przejdź do anonimizacji",
     "nextHelp": "Aby przejść dalej, zapisz niepustą i aktualną odpowiedź.",
@@ -373,7 +372,7 @@
     "subtitle": "Pracujesz na treści odpowiedzi zapisanej w tej sprawie.",
     "missing": {
       "title": "Brak treści odpowiedzi",
-      "description": "Dodaj lub przygotuj odpowiedź w materiałach tej sprawy. Nie używamy osobnego przykładowego pisma.",
+      "description": "Dodaj lub przygotuj odpowiedź w materiałach tej sprawy.",
       "goToMaterials": "Przejdź do materiałów sprawy"
     },
     "waiting": {
@@ -469,7 +468,7 @@
     "selectedDay": "Wybrany dzień",
     "emptyDay": "Brak spraw z terminem w tym dniu.",
     "receivedAt": "Data wpływu: {{date}}",
-    "deadline": "Zatwierdzony termin: {{date}}",
+    "deadline": "Termin zatwierdzony: {{date}}",
     "daysRemaining_one": "Pozostał {{count}} dzień",
     "daysRemaining_few": "Pozostały {{count}} dni",
     "daysRemaining_many": "Pozostało {{count}} dni",
@@ -477,7 +476,7 @@
     "openCase": "Otwórz sprawę",
     "status": {
       "NEW": "W analizie",
-      "SENT_TO_DEPARTMENTS": "Oczekiwanie na materiały",
+      "SENT_TO_DEPARTMENTS": "Oczekuje na materiały",
       "RESPONSE_PREPARED": "Projekt odpowiedzi",
       "RESPONSE_SENT": "Zakończona"
     },
@@ -628,7 +627,7 @@
     "unknown": "Nie udało się zapisać zmiany terminu. Spróbuj ponownie."
   },
   "localStore": {
-    "restoreError": "Nie udało się odczytać zapisanych danych lokalnych. Pokazujemy dane początkowe.",
+    "restoreError": "Nie udało się odczytać zapisanych wersji roboczych. Zaczynasz z pustymi wersjami roboczymi.",
     "saveError": "Nie udało się zapisać zmian w przeglądarce. Zmiany są dostępne tylko do odświeżenia strony.",
     "conflictError": "Dane lokalne zmieniły się w innej karcie. Zapis w tej karcie został wstrzymany, aby nie nadpisać tamtych zmian. Skopiuj potrzebne niezapisane treści, a następnie odśwież stronę."
   }
