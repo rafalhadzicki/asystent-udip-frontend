@@ -332,7 +332,7 @@ describe('redaction workflow', () => {
 
   it('lets the user undo a decision by clicking the selected option again', async () => {
     const user = userEvent.setup()
-    suggest('Jan Kowalski')
+    suggest('Jan Demonstracyjny')
     renderPage()
     await user.click(
       screen.getByRole('button', { name: 'Wyszukaj dane osobowe (AI)' }),
