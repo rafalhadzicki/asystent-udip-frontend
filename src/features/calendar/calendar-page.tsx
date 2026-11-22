@@ -43,7 +43,7 @@ import {
   Switch,
   Typography,
 } from '@mui/material'
-import { useGetCasesOfYears, useRefetchCases } from '@/api/cases/cases.queries'
+import { useGetCalendarCases, useRefetchCases } from '@/api/cases/cases.queries'
 import type { CaseStatus } from '@/api/cases/cases.schemas'
 import {
   formatDate,
@@ -84,14 +84,19 @@ export const CalendarPage = () => {
   const [month, setMonth] = useState(() => startOfMonth(today))
   const [selected, setSelected] = useState(today)
   const [showCompleted, setShowCompleted] = useState(false)
-  // A case received last year can still have its deadline in this year.
-  const year = month.getFullYear()
+  const days = eachDayOfInterval({
+    start: startOfWeek(startOfMonth(month), { weekStartsOn }),
+    end: endOfWeek(endOfMonth(month), { weekStartsOn }),
+  })
+  // The whole grid is fetched, so the days around the month show their cases.
   const {
-    items: cases,
-    isPartial,
-    isLoading,
-    isError,
-  } = useGetCasesOfYears([year, year - 1])
+    calendarCases: cases,
+    isLoadingCalendar: isLoading,
+    isCalendarError: isError,
+  } = useGetCalendarCases({
+    from: format(days[0], 'yyyy-MM-dd'),
+    to: format(days[days.length - 1], 'yyyy-MM-dd'),
+  })
   const refetchCases = useRefetchCases()
 
   const visibleCases = useMemo(
@@ -99,10 +104,6 @@ export const CalendarPage = () => {
       cases.filter((item) => showCompleted || item.status !== 'RESPONSE_SENT'),
     [cases, showCompleted],
   )
-  const days = eachDayOfInterval({
-    start: startOfWeek(startOfMonth(month), { weekStartsOn }),
-    end: endOfWeek(endOfMonth(month), { weekStartsOn }),
-  })
   const weekdays = days.slice(0, 7)
   const selectedCases = visibleCases.filter((item) =>
     isSameDay(parseISO(item.effectiveDueAt), selected),
@@ -219,11 +220,6 @@ export const CalendarPage = () => {
             }
           >
             {t('loadError')}
-          </Alert>
-        )}
-        {isPartial && (
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            {t('partial')}
           </Alert>
         )}
         {isLoading && (

@@ -3,6 +3,7 @@ import type {
   KnowledgeSearchParams,
 } from './knowledge/knowledge.schemas'
 import type {
+  CaseCalendarParams,
   CaseListParams,
   CaseNumberCheckParams,
 } from './cases/cases.schemas'
@@ -28,6 +29,8 @@ export const queryKeys = {
     lists: (email: string) => [...queryKeys.cases.all(email), 'list'] as const,
     list: (email: string, params: CaseListParams) =>
       [...queryKeys.cases.lists(email), params] as const,
+    calendar: (email: string, params: CaseCalendarParams) =>
+      [...queryKeys.cases.all(email), 'calendar', params] as const,
     years: (email: string) => [...queryKeys.cases.all(email), 'years'] as const,
     deadlinePreview: (email: string, receivedAt: string) =>
       [...queryKeys.cases.all(email), 'deadline-preview', receivedAt] as const,

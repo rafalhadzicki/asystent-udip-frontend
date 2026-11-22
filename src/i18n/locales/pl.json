@@ -498,8 +498,7 @@
     },
     "loading": "Ładowanie spraw…",
     "loadError": "Nie udało się pobrać spraw do kalendarza.",
-    "retry": "Spróbuj ponownie",
-    "partial": "Wyświetlono tylko część spraw (limit odpowiedzi serwera), więc kalendarz może być niepełny."
+    "retry": "Spróbuj ponownie"
   },
   "knowledge": {
     "title": "Baza wiedzy",

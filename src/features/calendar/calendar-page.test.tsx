@@ -8,7 +8,7 @@ import type { CaseSummary } from '@/api/cases/cases.schemas'
 import { createTestQueryClient } from '@/test/query-client'
 import { CalendarPage } from './calendar-page'
 
-vi.mock('@/api/cases/cases.api', () => ({ getCases: vi.fn() }))
+vi.mock('@/api/cases/cases.api', () => ({ getCalendarCases: vi.fn() }))
 
 const summary = (overrides: Partial<CaseSummary>): CaseSummary => ({
   id: 'case-1',
@@ -31,7 +31,7 @@ const summary = (overrides: Partial<CaseSummary>): CaseSummary => ({
   ...overrides,
 })
 
-const thisYear = [
+const caseItems = [
   summary({}),
   summary({
     id: 'case-2',
@@ -57,8 +57,6 @@ const thisYear = [
     urgency: 'UPCOMING',
     daysLeft: 9,
   }),
-]
-const lastYear = [
   summary({
     id: 'case-5',
     year: 2025,
@@ -81,10 +79,9 @@ const renderCalendar = () =>
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-11-21T10:00:00'))
-  vi.mocked(casesApi.getCases).mockImplementation(async ({ year }) => {
-    const items = year === 2026 ? thisYear : year === 2025 ? lastYear : []
-    return { items, total: items.length }
-  })
+  vi.mocked(casesApi.getCalendarCases).mockImplementation(
+    async ({ from, to }) => ({ from, to, items: caseItems }),
+  )
 })
 
 afterEach(() => {
@@ -93,7 +90,7 @@ afterEach(() => {
 })
 
 describe('CalendarPage', () => {
-  it('lists the cases of the current and previous year on their deadline day', async () => {
+  it('lists the cases whose deadline falls in the displayed grid', async () => {
     renderCalendar()
 
     expect(
@@ -102,12 +99,9 @@ describe('CalendarPage', () => {
     expect(
       await screen.findByText('Sprawa ze zeszłego roku'),
     ).toBeInTheDocument()
-    expect(casesApi.getCases).toHaveBeenCalledWith(
-      expect.objectContaining({ year: 2026, sort: 'DEADLINE_ASC', limit: 500 }),
-      expect.anything(),
-    )
-    expect(casesApi.getCases).toHaveBeenCalledWith(
-      expect.objectContaining({ year: 2025 }),
+    // The whole Monday-aligned grid of the month is requested.
+    expect(casesApi.getCalendarCases).toHaveBeenCalledWith(
+      { from: '2026-10-26', to: '2026-12-06' },
       expect.anything(),
     )
     expect(screen.getByText('Po terminie: 1')).toBeInTheDocument()
@@ -168,27 +162,17 @@ describe('CalendarPage', () => {
     expect(screen.getByText('Termin dzisiaj: 2')).toBeInTheDocument()
   })
 
-  it('warns when the server returned only part of a year', async () => {
-    vi.mocked(casesApi.getCases).mockImplementation(async ({ year }) => ({
-      items: year === 2026 ? thisYear : [],
-      total: year === 2026 ? 900 : 0,
-    }))
-    renderCalendar()
-    expect(
-      await screen.findByText(/Wyświetlono tylko część spraw/),
-    ).toBeInTheDocument()
-  })
-
   it('shows an error with a retry when the cases cannot be loaded', async () => {
     const user = userEvent.setup()
-    vi.mocked(casesApi.getCases).mockRejectedValue(new Error('network'))
+    vi.mocked(casesApi.getCalendarCases).mockRejectedValue(new Error('network'))
     renderCalendar()
     expect(
       await screen.findByText('Nie udało się pobrać spraw do kalendarza.'),
     ).toBeInTheDocument()
-    vi.mocked(casesApi.getCases).mockResolvedValue({
-      items: thisYear,
-      total: thisYear.length,
+    vi.mocked(casesApi.getCalendarCases).mockResolvedValue({
+      from: '2026-10-26',
+      to: '2026-12-06',
+      items: caseItems,
     })
     await user.click(screen.getByRole('button', { name: 'Spróbuj ponownie' }))
     await waitFor(() =>

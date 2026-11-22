@@ -21,6 +21,7 @@ import {
   extendDeadline,
   getCase,
   getCaseYears,
+  getCalendarCases,
   getCases,
   getDeadlinePreview,
   getRedactionSuggestions,
@@ -31,11 +32,13 @@ import {
 } from './cases.api'
 import {
   UNFINISHED_STATUSES,
+  type CaseCalendarParams,
   type CaseDetail,
   type CaseList,
   type CaseListParams,
   type CaseNumberCheck,
   type CaseNumberCheckParams,
+  type CaseSummary,
   type CaseUrgency,
   type ChangeCaseStatusInput,
   type CaseDocument,
@@ -124,33 +127,22 @@ export const useGetDeadlineSummary = (years: number[]) => {
   })
 }
 
-// Every case received in the given years, nearest deadline first. The API lists
-// one receipt year at a time, so a calendar needs the previous year as well.
-export const useGetCasesOfYears = (years: number[]) => {
+// Cases by the deadline in force (extended or statutory), whatever the receipt year.
+export const useGetCalendarCases = (params: CaseCalendarParams) => {
   const email = useSessionEmail()
-  return useQueries({
-    queries: years.map((year) => {
-      const params: CaseListParams = {
-        year,
-        sort: 'DEADLINE_ASC',
-        limit: DEADLINE_SUMMARY_LIMIT,
-      }
-      return {
-        queryKey: queryKeys.cases.list(email, params),
-        queryFn: ({ signal }: { signal: AbortSignal }) =>
-          getCases(params, signal),
-      }
-    }),
-    combine: (results) => ({
-      items: results.flatMap(({ data }) => data?.items ?? []),
-      // The API caps a page, so a bigger year is only partially listed.
-      isPartial: results.some(
-        ({ data }) => data !== undefined && data.total > data.items.length,
-      ),
-      isLoading: results.some((result) => result.isLoading),
-      isError: results.some((result) => result.isError),
-    }),
-  })
+  const { data, isLoading, isError, error } = useQuery<CaseSummary[], ApiError>(
+    {
+      queryKey: queryKeys.cases.calendar(email, params),
+      queryFn: async ({ signal }) =>
+        (await getCalendarCases(params, signal)).items,
+    },
+  )
+  return {
+    calendarCases: data ?? [],
+    isLoadingCalendar: isLoading,
+    isCalendarError: isError,
+    calendarError: error,
+  }
 }
 
 // Refreshes every cases query (lists, years, deadline summary) after a failure.

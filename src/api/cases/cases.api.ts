@@ -1,6 +1,7 @@
 import { apiClient } from '../client'
 import {
   caseDetailSchema,
+  caseCalendarSchema,
   caseListSchema,
   caseDocumentSchema,
   caseNumberCheckSchema,
@@ -9,6 +10,7 @@ import {
   deadlinePreviewSchema,
   caseYearsSchema,
   requestAnalysisSchema,
+  type CaseCalendarParams,
   type CaseListParams,
   type CaseNumberCheckParams,
   type CaseSummary,
@@ -52,6 +54,15 @@ export const getCases = async (
       params: { ...params, status: status?.join(',') || undefined },
       signal,
     }),
+  )
+
+// Cases whose deadline in force falls in the range (at most 93 days).
+export const getCalendarCases = async (
+  params: CaseCalendarParams,
+  signal?: AbortSignal,
+) =>
+  caseCalendarSchema.parse(
+    await apiClient.get<unknown>('/api/cases/calendar', { params, signal }),
   )
 
 const MAX_PAGE_SIZE = 500

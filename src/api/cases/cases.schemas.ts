@@ -175,6 +175,12 @@ export const caseListSchema = z.object({
   total: z.number(),
 })
 
+export const caseCalendarSchema = z.object({
+  from: isoDate,
+  to: isoDate,
+  items: z.array(caseSummarySchema),
+})
+
 export const caseYearsSchema = z.object({ years: z.array(z.number()) })
 
 export const caseNumberConflictSchema = z.enum([
@@ -253,6 +259,8 @@ export type CaseNumberCheckParams = {
   year?: number
   exceptId?: string
 }
+
+export type CaseCalendarParams = { from: string; to: string }
 
 export type CaseListParams = {
   year?: number
