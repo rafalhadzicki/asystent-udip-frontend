@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ZodError } from 'zod'
-import { apiClient } from '../client'
+import { apiClient, UPLOAD_TIMEOUT_MS } from '../client'
 import {
   analyzeRequest,
   createCase,
@@ -49,7 +49,7 @@ const detail = {
 describe('cases api', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('analyzeRequest wysyła plik jako multipart z sygnałem anulowania', async () => {
+  it('analyzeRequest wysyła plik jako multipart z sygnałem anulowania i dłuższym limitem czasu', async () => {
     const response = {
       fileName: 'test.pdf',
       textExtractionStatus: 'NO_TEXT',
@@ -67,7 +67,7 @@ describe('cases api', () => {
     const [url, body, config] = post.mock.calls[0]
     expect(url).toBe('/api/cases/analyze')
     expect((body as FormData).get('file')).toBe(file)
-    expect(config).toEqual({ signal })
+    expect(config).toEqual({ signal, timeout: UPLOAD_TIMEOUT_MS })
   })
 
   it.each([
