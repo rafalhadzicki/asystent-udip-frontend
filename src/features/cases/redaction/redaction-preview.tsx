@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { Button, Stack, Typography } from '@mui/material'
 import { useTranslation } from 'react-i18next'
 import type { Redaction } from '@/features/cases/types'
-import { Mark, Preview, PreviewPanel } from './redaction-page.styles'
+import {
+  Mark,
+  Preview,
+  PreviewBox,
+  PreviewPanel,
+} from './redaction-page.styles'
 import { segmentText } from './redaction-utils'
 
 type RedactionPreviewProps = {
@@ -19,7 +24,7 @@ export const RedactionPreview = ({
 
   return (
     <PreviewPanel variant="outlined">
-      <Stack spacing={1.5}>
+      <Stack spacing={1.5} sx={{ flex: 1 }}>
         <Stack spacing={1}>
           <Typography variant="h2">{t('preview.title')}</Typography>
           <Typography color="text.secondary">
@@ -36,20 +41,22 @@ export const RedactionPreview = ({
         <Typography variant="caption" color="text.secondary">
           {t('preview.legend')}
         </Typography>
-        <Preview variant="outlined" aria-label={t('preview.label')}>
-          {segmentText(text, redactions, {
-            applyHidden: !showOriginal,
-            replacement: t('replacement'),
-          }).map((segment, index) =>
-            segment.decision ? (
-              <Mark key={index} data-decision={segment.decision}>
-                {segment.text}
-              </Mark>
-            ) : (
-              segment.text
-            ),
-          )}
-        </Preview>
+        <PreviewBox>
+          <Preview variant="outlined" aria-label={t('preview.label')}>
+            {segmentText(text, redactions, {
+              applyHidden: !showOriginal,
+              replacement: t('replacement'),
+            }).map((segment, index) =>
+              segment.decision ? (
+                <Mark key={index} data-decision={segment.decision}>
+                  {segment.text}
+                </Mark>
+              ) : (
+                segment.text
+              ),
+            )}
+          </Preview>
+        </PreviewBox>
       </Stack>
     </PreviewPanel>
   )

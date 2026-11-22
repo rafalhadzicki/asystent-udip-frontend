@@ -7,9 +7,17 @@ const Page = styled('section')(({ theme }) => ({
   paddingBottom: theme.spacing(3),
 }))
 
+// The preview fills the panel down to its bottom edge and scrolls inside, so a
+// long text never makes the row taller than the panels next to it.
+const PreviewBox = styled(Box)({
+  position: 'relative',
+  flex: 1,
+  minHeight: 240,
+})
+
 const Preview = styled(Paper)(({ theme }) => ({
-  minHeight: 180,
-  maxHeight: 440,
+  position: 'absolute',
+  inset: 0,
   overflow: 'auto',
   padding: theme.spacing(2),
   whiteSpace: 'pre-wrap',
@@ -49,6 +57,9 @@ const Grid = styled(Box)(({ theme }) => ({
 const PreviewPanel = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
   gridArea: 'preview',
+  alignSelf: 'stretch',
+  display: 'flex',
+  flexDirection: 'column',
 }))
 
-export { Grid, Mark, Page, Preview, PreviewPanel }
+export { Grid, Mark, Page, Preview, PreviewBox, PreviewPanel }
