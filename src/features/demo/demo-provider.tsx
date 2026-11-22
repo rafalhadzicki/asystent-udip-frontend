@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { createDemoCases } from './demo-data'
 import type { CaseItem, UploadDraft } from './types'
 import {
   pickLocalFields,
@@ -17,7 +16,6 @@ const storageKeyFor = (email: string) =>
 
 const freshSnapshot = (): DemoSnapshot => ({
   version: 1,
-  cases: createDemoCases(),
   overlays: {},
 })
 
@@ -36,7 +34,6 @@ const migrateApiCopies = (value: unknown) => {
   )
   return {
     ...rest,
-    cases: cases.filter((item) => !isCopy(item)),
     overlays: {
       ...migrated,
       ...(typeof overlays === 'object' ? overlays : {}),
@@ -114,43 +111,25 @@ const DemoStateProvider = ({
     }
   }
 
+  // Cases live on the server: only their local fields are kept here.
   const updateCase = (id: string, changes: Partial<CaseItem>) => {
     const current = currentSnapshot.current
-    if (!current.cases.some((item) => item.id === id)) {
-      // A case that is not stored locally lives on the server: only its local fields are kept.
-      saveSnapshot({
-        ...current,
-        overlays: {
-          ...current.overlays,
-          [id]: { ...current.overlays[id], ...pickLocalFields(changes) },
-        },
-      })
-      return
-    }
     saveSnapshot({
       ...current,
-      cases: current.cases.map((item) =>
-        item.id === id ? { ...item, ...changes } : item,
-      ),
+      overlays: {
+        ...current.overlays,
+        [id]: { ...current.overlays[id], ...pickLocalFields(changes) },
+      },
     })
   }
 
   return (
     <DemoContext.Provider
       value={{
-        cases: snapshot.cases,
         overlays: snapshot.overlays,
         uploadDraft,
         setUploadDraft,
         storageError,
-        addCase: (item) => {
-          if (currentSnapshot.current.cases.some(({ id }) => id === item.id))
-            return
-          saveSnapshot({
-            ...currentSnapshot.current,
-            cases: [...currentSnapshot.current.cases, item],
-          })
-        },
         updateCase,
       }}
     >

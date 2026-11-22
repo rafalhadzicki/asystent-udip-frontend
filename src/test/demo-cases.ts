@@ -1,4 +1,4 @@
-import type { CaseItem } from './types'
+import type { CaseItem } from '@/features/demo/types'
 
 export const createDemoCases = (): CaseItem[] =>
   Array.from({ length: 10 }, (_, index) => {
@@ -31,6 +31,7 @@ export const createDemoCases = (): CaseItem[] =>
       owner: 'Urzędnik demonstracyjny',
       status:
         index === 9 ? 'completed' : index % 3 === 1 ? 'waiting' : 'analysis',
+      apiStatus: index === 9 ? 'RESPONSE_SENT' : 'NEW',
       requestText:
         'Proszę o udostępnienie kosztorysu inwestorskiego, umowy z wykonawcą oraz protokołów odbioru remontu ul. Gdańskiej.',
       source: {

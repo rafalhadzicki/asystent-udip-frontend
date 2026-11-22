@@ -4,14 +4,6 @@ import { validIsoDate } from './date-utils'
 const isoDate = z.string().refine(validIsoDate)
 const optionalIsoDate = z.union([z.literal(''), isoDate])
 
-const documentSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  size: z.number(),
-  unit: z.string(),
-  addedAt: isoDate,
-})
-
 // Fields without a backend counterpart: kept in the browser for every case.
 // Questions, departments and the date of the letter live on the server.
 export const caseLocalSchema = z.object({
@@ -44,39 +36,8 @@ export const pickLocalFields = (changes: object): CaseOverlay =>
     ),
   )
 
-const localCaseSchema = caseLocalSchema.extend({
-  materials: z.array(documentSchema),
-  writtenAt: optionalIsoDate,
-  questions: z.array(
-    z.object({
-      id: z.string(),
-      text: z.string(),
-      selected: z.boolean(),
-      departmentId: z.string().nullish(),
-    }),
-  ),
-  departments: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      reason: z.string(),
-      selected: z.boolean(),
-    }),
-  ),
-  id: z.string(),
-  reference: z.string(),
-  subject: z.string(),
-  applicant: z.string(),
-  receivedAt: isoDate,
-  deadline: isoDate,
-  owner: z.string(),
-  requestText: z.string(),
-  source: documentSchema,
-})
-
 export const snapshotSchema = z.object({
   version: z.literal(1),
-  cases: z.array(localCaseSchema),
   // Local data of cases that live on the server, keyed by case id.
   overlays: z.record(z.string(), caseOverlaySchema).default({}),
 })

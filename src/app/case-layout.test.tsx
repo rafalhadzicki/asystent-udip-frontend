@@ -46,13 +46,7 @@ describe('CaseLayout', () => {
     expect(localStorage.getItem(DEMO_STORAGE_KEY)).toBeNull()
   })
 
-  it('does not call the API for local demo cases', async () => {
-    renderCase('demo-1')
-    expect(await screen.findByText('Zakładka wniosku')).toBeInTheDocument()
-    expect(casesApi.getCase).not.toHaveBeenCalled()
-  })
-
-  it('reports a case that exists neither locally nor in the API', async () => {
+  it('reports a case that does not exist in the API', async () => {
     vi.mocked(casesApi.getCase).mockRejectedValue(new Error('not found'))
     renderCase('missing')
     expect(await screen.findByText(/Nie znaleziono sprawy/)).toBeInTheDocument()

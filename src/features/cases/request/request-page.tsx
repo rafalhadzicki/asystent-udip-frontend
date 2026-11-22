@@ -28,10 +28,8 @@ import {
   getCaseNumberConflict,
   useCaseNumberConflict,
 } from '../use-case-number-check'
-import { useDemoStore } from '@/features/demo/demo-store'
 import { useSaveCase } from '../use-save-case'
 import type { CaseItem } from '@/features/demo/types'
-import { normalizeReference, suggestedDeadline } from '../case-utils'
 import { caseTabs, routes } from '@/app/routes'
 
 type RequestValues = Pick<
@@ -96,9 +94,7 @@ const SourceSection = ({ item }: { item: CaseItem }) => {
 
 const RequestEditor = ({ item }: { item: CaseItem }) => {
   const { t } = useTranslation('translation', { keyPrefix: 'request' })
-  const { cases } = useDemoStore()
   const saveCase = useSaveCase(item)
-  const isRemote = Boolean(item.apiStatus)
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
   const readOnly = item.status === 'completed'
@@ -114,13 +110,13 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
     mode: 'onBlur',
     defaultValues: toValues(item),
   })
-  const [reference, receivedAt, deadline, subject, requestText] = useWatch({
+  const [reference, receivedAt, subject, requestText] = useWatch({
     control,
-    name: ['reference', 'receivedAt', 'deadline', 'subject', 'requestText'],
+    name: ['reference', 'receivedAt', 'subject', 'requestText'],
   })
 
-  // Saved cases: the backend checks the number and computes the deadline.
-  const checksWithApi = isRemote && editing
+  // The backend checks the number and computes the deadline.
+  const checksWithApi = editing
   const conflict = useCaseNumberConflict({
     caseNumber: checksWithApi ? reference : '',
     receivedAt,
@@ -147,7 +143,6 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
       ? t('errors.sequenceTaken')
       : t('errors.referenceTaken')
 
-  const proposal = suggestedDeadline(receivedAt)
   const scopeChanged =
     subject.trim() !== item.subject.trim() ||
     requestText.trim() !== item.requestText.trim()
@@ -257,17 +252,7 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
               rules={{
                 validate: {
                   required,
-                  unique: (value) => {
-                    if (isRemote) return !conflict || conflictMessage(conflict)
-                    return (
-                      !cases.some(
-                        (other) =>
-                          other.id !== item.id &&
-                          normalizeReference(other.reference) ===
-                            normalizeReference(value),
-                      ) || t('errors.referenceTaken')
-                    )
-                  },
+                  unique: () => !conflict || conflictMessage(conflict),
                 },
               }}
             />
@@ -320,42 +305,10 @@ const RequestEditor = ({ item }: { item: CaseItem }) => {
               label={t('details.deadline')}
               type="date"
               required
-              disabled={isRemote}
+              disabled
               slotProps={{ inputLabel: { shrink: true } }}
-              helperText={
-                isRemote
-                  ? t('deadlineFromServer')
-                  : proposal
-                    ? t('deadlineProposal', { date: displayDate(proposal) })
-                    : undefined
-              }
-              rules={{
-                validate: isRemote
-                  ? {}
-                  : {
-                      date,
-                      order: (value) =>
-                        !isDate(getValues('receivedAt')) ||
-                        value >= getValues('receivedAt') ||
-                        t('errors.deadlineBeforeReceived'),
-                    },
-              }}
+              helperText={t('deadlineFromServer')}
             />
-            {!isRemote && proposal && proposal !== deadline && (
-              <Actions className="wide">
-                <Button
-                  variant="text"
-                  onClick={() =>
-                    setValue('deadline', proposal, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  {t('actions.applyDeadline', { date: displayDate(proposal) })}
-                </Button>
-              </Actions>
-            )}
             <FormTextField
               className="wide"
               control={control}

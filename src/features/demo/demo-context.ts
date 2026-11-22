@@ -3,11 +3,9 @@ import type { CaseOverlay } from './demo-schema'
 import type { CaseItem, UploadDraft } from './types'
 
 type DemoStore = {
-  cases: CaseItem[]
   overlays: Record<string, CaseOverlay>
   uploadDraft: UploadDraft | null
   setUploadDraft: (draft: UploadDraft | null) => void
-  addCase: (item: CaseItem) => void
   updateCase: (id: string, changes: Partial<CaseItem>) => void
   storageError: 'restore' | 'save' | 'conflict' | null
 }

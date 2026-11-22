@@ -59,7 +59,7 @@ export type CaseItem = {
   source: DocumentMeta
   questions: Question[]
   // Only on cases composed from the API; never stored locally.
-  apiStatus?: ApiCaseStatus
+  apiStatus: ApiCaseStatus
   // Deadline extension (kwerenda), only on cases composed from the API.
   extension?: CaseExtension
   analysisNeedsReview?: boolean

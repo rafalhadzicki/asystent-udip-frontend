@@ -201,24 +201,22 @@ export const RedactionPage = () => {
     setSendError(false)
     // The server only allows moving forward step by step, so a case that has
     // not reached RESPONSE_PREPARED yet goes through it first.
-    if (item.apiStatus) {
-      try {
-        if (item.apiStatus !== 'RESPONSE_PREPARED') {
-          await changeCaseStatusAsync({
-            id: item.id,
-            status: 'RESPONSE_PREPARED',
-          })
-        }
+    try {
+      if (item.apiStatus !== 'RESPONSE_PREPARED') {
         await changeCaseStatusAsync({
           id: item.id,
-          status: 'RESPONSE_SENT',
-          respondedAt: sentAt,
-          comment: sentNote.trim() || undefined,
+          status: 'RESPONSE_PREPARED',
         })
-      } catch {
-        setSendError(true)
-        return
       }
+      await changeCaseStatusAsync({
+        id: item.id,
+        status: 'RESPONSE_SENT',
+        respondedAt: sentAt,
+        comment: sentNote.trim() || undefined,
+      })
+    } catch {
+      setSendError(true)
+      return
     }
     updateCase(item.id, {
       status: 'completed',

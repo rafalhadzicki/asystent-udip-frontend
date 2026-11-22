@@ -3,12 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createDemoCases } from '@/features/demo/demo-data'
-import {
-  DEMO_STORAGE_KEY,
-  DemoProvider,
-  useDemoStore,
-} from '@/features/demo/demo-store'
+import { createDemoCases } from '@/test/demo-cases'
+import { DemoProvider } from '@/features/demo/demo-store'
+import { TestCaseOutlet } from '@/test/case-outlet'
+import { readSavedCase } from '@/test/saved-case'
 import type { KnowledgeMatch } from '@/api/knowledge/knowledge.schemas'
 import type { CaseItem } from '@/features/demo/types'
 import { AnalysisPage } from './analysis-page'
@@ -47,16 +45,12 @@ vi.mock('@/api/departments/departments.api', () => ({
   getDepartments: vi.fn().mockResolvedValue([]),
 }))
 
-const CaseOutlet = () => {
-  const { cases } = useDemoStore()
-  return <Outlet context={cases[0]} />
-}
+let current: CaseItem
+
+const CaseOutlet = () => <TestCaseOutlet item={current} />
 
 const renderPage = (item: CaseItem) => {
-  localStorage.setItem(
-    DEMO_STORAGE_KEY,
-    JSON.stringify({ version: 1, cases: [item] }),
-  )
+  current = item
   return render(
     <QueryClientProvider client={createTestQueryClient()}>
       <DemoProvider>
@@ -88,16 +82,13 @@ const renderRemote = (item: CaseItem) =>
     </QueryClientProvider>,
   )
 
-const savedCase = () =>
-  (
-    JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY) || '{}') as {
-      cases: CaseItem[]
-    }
-  ).cases[0]
+const savedCase = () => readSavedCase(current)
 
 describe('analiza sprawy', () => {
   beforeEach(() => {
     localStorage.clear()
+    vi.mocked(casesApi.setCaseQuestions).mockReset().mockResolvedValue(detail)
+    vi.mocked(casesApi.setCaseDepartments).mockReset().mockResolvedValue(detail)
     vi.mocked(departmentApi.getDepartments).mockReset().mockResolvedValue([])
     vi.mocked(knowledgeApi.searchKnowledge)
       .mockReset()
@@ -137,12 +128,13 @@ describe('analiza sprawy', () => {
     await user.type(screen.getByLabelText('Nazwa jednostki'), 'Wydział testowy')
     await user.click(screen.getByRole('button', { name: 'Dodaj jednostkę' }))
     await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
-    expect(savedCase().departments).toContainEqual(
-      expect.objectContaining({
-        id: 'api-unit',
-        name: 'Wydział testowy',
-        selected: true,
-      }),
+    await waitFor(() =>
+      expect(casesApi.setCaseDepartments).toHaveBeenCalledWith(
+        expect.objectContaining({
+          departmentIds: expect.arrayContaining(['api-unit']),
+        }),
+        expect.anything(),
+      ),
     )
     expect(
       screen.getByText(/Podpowiedzi nazw pochodzą ze słownika serwera/),
@@ -188,7 +180,9 @@ describe('analiza sprawy', () => {
     )
     expect(screen.getByText('Etap materiałów')).toBeInTheDocument()
     await waitFor(() => expect(savedCase().status).toBe('waiting'))
-    expect(savedCase().questions[0].text).toBe('Dokumenty')
+    expect(
+      vi.mocked(casesApi.setCaseQuestions).mock.calls[0][0].questions[0].text,
+    ).toBe('Dokumenty')
   })
 
   it('saves local edits, preserves the later status when the selected scope is unchanged', async () => {
@@ -210,11 +204,13 @@ describe('analiza sprawy', () => {
       'Niewybrane pytanie',
     )
     await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
-    await waitFor(() => expect(savedCase().questions).toHaveLength(4))
+    expect(
+      await screen.findByText('Ustalenia zostały zapisane.'),
+    ).toBeInTheDocument()
+    expect(casesApi.setCaseQuestions).not.toHaveBeenCalled()
     expect(savedCase().status).toBe('redaction')
     expect(savedCase().responseText).toBe('Robocza odpowiedź')
     expect(savedCase().redactionConfirmed).toBe(true)
-    expect(screen.getByText('Ustalenia zostały zapisane.')).toBeInTheDocument()
   })
 
   it('marks a changed scope stale while retaining the response and clears redaction decisions', async () => {
@@ -241,9 +237,23 @@ describe('analiza sprawy', () => {
     ).toBeInTheDocument()
   })
 
-  it('adds and removes a custom unit', async () => {
+  it('adds and removes a unit from the dictionary', async () => {
+    vi.mocked(departmentApi.getDepartments).mockResolvedValue([
+      {
+        id: 'archive',
+        name: 'Archiwum',
+        symbol: 'AR',
+        kind: 'DEPARTMENT',
+        isActive: true,
+      },
+    ])
     const user = userEvent.setup()
     renderPage(createDemoCases()[0])
+    await waitFor(() =>
+      expect(
+        document.querySelector('#department-options option'),
+      ).toBeInTheDocument(),
+    )
     await user.type(screen.getByLabelText('Nazwa jednostki'), 'Archiwum')
     await user.type(
       screen.getByLabelText('Uzasadnienie wyboru (opcjonalnie)'),
@@ -253,23 +263,17 @@ describe('analiza sprawy', () => {
     expect(screen.getByText('Zasób archiwalny')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
     await waitFor(() =>
-      expect(
-        savedCase().departments.some(
-          (department) => department.name === 'Archiwum' && department.selected,
-        ),
-      ).toBe(true),
+      expect(casesApi.setCaseDepartments).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          departmentIds: expect.arrayContaining(['archive']),
+        }),
+        expect.anything(),
+      ),
     )
     await user.click(
       screen.getByRole('button', { name: 'Usuń jednostkę Archiwum' }),
     )
-    await user.click(screen.getByRole('button', { name: 'Zapisz ustalenia' }))
-    await waitFor(() =>
-      expect(
-        savedCase().departments.some(
-          (department) => department.name === 'Archiwum',
-        ),
-      ).toBe(false),
-    )
+    expect(screen.queryByText('Zasób archiwalny')).not.toBeInTheDocument()
   })
 
   describe('similar responses', () => {

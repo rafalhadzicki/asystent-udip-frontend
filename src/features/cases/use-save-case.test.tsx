@@ -46,9 +46,6 @@ describe('useSaveCase', () => {
     expect(result.current.store.overlays['case-1']).toEqual({
       responseText: 'Projekt',
     })
-    expect(result.current.store.cases.some(({ id }) => id === 'case-1')).toBe(
-      false,
-    )
   })
 
   it('does not call the API for local-only changes', async () => {
@@ -79,18 +76,5 @@ describe('useSaveCase', () => {
       act(() => result.current.save({ subject: 'X', responseText: 'Y' })),
     ).rejects.toThrow('network')
     expect(result.current.store.overlays['case-1']).toBeUndefined()
-  })
-
-  it('updates local cases in the store without the API', async () => {
-    const { result } = renderHook(
-      () => {
-        const store = useDemoStore()
-        return { save: useSaveCase(store.cases[0]), store }
-      },
-      { wrapper },
-    )
-    await act(() => result.current.save({ subject: 'Zmieniony' }))
-    expect(casesApi.updateCase).not.toHaveBeenCalled()
-    expect(result.current.store.cases[0].subject).toBe('Zmieniony')
   })
 })

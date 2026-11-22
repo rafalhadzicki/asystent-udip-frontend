@@ -153,7 +153,7 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
         department.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
     )
     // The server accepts only departments from its dictionary.
-    if (item.apiStatus && !matchedDepartment) {
+    if (!matchedDepartment) {
       setDepartmentError(t('departmentUnknown'))
       return
     }
@@ -202,26 +202,20 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
       setAttemptedContinue(true)
       if (questionsInvalid || departmentsInvalid) return
     }
-    if (item.apiStatus) {
-      try {
-        await saveScopeOnServer()
-      } catch (error) {
-        console.error('Cannot save the scope of the case', error)
-        setSaveFailed(true)
-        return
-      }
+    try {
+      await saveScopeOnServer()
+    } catch (error) {
+      console.error('Cannot save the scope of the case', error)
+      setSaveFailed(true)
+      return
     }
     setSaveFailed(false)
     const changes: Partial<CaseItem> = {
       questions,
       departments,
-      ...(item.apiStatus
-        ? {
-            departmentReasons: Object.fromEntries(
-              departments.map(({ id, reason }) => [id, reason]),
-            ),
-          }
-        : {}),
+      departmentReasons: Object.fromEntries(
+        departments.map(({ id, reason }) => [id, reason]),
+      ),
       analysisNeedsReview: false,
     }
     if (changedScope) {

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider } from '@mui/material/styles'
-import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,12 +9,10 @@ import * as casesApi from '@/api/cases/cases.api'
 import { createTestQueryClient } from '@/test/query-client'
 import { theme } from '@/app/theme'
 import type { CaseItem } from '@/features/demo/types'
-import { createDemoCases } from '@/features/demo/demo-data'
-import {
-  DEMO_STORAGE_KEY,
-  DemoProvider,
-  useDemoStore,
-} from '@/features/demo/demo-store'
+import { createDemoCases } from '@/test/demo-cases'
+import { DemoProvider } from '@/features/demo/demo-store'
+import { TestCaseOutlet } from '@/test/case-outlet'
+import { readSavedCase } from '@/test/saved-case'
 import { RedactionPage } from './redaction-page'
 
 vi.mock('@/api/cases/cases.api', () => ({
@@ -31,13 +29,13 @@ const suggest = (...texts: string[]) =>
     })),
   })
 
-// Fields that make the demo case look like a case stored on the server.
-let caseOverrides: Partial<CaseItem> = {}
+let testCase: CaseItem
 
-const CurrentCase = () => {
-  const { cases } = useDemoStore()
-  return <Outlet context={{ ...cases[0], ...caseOverrides }} />
+const useCase = (changes: Partial<CaseItem>) => {
+  testCase = { ...createDemoCases()[0], ...changes }
 }
+
+const CurrentCase = () => <TestCaseOutlet item={testCase} />
 
 const renderPage = () =>
   render(
@@ -57,24 +55,14 @@ const renderPage = () =>
   )
 
 beforeEach(() => {
-  const cases = createDemoCases()
-  cases[0] = {
-    ...cases[0],
+  useCase({
     status: 'draft',
     responseText:
       'Do: Jan Demonstracyjny\nKwota: 123 zł.\nJAN DEMONSTRACYJNY otrzymuje odpowiedź.',
-  }
-  localStorage.setItem(
-    DEMO_STORAGE_KEY,
-    JSON.stringify({
-      version: 1,
-      cases,
-    }),
-  )
+  })
 })
 
 afterEach(() => {
-  caseOverrides = {}
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   localStorage.clear()
@@ -82,9 +70,7 @@ afterEach(() => {
 
 describe('redaction workflow', () => {
   it('blocks redaction until a changed request has been reviewed', () => {
-    const snapshot = JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!)
-    snapshot.cases[0].analysisNeedsReview = true
-    localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(snapshot))
+    testCase = { ...testCase, analysisNeedsReview: true }
     renderPage()
     expect(screen.getByText(/Przed dalszą pracą przejrzyj/)).toBeInTheDocument()
     expect(
@@ -132,9 +118,7 @@ describe('redaction workflow', () => {
       screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
     )
     expect(download).toBeEnabled()
-    expect(
-      JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases[0].status,
-    ).toBe('redaction')
+    expect(readSavedCase(testCase).status).toBe('redaction')
     await user.click(download)
 
     const blob: Blob = createObjectURL.mock.calls[0][0]
@@ -162,6 +146,9 @@ describe('redaction workflow', () => {
 
   it('records a manually sent answer, persists completion and keeps completed content read-only', async () => {
     const user = userEvent.setup()
+    vi.mocked(casesApi.changeCaseStatus).mockResolvedValue(
+      {} as Awaited<ReturnType<typeof casesApi.changeCaseStatus>>,
+    )
     renderPage()
     await user.click(
       screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
@@ -184,9 +171,7 @@ describe('redaction workflow', () => {
       screen.getByRole('button', { name: 'Zapisz wysyłkę i zakończ sprawę' }),
     )
     await waitFor(() => {
-      expect(
-        JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases[0],
-      ).toMatchObject({
+      expect(readSavedCase(testCase)).toMatchObject({
         status: 'completed',
         sentAt: '2026-11-21',
         sentNote: 'Wysłano poza aplikacją — demo',
@@ -201,7 +186,6 @@ describe('redaction workflow', () => {
 
   describe('with a case stored on the server', () => {
     const openSendDialog = async (user: ReturnType<typeof userEvent.setup>) => {
-      caseOverrides = { apiStatus: 'NEW' }
       renderPage()
       await user.click(
         screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
@@ -249,24 +233,16 @@ describe('redaction workflow', () => {
       expect(
         await screen.findByText(/Nie udało się zapisać wysyłki/),
       ).toBeInTheDocument()
-      expect(
-        JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases[0].status,
-      ).not.toBe('completed')
+      expect(readSavedCase(testCase).status).not.toBe('completed')
     })
   })
 
   it('suggests case variants separately without hiding declined variants or inflections', async () => {
-    const cases = createDemoCases()
-    cases[0] = {
-      ...cases[0],
+    useCase({
       applicant: 'Żaneta Żółć',
       status: 'draft',
       responseText: 'Żaneta Żółć; ŻANETA ŻÓŁĆ; Żanecie Żółci',
-    }
-    localStorage.setItem(
-      DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases }),
-    )
+    })
     suggest('Żaneta Żółć', 'ŻANETA ŻÓŁĆ')
     const user = userEvent.setup()
     renderPage()
@@ -305,18 +281,12 @@ describe('redaction workflow', () => {
   })
 
   it('preserves previously saved exact decisions and confirmation', () => {
-    const cases = createDemoCases()
-    cases[0] = {
-      ...cases[0],
+    useCase({
       status: 'redaction',
       responseText: 'Jan i JAN',
       redactions: [{ id: 'legacy', text: 'Jan', reason: '', decision: 'hide' }],
       redactionConfirmed: true,
-    }
-    localStorage.setItem(
-      DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases }),
-    )
+    })
     renderPage()
     expect(screen.getByLabelText('Podgląd odpowiedzi')).toHaveTextContent(
       '[ZANONIMIZOWANO] i JAN',
@@ -327,9 +297,7 @@ describe('redaction workflow', () => {
   })
 
   it('skips overlapping suggestions, adds other variants and resets review', async () => {
-    const cases = createDemoCases()
-    cases[0] = {
-      ...cases[0],
+    useCase({
       applicant: 'Jan Kowalski',
       status: 'redaction',
       responseText: 'Jan Kowalski; JAN KOWALSKI',
@@ -337,11 +305,7 @@ describe('redaction workflow', () => {
         { id: 'existing', text: 'Jan', reason: '', decision: 'hide' },
       ],
       redactionConfirmed: true,
-    }
-    localStorage.setItem(
-      DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases }),
-    )
+    })
     suggest('Jan Kowalski', 'JAN KOWALSKI')
     const user = userEvent.setup()
     renderPage()

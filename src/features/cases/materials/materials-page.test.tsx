@@ -1,17 +1,15 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, AxiosHeaders } from 'axios'
-import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { createTestQueryClient } from '@/test/query-client'
-import { createDemoCases } from '@/features/demo/demo-data'
-import {
-  DEMO_STORAGE_KEY,
-  DemoProvider,
-  useDemoStore,
-} from '@/features/demo/demo-store'
+import { createDemoCases } from '@/test/demo-cases'
+import { DemoProvider } from '@/features/demo/demo-store'
+import { TestCaseOutlet } from '@/test/case-outlet'
+import { readSavedCase } from '@/test/saved-case'
 import type { CaseItem } from '@/features/demo/types'
 import { MaterialsPage } from './materials-page'
 
@@ -21,15 +19,12 @@ vi.mock('@/api/cases/cases.api', () => ({
   draftResponse: vi.fn(),
 }))
 
-const CaseOutlet = () => {
-  const { cases } = useDemoStore()
-  return <Outlet context={cases[0]} />
-}
+let current: CaseItem
+
+const CaseOutlet = () => <TestCaseOutlet item={current} />
 
 const renderPage = (changes: Partial<CaseItem> = {}) => {
-  const cases = createDemoCases()
-  cases[0] = { ...cases[0], ...changes }
-  localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ version: 1, cases }))
+  current = { ...createDemoCases()[0], ...changes }
   return render(
     <QueryClientProvider client={createTestQueryClient()}>
       <DemoProvider>
@@ -49,9 +44,7 @@ const renderPage = (changes: Partial<CaseItem> = {}) => {
   )
 }
 
-const savedCase = (): CaseItem =>
-  JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY) || '{}')
-    .cases[0] as CaseItem
+const savedCase = () => readSavedCase(current)
 
 describe('MaterialsPage', () => {
   beforeEach(() => {

@@ -253,11 +253,9 @@
       "edit": "Edytuj wniosek",
       "save": "Zapisz zmiany",
       "cancel": "Anuluj",
-      "next": "Przejdź do analizy",
-      "applyDeadline": "Ustaw proponowany termin {{date}}"
+      "next": "Przejdź do analizy"
     },
     "deadlineFromServer": "Termin liczy serwer na podstawie daty wpływu; przedłużenie wymaga osobnej akcji.",
-    "deadlineProposal": "Proponowany termin: 14 dni od daty wpływu ({{date}}). Termin zmieni się dopiero po kliknięciu.",
     "readOnly": "Sprawa jest zakończona, a odpowiedź została wysłana. Dane wniosku są tylko do odczytu.",
     "scopeWarning": "Zmieniasz treść lub przedmiot wniosku. Po zapisie ewentualny projekt odpowiedzi i anonimizacja zostaną usunięte, a sprawa wróci do analizy. Przejrzyj istniejące pytania.",
     "notice": {
@@ -271,8 +269,7 @@
       "date": "Podaj poprawną datę.",
       "referenceTaken": "Sprawa o tej sygnaturze już istnieje.",
       "sequenceTaken": "Ten numer kolejny w roku jest już zajęty.",
-      "writtenAfterReceived": "Data sporządzenia nie może być późniejsza niż data wpływu.",
-      "deadlineBeforeReceived": "Termin nie może być wcześniejszy niż data wpływu."
+      "writtenAfterReceived": "Data sporządzenia nie może być późniejsza niż data wpływu."
     }
   },
   "analysis": {

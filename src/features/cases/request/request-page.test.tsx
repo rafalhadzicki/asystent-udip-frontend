@@ -9,17 +9,26 @@ import {
   Routes,
   useParams,
 } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as casesApi from '@/api/cases/cases.api'
 import { theme } from '@/app/theme'
 import { DemoProvider, useDemoStore } from '@/features/demo/demo-store'
-import { createDemoCases } from '@/features/demo/demo-data'
-import { DEMO_STORAGE_KEY } from '@/features/demo/demo-store'
+import { createDemoCases } from '@/test/demo-cases'
+import { detail } from '@/test/case-detail'
+import { readSavedCase } from '@/test/saved-case'
 import { createTestQueryClient } from '@/test/query-client'
 import { RequestPage } from './request-page'
 
+vi.mock('@/api/cases/cases.api', () => ({ updateCase: vi.fn() }))
+
+let cases = createDemoCases()
+
+// Stands in for CaseLayout: the server case merged with the local overlay.
 const CaseOutlet = () => {
   const { caseId } = useParams()
-  const item = useDemoStore().cases.find((c) => c.id === caseId)
+  const { overlays } = useDemoStore()
+  const base = cases.find((c) => c.id === caseId)
+  const item = base && { ...base, ...overlays[base.id] }
   return item ? (
     <>
       <span data-testid="status">{item.status}</span>
@@ -47,7 +56,11 @@ const renderPage = (caseId: string) =>
   )
 
 describe('RequestPage', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    localStorage.clear()
+    cases = createDemoCases()
+    vi.mocked(casesApi.updateCase).mockReset().mockResolvedValue(detail)
+  })
 
   it('pokazuje metadane źródła i uczciwą informację o pliku', () => {
     renderPage('demo-1')
@@ -60,45 +73,14 @@ describe('RequestPage', () => {
     ).toHaveAttribute('href', '/sprawy/demo-1/analiza')
   })
 
-  it('waliduje wymagane pola i unikalność sygnatury', async () => {
+  it('waliduje wymagane pola', async () => {
     const user = userEvent.setup()
     renderPage('demo-1')
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
     await user.clear(screen.getByLabelText(/Wnioskodawca/))
     await user.type(screen.getByLabelText(/Wnioskodawca/), '   ')
-    const reference = screen.getByLabelText(/Sygnatura/)
-    await user.clear(reference)
-    await user.type(reference, 'UDIP/2026/0159')
     await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
     expect(screen.getByText('To pole jest wymagane.')).toBeInTheDocument()
-    expect(
-      screen.getByText('Sprawa o tej sygnaturze już istnieje.'),
-    ).toBeInTheDocument()
-  })
-
-  it('proponuje termin tylko po potwierdzeniu i zapisuje metadane', async () => {
-    const user = userEvent.setup()
-    renderPage('demo-1')
-    await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
-    expect(screen.getByLabelText(/Termin odpowiedzi/)).toHaveValue('2026-11-19')
-    expect(
-      screen.queryByRole('button', { name: /Ustaw proponowany termin/ }),
-    ).not.toBeInTheDocument()
-    await user.clear(screen.getByLabelText(/Data wpływu/))
-    await user.type(screen.getByLabelText(/Data wpływu/), '2026-11-06')
-    expect(screen.getByLabelText(/Termin odpowiedzi/)).toHaveValue('2026-11-19')
-    await user.click(
-      screen.getByRole('button', {
-        name: 'Ustaw proponowany termin 20.11.2026',
-      }),
-    )
-    expect(screen.getByLabelText(/Termin odpowiedzi/)).toHaveValue('2026-11-20')
-    await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Zapisano zmiany we wniosku.',
-    )
-    expect(screen.getByText('20.11.2026')).toBeInTheDocument()
-    expect(screen.getByTestId('status')).toHaveTextContent('analysis')
   })
 
   it('zmiana zakresu cofa sprawę do analizy z ostrzeżeniem', async () => {
@@ -136,12 +118,7 @@ describe('RequestPage', () => {
   })
 
   it('pozwala zapisać sprawę bez opcjonalnej daty sporządzenia', async () => {
-    const cases = createDemoCases()
     cases[0].writtenAt = ''
-    localStorage.setItem(
-      DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases }),
-    )
     const user = userEvent.setup()
     renderPage('demo-1')
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
@@ -149,20 +126,7 @@ describe('RequestPage', () => {
     expect(screen.getByText('Zapisano zmiany we wniosku.')).toBeInTheDocument()
   })
 
-  it('odrzuca sygnaturę różniącą się tylko wielkością liter', async () => {
-    const user = userEvent.setup()
-    renderPage('demo-1')
-    await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
-    await user.clear(screen.getByLabelText(/Sygnatura/))
-    await user.type(screen.getByLabelText(/Sygnatura/), 'udip/2026/0159')
-    await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
-    expect(
-      screen.getByText('Sprawa o tej sygnaturze już istnieje.'),
-    ).toBeInTheDocument()
-  })
-
   it('unieważnia przegląd i oznacza projekt jako nieaktualny po zmianie wnioskodawcy', async () => {
-    const cases = createDemoCases()
     cases[0] = {
       ...cases[0],
       status: 'redaction',
@@ -170,20 +134,13 @@ describe('RequestPage', () => {
       redactions: [{ id: 'r', text: 'Jan', reason: '', decision: 'hide' }],
       redactionConfirmed: true,
     }
-    localStorage.setItem(
-      DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases }),
-    )
     const user = userEvent.setup()
     renderPage('demo-1')
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
     await user.clear(screen.getByLabelText(/Wnioskodawca/))
     await user.type(screen.getByLabelText(/Wnioskodawca/), 'Anna Testowa')
     await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
-    expect(
-      JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases[0],
-    ).toMatchObject({
-      applicant: 'Anna Testowa',
+    expect(readSavedCase(cases[0])).toMatchObject({
       status: 'waiting',
       responseText: 'Do: Jan Demonstracyjny',
       redactions: [],
@@ -200,9 +157,7 @@ describe('RequestPage', () => {
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
     await user.type(screen.getByLabelText(/Treść wniosku/), ' Nowe pytanie.')
     await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
-    expect(
-      JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases[0],
-    ).toMatchObject({
+    expect(readSavedCase(cases[0])).toMatchObject({
       status: 'analysis',
       analysisNeedsReview: true,
     })

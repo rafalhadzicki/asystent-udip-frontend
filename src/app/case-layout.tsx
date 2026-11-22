@@ -20,19 +20,13 @@ import { caseTabs, routes } from './routes'
 
 export const CaseLayout = () => {
   const { caseId } = useParams()
-  const { cases, overlays } = useDemoStore()
+  const { overlays } = useDemoStore()
   const { t } = useTranslation()
   const location = useLocation()
-  const localItem = cases.find((candidate) => candidate.id === caseId)
-  // Cases stored locally (demo, created in the wizard) are not on the server.
-  const { caseDetail, isCaseLoading } = useGetCaseById(
-    localItem ? undefined : caseId,
-  )
+  const { caseDetail, isCaseLoading } = useGetCaseById(caseId)
   const item = useMemo(
-    () =>
-      localItem ??
-      (caseDetail && composeApiCase(caseDetail, overlays[caseDetail.id])),
-    [localItem, caseDetail, overlays],
+    () => caseDetail && composeApiCase(caseDetail, overlays[caseDetail.id]),
+    [caseDetail, overlays],
   )
 
   if (!item && isCaseLoading)
@@ -82,14 +76,7 @@ export const CaseLayout = () => {
             {t('caseDetail.deadline', { date: displayDate(item.deadline) })}
           </Typography>
           <Typography variant="body2">{item.applicant}</Typography>
-          <Chip
-            size="small"
-            label={
-              item.apiStatus
-                ? t(`register.status.${item.apiStatus}`)
-                : t(`status.${item.status}`)
-            }
-          />
+          <Chip size="small" label={t(`register.status.${item.apiStatus}`)} />
         </Stack>
         <DeadlineExtension item={item} />
         {item.status === 'completed' && (
