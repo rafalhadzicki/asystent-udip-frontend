@@ -1,4 +1,4 @@
-import { apiClient } from '../client'
+import { apiClient, UPLOAD_TIMEOUT_MS } from '../client'
 import {
   knowledgeDocumentDetailSchema,
   knowledgeDocumentSchema,
@@ -44,7 +44,9 @@ export const createKnowledgeDocument = async ({
   form.append('name', name)
   form.append('category', category)
   return knowledgeDocumentSchema.parse(
-    await apiClient.post<unknown>('/api/knowledge', form),
+    await apiClient.post<unknown>('/api/knowledge', form, {
+      timeout: UPLOAD_TIMEOUT_MS,
+    }),
   )
 }
 

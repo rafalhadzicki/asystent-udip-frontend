@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ZodError } from 'zod'
-import { apiClient } from '../client'
+import { apiClient, UPLOAD_TIMEOUT_MS } from '../client'
 import {
   analyzeRequest,
   createCase,
@@ -67,7 +67,7 @@ describe('cases api', () => {
     const [url, body, config] = post.mock.calls[0]
     expect(url).toBe('/api/cases/analyze')
     expect((body as FormData).get('file')).toBe(file)
-    expect(config).toEqual({ signal })
+    expect(config).toEqual({ signal, timeout: UPLOAD_TIMEOUT_MS })
   })
 
   it.each([

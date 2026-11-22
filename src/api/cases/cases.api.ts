@@ -1,4 +1,4 @@
-import { apiClient } from '../client'
+import { apiClient, UPLOAD_TIMEOUT_MS } from '../client'
 import {
   caseDetailSchema,
   caseCalendarSchema,
@@ -42,7 +42,7 @@ export const analyzeRequest = async (file: File, signal?: AbortSignal) =>
     await apiClient.post<unknown, FormData>(
       '/api/cases/analyze',
       toFormData({ file }),
-      { signal },
+      { signal, timeout: UPLOAD_TIMEOUT_MS },
     ),
   )
 
@@ -123,6 +123,7 @@ export const createCase = async ({ file, ...fields }: CreateCaseInput) =>
     await apiClient.post<unknown>(
       '/api/cases',
       file ? toFormData({ ...fields, file }) : fields,
+      file ? { timeout: UPLOAD_TIMEOUT_MS } : undefined,
     ),
   )
 
@@ -175,6 +176,7 @@ export const uploadCaseDocument = async ({
     await apiClient.post<unknown>(
       `${caseUrl(caseId)}/documents`,
       toFormData(fields),
+      { timeout: UPLOAD_TIMEOUT_MS },
     ),
   )
 

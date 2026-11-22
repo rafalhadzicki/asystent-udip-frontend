@@ -189,6 +189,7 @@
     "backToUpload": "Wybierz plik",
     "ocrNotice": "Sprawdź odczyt i sugestie z oryginałem, a brakujące dane uzupełnij ręcznie. Po zatwierdzeniu sprawa zostanie zapisana w rejestrze.",
     "extractionStatus": {
+      "OCR_EXTRACTED": "Tekst odczytano automatycznie ze skanu. Mogą w nim być błędy, zwłaszcza w nazwiskach, datach i liczbach — porównaj go z oryginałem.",
       "NO_TEXT": "Nie znaleziono tekstu w pliku. Uzupełnij go ręcznie.",
       "UNSUPPORTED": "Odczyt tekstu z tego pliku nie jest obsługiwany. Uzupełnij go ręcznie.",
       "FAILED": "Odczyt tekstu nie powiódł się. Uzupełnij go ręcznie."

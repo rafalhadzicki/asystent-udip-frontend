@@ -28,6 +28,7 @@ export const caseSortSchema = z.enum([
 ])
 export const textExtractionStatusSchema = z.enum([
   'EXTRACTED',
+  'OCR_EXTRACTED',
   'NO_TEXT',
   'UNSUPPORTED',
   'FAILED',

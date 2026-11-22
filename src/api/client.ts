@@ -15,6 +15,7 @@ export type RequestConfig<TData = unknown> = Omit<
 export type ApiError = AxiosError | ZodError
 
 export const REQUEST_TIMEOUT_MS = 60_000
+export const UPLOAD_TIMEOUT_MS = 150_000
 
 const CREDENTIAL_URLS = ['/api/auth/login', '/api/auth/register']
 
