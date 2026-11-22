@@ -285,11 +285,6 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
                   rules={{ validate: required }}
                 />
               </FullWidth>
-              <FullWidth>
-                <Typography variant="body2" color="text.secondary">
-                  {t('questionsNotice')}
-                </Typography>
-              </FullWidth>
             </Fields>
             {submitError && (
               <Alert severity="error" sx={{ mt: 2 }}>

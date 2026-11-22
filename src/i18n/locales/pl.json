@@ -60,7 +60,7 @@
   },
   "caseDetail": {
     "loading": "Ładowanie sprawy…",
-    "missing": "Nie znaleziono sprawy. Mogła zostać usunięta podczas resetowania demo.",
+    "missing": "Nie znaleziono sprawy.",
     "back": "Wróć do rejestru spraw",
     "request": "Wniosek",
     "analysis": "Analiza",
@@ -217,7 +217,6 @@
     "optional": "Pole opcjonalne.",
     "invalidEmail": "Podaj prawidłowy adres e-mail.",
     "deadline": "Termin odpowiedzi",
-    "questionsNotice": "Początkowe pytania w analizie powstaną z treści wniosku jako sugestie demonstracyjne i wymagają weryfikacji.",
     "deadlineFromServer": "Termin wylicza serwer na podstawie daty wpływu; po utworzeniu sprawy można go przedłużyć osobną akcją.",
     "receivedAtInFuture": "Data wpływu nie może być z przyszłości.",
     "submitErrors": {
