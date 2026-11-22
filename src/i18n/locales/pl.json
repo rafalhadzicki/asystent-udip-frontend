@@ -432,7 +432,7 @@
       "confirm": "Potwierdzam, że ręcznie sprawdziłem/am całą treść i decyzje. Sugestie automatyczne mogą być niepełne.",
       "exportNote": "Pobierany jest wyłącznie zanonimizowany tekst odpowiedzi z tej sprawy. Nie anonimizujemy załączników ani plików źródłowych."
     },
-    "export": "Pobierz zanonimizowany tekst TXT",
+    "export": "Pobierz zanonimizowany tekst",
     "replacement": "[ZANONIMIZOWANO]",
     "sent": {
       "openDialog": "Zapisz ręcznie odnotowaną wysyłkę",
@@ -447,13 +447,14 @@
       "noNote": "brak"
     },
     "errors": {
-      "export": "Nie udało się przygotować pliku TXT do pobrania. Spróbuj ponownie.",
+      "export": "Nie udało się przygotować pliku do pobrania. Spróbuj ponownie.",
       "empty": "Wpisz niepusty fragment.",
       "notFound": "Ten fragment nie występuje dokładnie w treści odpowiedzi.",
       "duplicate": "Taki fragment jest już na liście.",
       "overlap": "Ten fragment nakłada się na istniejący. Wybierz inny fragment lub rozstrzygnij istniejący."
     },
-    "warning": "Sugestie AI mogą pominąć część danych osobowych. Przed pobraniem i udostępnieniem ręcznie sprawdź całą treść i podgląd; oznaczenie fragmentów nie gwarantuje bezpieczeństwa tekstu."
+    "warning": "Sugestie AI mogą pominąć część danych osobowych. Przed pobraniem i udostępnieniem ręcznie sprawdź całą treść i podgląd; oznaczenie fragmentów nie gwarantuje bezpieczeństwa tekstu.",
+    "format": "Format pliku"
   },
   "calendar": {
     "eyebrow": "Terminarz",

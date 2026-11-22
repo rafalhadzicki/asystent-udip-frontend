@@ -32,6 +32,12 @@ import type {
 } from '@/features/demo/types'
 import { caseTabs, routes } from '@/app/routes'
 import {
+  buildExportBlob,
+  downloadBlob,
+  exportFormats,
+  type ExportFormat,
+} from './redaction-export'
+import {
   canExportRedactedText,
   hasUnresolvedRedactions,
   overlapsExistingRedaction,
@@ -65,6 +71,7 @@ export const RedactionPage = () => {
   const [sentNote, setSentNote] = useState('')
   const [sendDateError, setSendDateError] = useState(false)
   const [exportError, setExportError] = useState(false)
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('txt')
 
   const changeRedactions = (next: Redaction[]) => {
     updateCase(item.id, {
@@ -162,30 +169,20 @@ export const RedactionPage = () => {
     }
   }
 
-  const downloadText = () => {
+  const downloadText = async () => {
     if (!exportAllowed || !item.responseText) return
     setExportError(false)
     try {
-      const blob = new Blob(
-        [redactText(item.responseText, redactions, t('replacement'))],
-        { type: 'text/plain;charset=utf-8' },
+      const blob = await buildExportBlob(
+        redactText(item.responseText, redactions, t('replacement')),
+        exportFormat,
       )
-      const url = URL.createObjectURL(blob)
-      try {
-        const anchor = document.createElement('a')
-        anchor.href = url
-        anchor.download = `${item.reference.replaceAll('/', '-')}-zanonimizowana.txt`
-        document.body.append(anchor)
-        try {
-          anchor.click()
-        } finally {
-          anchor.remove()
-        }
-      } finally {
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      }
+      downloadBlob(
+        blob,
+        `${item.reference.replaceAll('/', '-')}-zanonimizowana.${exportFormat}`,
+      )
     } catch (error) {
-      console.error('Cannot export anonymized demo text', error)
+      console.error('Cannot export anonymized text', error)
       setExportError(true)
     }
   }
@@ -323,10 +320,25 @@ export const RedactionPage = () => {
                   label={t('review.confirm')}
                   sx={{ alignItems: 'flex-start', mr: 0 }}
                 />
+                <TextField
+                  select
+                  label={t('format')}
+                  value={exportFormat}
+                  onChange={(event) =>
+                    setExportFormat(event.target.value as ExportFormat)
+                  }
+                  slotProps={{ select: { native: true } }}
+                >
+                  {exportFormats.map((format) => (
+                    <option key={format} value={format}>
+                      {format.toUpperCase()}
+                    </option>
+                  ))}
+                </TextField>
                 <Button
                   fullWidth
                   variant="contained"
-                  onClick={downloadText}
+                  onClick={() => void downloadText()}
                   disabled={!exportAllowed || !item.responseText}
                 >
                   {t('export')}

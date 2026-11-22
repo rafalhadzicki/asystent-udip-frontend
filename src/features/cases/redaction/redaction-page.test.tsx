@@ -86,7 +86,7 @@ describe('redaction workflow', () => {
     ).toHaveAttribute('href', '/sprawy/demo-1/analiza')
     expect(
       screen.queryByRole('button', {
-        name: 'Pobierz zanonimizowany tekst TXT',
+        name: 'Pobierz zanonimizowany tekst',
       }),
     ).not.toBeInTheDocument()
   })
@@ -111,7 +111,7 @@ describe('redaction workflow', () => {
     suggest('Jan Demonstracyjny', 'JAN DEMONSTRACYJNY')
     renderPage()
     const download = screen.getByRole('button', {
-      name: 'Pobierz zanonimizowany tekst TXT',
+      name: 'Pobierz zanonimizowany tekst',
     })
     expect(download).toBeDisabled()
     await user.click(
@@ -231,7 +231,7 @@ describe('redaction workflow', () => {
     )
     expect(
       screen.getByRole('button', {
-        name: 'Pobierz zanonimizowany tekst TXT',
+        name: 'Pobierz zanonimizowany tekst',
       }),
     ).toBeEnabled()
     await user.click(
@@ -298,7 +298,7 @@ describe('redaction workflow', () => {
       screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
     ).not.toBeChecked()
     expect(
-      screen.getByRole('button', { name: 'Pobierz zanonimizowany tekst TXT' }),
+      screen.getByRole('button', { name: 'Pobierz zanonimizowany tekst' }),
     ).toBeDisabled()
   })
 
