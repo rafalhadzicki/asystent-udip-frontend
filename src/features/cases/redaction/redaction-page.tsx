@@ -20,6 +20,9 @@ import {
 } from '@mui/material'
 import { Link, useOutletContext } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useRedactionSuggestions } from '@/api/cases/cases.queries'
+import type { RedactionSuggestion } from '@/api/cases/cases.schemas'
+import { useAiErrorMessage } from '../use-ai-error-message'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { validIsoDate } from '@/features/demo/date-utils'
 import type {
@@ -30,7 +33,6 @@ import type {
 import { caseTabs, routes } from '@/app/routes'
 import {
   canExportRedactedText,
-  findCaseInsensitiveOccurrences,
   hasUnresolvedRedactions,
   overlapsExistingRedaction,
   redactText,
@@ -54,6 +56,10 @@ export const RedactionPage = () => {
     redactions,
   )
   const [analysisMessage, setAnalysisMessage] = useState('')
+  const [analysisError, setAnalysisError] = useState('')
+  const { getRedactionSuggestionsAsync, isGettingRedactionSuggestions } =
+    useRedactionSuggestions()
+  const toAiErrorMessage = useAiErrorMessage()
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [sentAt, setSentAt] = useState('')
   const [sentNote, setSentNote] = useState('')
@@ -94,24 +100,27 @@ export const RedactionPage = () => {
     return null
   }
 
-  const runDemoAnalysis = () => {
-    const applicant = item.applicant
-    const matches = findCaseInsensitiveOccurrences(item.responseText, applicant)
-    if (matches.length === 0) {
-      setAnalysisMessage(t('analysis.noMatch'))
+  const runAnalysis = async () => {
+    setAnalysisMessage('')
+    setAnalysisError('')
+    let suggestions: RedactionSuggestion[]
+    try {
+      suggestions = await getRedactionSuggestionsAsync({
+        id: item.id,
+        text: item.responseText,
+      })
+    } catch (error) {
+      setAnalysisError(toAiErrorMessage(error, t('analysis.error')))
       return
     }
-    const variants = [
-      ...new Set(
-        matches.map(({ start, end }) => item.responseText.slice(start, end)),
-      ),
-    ]
     const added: Redaction[] = []
     let skipped = 0
-    for (const variant of variants) {
+    for (const { text, category, reason } of suggestions) {
       if (
-        redactions.some((redaction) => redaction.text === variant) ||
-        overlapsExistingRedaction(item.responseText, variant, [
+        item.responseText.indexOf(text) === -1 ||
+        redactions.some((redaction) => redaction.text === text) ||
+        added.some((redaction) => redaction.text === text) ||
+        overlapsExistingRedaction(item.responseText, text, [
           ...redactions,
           ...added,
         ])
@@ -121,16 +130,18 @@ export const RedactionPage = () => {
       }
       added.push({
         id: makeId(),
-        text: variant,
-        reason: t('analysis.applicantReason'),
+        text,
+        reason: `${t(`analysis.categories.${category}`)}: ${reason}`,
         decision: 'pending',
       })
     }
     if (added.length) changeRedactions([...redactions, ...added])
     setAnalysisMessage(
-      skipped
-        ? t('analysis.variantsPartial', { added: added.length, skipped })
-        : t('analysis.variantsAdded', { count: added.length }),
+      added.length === 0 && skipped === 0
+        ? t('analysis.noSuggestions')
+        : skipped
+          ? t('analysis.partial', { added: added.length, skipped })
+          : t('analysis.added', { count: added.length }),
     )
   }
 
@@ -216,7 +227,7 @@ export const RedactionPage = () => {
           </Typography>
         </Box>
 
-        <Alert severity="warning">{t('demoWarning')}</Alert>
+        <Alert severity="warning">{t('warning')}</Alert>
         {exportError && <Alert severity="error">{t('errors.export')}</Alert>}
 
         {responseNeedsSaving ? (
@@ -261,11 +272,16 @@ export const RedactionPage = () => {
                 <Button
                   variant="outlined"
                   fullWidth
-                  onClick={runDemoAnalysis}
-                  disabled={completed}
+                  onClick={() => void runAnalysis()}
+                  disabled={completed || isGettingRedactionSuggestions}
                 >
-                  {t('analysis.run')}
+                  {isGettingRedactionSuggestions
+                    ? t('analysis.running')
+                    : t('analysis.run')}
                 </Button>
+                {analysisError && (
+                  <Alert severity="error">{analysisError}</Alert>
+                )}
                 {analysisMessage && (
                   <Alert severity="info" role="status">
                     {analysisMessage}

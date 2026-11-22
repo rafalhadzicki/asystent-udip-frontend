@@ -19,25 +19,6 @@ export const findExactOccurrences = (
   return ranges
 }
 
-export const findCaseInsensitiveOccurrences = (
-  text: string,
-  fragment: string,
-): TextRange[] => {
-  if (!fragment) return []
-
-  const escaped = fragment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const pattern = new RegExp(escaped, 'giu')
-  const ranges: TextRange[] = []
-  let match: RegExpExecArray | null
-  while ((match = pattern.exec(text)) !== null) {
-    ranges.push({ start: match.index, end: match.index + match[0].length })
-    const first = text.codePointAt(match.index)
-    pattern.lastIndex =
-      match.index + (first !== undefined && first > 0xffff ? 2 : 1)
-  }
-  return ranges
-}
-
 export const mergeRanges = (ranges: TextRange[]): TextRange[] => {
   const sorted = [...ranges].sort(
     (left, right) => left.start - right.start || left.end - right.end,

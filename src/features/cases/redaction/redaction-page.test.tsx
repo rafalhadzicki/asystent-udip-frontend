@@ -2,7 +2,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThemeProvider } from '@mui/material/styles'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { AxiosError, AxiosHeaders } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as casesApi from '@/api/cases/cases.api'
+import { createTestQueryClient } from '@/test/query-client'
 import { theme } from '@/app/theme'
 import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
 import {
@@ -12,6 +16,19 @@ import {
 } from '@/features/demo/demo-store'
 import { RedactionPage } from './redaction-page'
 
+vi.mock('@/api/cases/cases.api', () => ({
+  getRedactionSuggestions: vi.fn(),
+}))
+
+const suggest = (...texts: string[]) =>
+  vi.mocked(casesApi.getRedactionSuggestions).mockResolvedValue({
+    suggestions: texts.map((text) => ({
+      text,
+      category: 'PERSON_NAME' as const,
+      reason: 'Dane osobowe wnioskodawcy',
+    })),
+  })
+
 const CurrentCase = () => {
   const { cases } = useDemoStore()
   return <Outlet context={cases[0]} />
@@ -20,15 +37,17 @@ const CurrentCase = () => {
 const renderPage = () =>
   render(
     <ThemeProvider theme={theme}>
-      <DemoProvider>
-        <MemoryRouter initialEntries={['/anonimizacja']}>
-          <Routes>
-            <Route element={<CurrentCase />}>
-              <Route path="/anonimizacja" element={<RedactionPage />} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      </DemoProvider>
+      <QueryClientProvider client={createTestQueryClient()}>
+        <DemoProvider>
+          <MemoryRouter initialEntries={['/anonimizacja']}>
+            <Routes>
+              <Route element={<CurrentCase />}>
+                <Route path="/anonimizacja" element={<RedactionPage />} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </DemoProvider>
+      </QueryClientProvider>
     </ThemeProvider>,
   )
 
@@ -90,13 +109,14 @@ describe('redaction workflow', () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, 'click')
       .mockImplementation(() => {})
+    suggest('Jan Demonstracyjny', 'JAN DEMONSTRACYJNY')
     renderPage()
     const download = screen.getByRole('button', {
       name: 'Pobierz zanonimizowany tekst TXT',
     })
     expect(download).toBeDisabled()
     await user.click(
-      screen.getByRole('button', { name: 'Uruchom analizę demonstracyjną' }),
+      screen.getByRole('button', { name: 'Wyszukaj dane osobowe (AI)' }),
     )
     for (const button of screen.getAllByRole('button', {
       name: 'Ukryj w pobranym tekście',
@@ -169,7 +189,7 @@ describe('redaction workflow', () => {
     })
     expect(
       await screen.findByRole('button', {
-        name: 'Uruchom analizę demonstracyjną',
+        name: 'Wyszukaj dane osobowe (AI)',
       }),
     ).toBeDisabled()
   })
@@ -186,16 +206,15 @@ describe('redaction workflow', () => {
       DEMO_STORAGE_KEY,
       JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
     )
+    suggest('Żaneta Żółć', 'ŻANETA ŻÓŁĆ')
     const user = userEvent.setup()
     renderPage()
-    expect(
-      screen.getByText(/Sugestie mogą pominąć odmiany/),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/Sugestie AI mogą pominąć/)).toBeInTheDocument()
     await user.click(
-      screen.getByRole('button', { name: 'Uruchom analizę demonstracyjną' }),
+      screen.getByRole('button', { name: 'Wyszukaj dane osobowe (AI)' }),
     )
     expect(
-      screen.getByText(/Dodano warianty zapisu jako osobne sugestie: 2/),
+      await screen.findByText(/Dodano sugestie do rozstrzygnięcia: 2/),
     ).toBeInTheDocument()
     expect(screen.getByText('Żaneta Żółć')).toBeInTheDocument()
     expect(screen.getByText('ŻANETA ŻÓŁĆ')).toBeInTheDocument()
@@ -216,10 +235,10 @@ describe('redaction workflow', () => {
       }),
     ).toBeEnabled()
     await user.click(
-      screen.getByRole('button', { name: 'Uruchom analizę demonstracyjną' }),
+      screen.getByRole('button', { name: 'Wyszukaj dane osobowe (AI)' }),
     )
     expect(
-      screen.getByText(/Pominięto wariantów już dodanych/),
+      await screen.findByText(/Dodano sugestii: 0. Pominięto/),
     ).toBeInTheDocument()
   })
 
@@ -261,15 +280,19 @@ describe('redaction workflow', () => {
       DEMO_STORAGE_KEY,
       JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
     )
+    suggest('Jan Kowalski', 'JAN KOWALSKI')
     const user = userEvent.setup()
     renderPage()
     await user.click(
-      screen.getByRole('button', { name: 'Uruchom analizę demonstracyjną' }),
+      screen.getByRole('button', { name: 'Wyszukaj dane osobowe (AI)' }),
     )
     expect(
-      screen.getByText(/Dodano wariantów: 1. Pominięto wariantów/),
+      await screen.findByText(/Dodano sugestii: 1. Pominięto/),
     ).toBeInTheDocument()
     expect(screen.getByText('JAN KOWALSKI')).toBeInTheDocument()
+    expect(
+      screen.getByText(/Imię i nazwisko: Dane osobowe wnioskodawcy/),
+    ).toBeInTheDocument()
     expect(screen.queryByText('Jan Kowalski')).not.toBeInTheDocument()
     expect(
       screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
@@ -277,5 +300,34 @@ describe('redaction workflow', () => {
     expect(
       screen.getByRole('button', { name: 'Pobierz zanonimizowany tekst TXT' }),
     ).toBeDisabled()
+  })
+
+  it('ignores suggestions that are not in the text and reports an AI that is not configured', async () => {
+    const user = userEvent.setup()
+    suggest('Tekst spoza odpowiedzi')
+    renderPage()
+    await user.click(
+      screen.getByRole('button', { name: 'Wyszukaj dane osobowe (AI)' }),
+    )
+    expect(
+      await screen.findByText(/Dodano sugestii: 0. Pominięto/),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Tekst spoza odpowiedzi')).not.toBeInTheDocument()
+
+    vi.mocked(casesApi.getRedactionSuggestions).mockRejectedValue(
+      new AxiosError('x', undefined, undefined, null, {
+        data: { code: 'AI_NOT_CONFIGURED' },
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Wyszukaj dane osobowe (AI)' }),
+    )
+    expect(
+      await screen.findByText(/Funkcje AI nie są skonfigurowane/),
+    ).toBeInTheDocument()
   })
 })

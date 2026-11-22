@@ -383,7 +383,6 @@
     "goToAnalysis": "Przejdź do analizy",
     "title": "Anonimizacja odpowiedzi",
     "subtitle": "Pracujesz na treści odpowiedzi zapisanej w tej sprawie.",
-    "demoWarning": "Wersja demonstracyjna — używaj tylko danych testowych. Sugestie mogą pominąć odmiany imion i nazwisk oraz inne dane osobowe. Przed pobraniem i udostępnieniem ręcznie sprawdź całą treść i podgląd; oznaczenie fragmentów nie gwarantuje bezpieczeństwa tekstu.",
     "missing": {
       "title": "Brak treści odpowiedzi",
       "description": "Dodaj lub przygotuj odpowiedź w materiałach tej sprawy. Nie używamy osobnego przykładowego pisma.",
@@ -394,13 +393,22 @@
       "goToMaterials": "Zapisz lub wygeneruj odpowiedź w materiałach"
     },
     "analysis": {
-      "title": "Sugestie demonstracyjne",
-      "description": "Sprawdzenie wyszukuje pełne imię i nazwisko wnioskodawcy niezależnie od wielkości liter. Każdy wariant zapisu dodaje jako osobną sugestię. Nie rozpoznaje odmian ani innych danych osobowych.",
-      "run": "Uruchom analizę demonstracyjną",
-      "noMatch": "Nie znaleziono pełnego imienia i nazwiska wnioskodawcy. Sprawdź ręcznie także odmiany i inne dane.",
-      "variantsAdded": "Dodano warianty zapisu jako osobne sugestie: {{count}}.",
-      "variantsPartial": "Dodano wariantów: {{added}}. Pominięto wariantów już dodanych lub nakładających się na istniejące fragmenty: {{skipped}}. Sprawdź je ręcznie.",
-      "applicantReason": "Sugestia demonstracyjna: wariant zapisu danych wnioskodawcy."
+      "title": "Sugestie AI",
+      "description": "AI wyszukuje w treści odpowiedzi dane osobowe i dopisuje je jako sugestie do rozstrzygnięcia. Każdą sugestię musisz zatwierdzić lub odrzucić; brak sugestii nie oznacza, że tekst jest bezpieczny.",
+      "run": "Wyszukaj dane osobowe (AI)",
+      "running": "Analizowanie…",
+      "noSuggestions": "AI nie zgłosiła żadnych sugestii. Sprawdź tekst ręcznie.",
+      "added": "Dodano sugestie do rozstrzygnięcia: {{count}}.",
+      "partial": "Dodano sugestii: {{added}}. Pominięto sugestie już dodane, nakładające się lub niepasujące do tekstu: {{skipped}}. Sprawdź tekst ręcznie.",
+      "error": "Nie udało się pobrać sugestii AI. Spróbuj ponownie.",
+      "categories": {
+        "PERSON_NAME": "Imię i nazwisko",
+        "ADDRESS": "Adres",
+        "EMAIL": "E-mail",
+        "PHONE": "Telefon",
+        "ID_NUMBER": "Numer identyfikacyjny",
+        "OTHER": "Inne dane"
+      }
     },
     "manual": {
       "title": "Dodaj fragment ręcznie",
@@ -454,7 +462,8 @@
       "notFound": "Ten fragment nie występuje dokładnie w treści odpowiedzi.",
       "duplicate": "Taki fragment jest już na liście.",
       "overlap": "Ten fragment nakłada się na istniejący. Wybierz inny fragment lub rozstrzygnij istniejący."
-    }
+    },
+    "warning": "Sugestie AI mogą pominąć część danych osobowych. Przed pobraniem i udostępnieniem ręcznie sprawdź całą treść i podgląd; oznaczenie fragmentów nie gwarantuje bezpieczeństwa tekstu."
   },
   "calendar": {
     "eyebrow": "Terminarz",
