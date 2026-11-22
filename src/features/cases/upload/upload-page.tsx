@@ -24,6 +24,7 @@ import { getApiErrorKind } from '@/api/errors'
 const MAX_FILE_SIZE = 25 * 1024 * 1024
 const MIME_TYPES = {
   pdf: 'application/pdf',
+  doc: 'application/msword',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 } as const
 
@@ -46,9 +47,12 @@ type UploadState =
 const validateFile = (file: File): UploadError | null => {
   if (file.size === 0) return 'empty'
   const extension = file.name.split('.').pop()?.toLowerCase()
-  if (!file.name.includes('.') || (extension !== 'pdf' && extension !== 'docx'))
+  if (!extension || !file.name.includes('.') || !(extension in MIME_TYPES))
     return 'extension'
-  if (file.type && file.type.toLowerCase() !== MIME_TYPES[extension])
+  if (
+    file.type &&
+    file.type.toLowerCase() !== MIME_TYPES[extension as keyof typeof MIME_TYPES]
+  )
     return 'mime'
   if (file.size > MAX_FILE_SIZE) return 'size'
   return null
@@ -175,7 +179,7 @@ export const UploadPage = () => {
           <HiddenInput
             ref={inputRef}
             type="file"
-            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             onChange={handleChange}
             tabIndex={-1}
             aria-label={t('choose')}

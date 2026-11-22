@@ -147,13 +147,13 @@
     "description": "Rozpocznij rejestrację, wybierając dokument wniosku.",
     "step": "Krok 1 z 2: Wybór pliku",
     "nextStep": "Krok 2: Weryfikacja",
-    "dropTitle": "Przeciągnij plik PDF lub DOCX tutaj",
+    "dropTitle": "Przeciągnij plik PDF, DOC lub DOCX tutaj",
     "dropDescription": "lub wybierz dokument z dysku",
     "choose": "Wybierz plik z dysku",
     "replace": "Zmień plik",
     "remove": "Usuń plik",
     "retry": "Spróbuj ponownie",
-    "formats": "Obsługiwane formaty: PDF, DOCX · Maksymalny rozmiar: 25 MB",
+    "formats": "Obsługiwane formaty: PDF, DOC, DOCX · Maksymalny rozmiar: 25 MB",
     "processing": "Odczytywanie pliku…",
     "ready": "Plik gotowy do weryfikacji",
     "size": "Rozmiar: {{size}} bajtów",
@@ -162,13 +162,13 @@
     "continueHint": "Wybierz plik, aby kontynuować.",
     "errors": {
       "empty": "Plik jest pusty. Wybierz inny dokument.",
-      "extension": "Nieobsługiwane rozszerzenie pliku. Wybierz plik PDF lub DOCX.",
-      "mime": "Typ pliku nie odpowiada rozszerzeniu PDF lub DOCX. Wybierz właściwy dokument.",
+      "extension": "Nieobsługiwane rozszerzenie pliku. Wybierz plik PDF, DOC lub DOCX.",
+      "mime": "Typ pliku nie odpowiada rozszerzeniu PDF, DOC lub DOCX. Wybierz właściwy dokument.",
       "size": "Plik jest zbyt duży. Maksymalny rozmiar to 25 MB.",
       "multiple": "Wybierz tylko jeden plik.",
       "unauthorized": "Sesja wygasła lub jest nieprawidłowa. Wyloguj się i zaloguj ponownie.",
       "serverSize": "Plik jest zbyt duży. Wybierz mniejszy dokument.",
-      "serverFormat": "Nie udało się rozpoznać pliku jako poprawnego PDF lub DOCX. Wybierz inny dokument.",
+      "serverFormat": "Nie udało się rozpoznać pliku jako poprawnego PDF, DOC lub DOCX. Wybierz inny dokument.",
       "request": "Nie udało się odczytać pliku. Spróbuj ponownie."
     }
   },
@@ -219,7 +219,7 @@
     "receivedAtInFuture": "Data wpływu nie może być z przyszłości.",
     "submitErrors": {
       "tooLarge": "Plik jest zbyt duży.",
-      "unsupported": "Ten format pliku nie jest obsługiwany. Użyj PDF lub DOCX.",
+      "unsupported": "Ten format pliku nie jest obsługiwany. Użyj PDF, DOC lub DOCX.",
       "invalid": "Nie udało się zapisać sprawy. Sprawdź pola formularza.",
       "failed": "Nie udało się utworzyć sprawy. Spróbuj ponownie."
     }

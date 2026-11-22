@@ -176,11 +176,20 @@ describe('UploadPage', () => {
     expect(unmountSignal?.aborted).toBe(true)
   })
 
+  it('accepts an old Word .doc file', async () => {
+    vi.spyOn(casesApi, 'analyzeRequest').mockResolvedValue(response)
+    renderPage()
+    select(new File(['abc'], 'wniosek.doc', { type: 'application/msword' }))
+    expect(
+      await screen.findByText('Plik gotowy do weryfikacji'),
+    ).toBeInTheDocument()
+  })
+
   it('accepts a dropped DOCX and rejects multiple dropped files', async () => {
     vi.spyOn(casesApi, 'analyzeRequest').mockResolvedValue(response)
     renderPage()
     const zone = screen.getByText(
-      'Przeciągnij plik PDF lub DOCX tutaj',
+      'Przeciągnij plik PDF, DOC lub DOCX tutaj',
     ).parentElement!
     fireEvent.drop(zone, {
       dataTransfer: { types: ['Files'], files: [pdf(), pdf()] },
