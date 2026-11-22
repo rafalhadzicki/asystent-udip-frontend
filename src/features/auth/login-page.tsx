@@ -12,7 +12,6 @@ import {
   BrandIcon,
   LoginContainer,
   LoginFields,
-  LoginFooter,
   LoginForm,
   LoginHeader,
   LoginLayout,
@@ -143,12 +142,6 @@ export const LoginPage = () => {
             {isSubmitting ? authT('submittingAnnouncement') : ''}
           </ScreenReaderText>
         </LoginForm>
-
-        <LoginFooter>
-          <Typography variant="caption" component="p" sx={{ mt: 1 }}>
-            {authT('sessionNotice')}
-          </Typography>
-        </LoginFooter>
       </LoginContainer>
     </LoginLayout>
   )

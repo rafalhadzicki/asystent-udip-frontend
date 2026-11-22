@@ -50,10 +50,3 @@ export const LoginFields = styled('fieldset')(({ theme }) => ({
   flexDirection: 'column',
   gap: theme.spacing(2.5),
 }))
-
-export const LoginFooter = styled('footer')(({ theme }) => ({
-  marginTop: theme.spacing(3),
-  textAlign: 'center',
-  color: theme.palette.text.secondary,
-  overflowWrap: 'anywhere',
-}))

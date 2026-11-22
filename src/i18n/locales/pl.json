@@ -27,7 +27,6 @@
       "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
       "requestFailed": "Nie udało się zalogować. Sprawdź połączenie i spróbuj ponownie."
     },
-    "sessionNotice": "Odświeżenie strony kończy sesję.",
     "session": "Zalogowano · {{email}}"
   },
   "form": {
