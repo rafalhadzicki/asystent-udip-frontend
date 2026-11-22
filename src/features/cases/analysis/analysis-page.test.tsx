@@ -137,7 +137,7 @@ describe('analiza sprawy', () => {
       ),
     )
     expect(
-      screen.getByText(/Podpowiedzi nazw pochodzą ze słownika serwera/),
+      screen.getByText(/Podpowiedzi pochodzą ze słownika jednostek/),
     ).toBeInTheDocument()
   })
 
@@ -147,7 +147,7 @@ describe('analiza sprawy', () => {
     )
     renderPage(createDemoCases()[0])
     expect(
-      await screen.findByText(/Nie udało się pobrać jednostek z API/),
+      await screen.findByText(/Nie udało się pobrać listy jednostek/),
     ).toBeInTheDocument()
   })
 

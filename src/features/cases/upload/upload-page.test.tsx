@@ -209,7 +209,7 @@ describe('UploadPage', () => {
     renderPage()
     select(pdf())
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Nie udało się odczytać pliku przez API',
+      'Nie udało się odczytać pliku',
     )
     expect(
       screen.getByRole('button', { name: 'Spróbuj ponownie' }),
@@ -221,8 +221,8 @@ describe('UploadPage', () => {
 
   it.each([
     [401, 'Sesja wygasła lub jest nieprawidłowa'],
-    [413, 'Serwer odrzucił plik jako zbyt duży'],
-    [415, 'Serwer nie rozpoznał pliku'],
+    [413, 'Plik jest zbyt duży'],
+    [415, 'Nie udało się rozpoznać pliku'],
   ])('shows a specific API error for HTTP %i', async (status, message) => {
     vi.spyOn(casesApi, 'analyzeRequest').mockRejectedValue(
       new AxiosError('error', undefined, undefined, undefined, {

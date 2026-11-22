@@ -57,7 +57,9 @@ describe('RequestPage for a case from the API', () => {
     renderPage()
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
     expect(screen.getByLabelText(/Termin odpowiedzi/)).toBeDisabled()
-    expect(screen.getByText(/Termin liczy serwer/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Termin jest wyliczany automatycznie/),
+    ).toBeInTheDocument()
     const subject = screen.getByLabelText(/Przedmiot wniosku/)
     await user.clear(subject)
     await user.type(subject, 'Zmieniony temat')
@@ -91,7 +93,7 @@ describe('RequestPage for a case from the API', () => {
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
     await user.click(screen.getByRole('button', { name: 'Zapisz zmiany' }))
     expect(
-      await screen.findByText(/Nie udało się zapisać zmian w API/),
+      await screen.findByText(/Nie udało się zapisać zmian\./),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Zapisz zmiany' }),

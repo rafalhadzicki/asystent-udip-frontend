@@ -314,7 +314,7 @@ describe('KnowledgePage', () => {
     await tableRows()
     await user.click(screen.getByRole('button', { name: /Indeksuj ponownie/ }))
     expect(
-      await screen.findByText(/Funkcje AI nie są skonfigurowane/),
+      await screen.findByText(/Funkcje AI są obecnie niedostępne/),
     ).toBeInTheDocument()
   })
 

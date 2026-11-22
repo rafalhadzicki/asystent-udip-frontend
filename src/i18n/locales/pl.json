@@ -1,6 +1,6 @@
 {
   "apiErrors": {
-    "aiNotConfigured": "Funkcje AI nie są skonfigurowane na serwerze. Uzupełnij dane ręcznie.",
+    "aiNotConfigured": "Funkcje AI są obecnie niedostępne. Uzupełnij dane ręcznie.",
     "aiFailed": "Zapytanie do AI nie powiodło się lub trwało zbyt długo. Spróbuj ponownie."
   },
   "app": {
@@ -25,7 +25,7 @@
     },
     "errors": {
       "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
-      "requestFailed": "Nie udało się zalogować. Sprawdź połączenie z serwerem i spróbuj ponownie."
+      "requestFailed": "Nie udało się zalogować. Sprawdź połączenie i spróbuj ponownie."
     },
     "sessionNotice": "Odświeżenie strony kończy sesję.",
     "session": "Zalogowano · {{email}}"
@@ -87,7 +87,7 @@
     "summaryLabel": "Terminy wszystkich niezakończonych spraw",
     "summaryPartial": "Liczby przybliżone: uwzględniono tylko część spraw z danego roku (limit pojedynczego pobrania).",
     "loading": "Ładowanie spraw…",
-    "loadError": "Nie udało się pobrać spraw z API. Spróbuj ponownie.",
+    "loadError": "Nie udało się pobrać spraw. Spróbuj ponownie.",
     "retry": "Spróbuj ponownie",
     "summary": {
       "overdue": "Po terminie",
@@ -156,7 +156,7 @@
     "remove": "Usuń plik",
     "retry": "Spróbuj ponownie",
     "formats": "Obsługiwane formaty: PDF, DOCX · Maksymalny rozmiar: 25 MB",
-    "processing": "Odczytywanie pliku przez API…",
+    "processing": "Odczytywanie pliku…",
     "ready": "Plik gotowy do weryfikacji",
     "size": "Rozmiar: {{size}} bajtów",
     "cancel": "Anuluj",
@@ -169,9 +169,9 @@
       "size": "Plik jest zbyt duży. Maksymalny rozmiar to 25 MB.",
       "multiple": "Wybierz tylko jeden plik.",
       "unauthorized": "Sesja wygasła lub jest nieprawidłowa. Wyloguj się i zaloguj ponownie.",
-      "serverSize": "Serwer odrzucił plik jako zbyt duży. Wybierz mniejszy dokument.",
-      "serverFormat": "Serwer nie rozpoznał pliku jako poprawnego PDF lub DOCX. Wybierz inny dokument.",
-      "request": "Nie udało się odczytać pliku przez API. Spróbuj ponownie."
+      "serverSize": "Plik jest zbyt duży. Wybierz mniejszy dokument.",
+      "serverFormat": "Nie udało się rozpoznać pliku jako poprawnego PDF lub DOCX. Wybierz inny dokument.",
+      "request": "Nie udało się odczytać pliku. Spróbuj ponownie."
     }
   },
   "verification": {
@@ -181,22 +181,22 @@
     "missingTitle": "Brak wniosku do weryfikacji",
     "missingDescription": "Wybierz plik w poprzednim kroku. Po odświeżeniu strony szkic nie jest zachowywany.",
     "backToUpload": "Wybierz plik",
-    "ocrNotice": "Sprawdź odczyt i sugestie API z oryginałem, a brakujące dane uzupełnij ręcznie. Po zatwierdzeniu sprawa zostanie zapisana w rejestrze.",
+    "ocrNotice": "Sprawdź odczyt i sugestie z oryginałem, a brakujące dane uzupełnij ręcznie. Po zatwierdzeniu sprawa zostanie zapisana w rejestrze.",
     "extractionStatus": {
       "NO_TEXT": "Nie znaleziono tekstu w pliku. Uzupełnij go ręcznie.",
       "UNSUPPORTED": "Odczyt tekstu z tego pliku nie jest obsługiwany. Uzupełnij go ręcznie.",
       "FAILED": "Odczyt tekstu nie powiódł się. Uzupełnij go ręcznie."
     },
     "warnings": {
-      "TEXT_NOT_FOUND": "API nie znalazło tekstu w pliku.",
-      "TEXT_EXTRACTION_UNSUPPORTED": "API nie obsługuje odczytu tekstu z tego pliku.",
-      "TEXT_EXTRACTION_FAILED": "API nie zdołało odczytać tekstu z pliku.",
+      "TEXT_NOT_FOUND": "Nie znaleziono tekstu w pliku.",
+      "TEXT_EXTRACTION_UNSUPPORTED": "Odczyt tekstu z tego pliku nie jest obsługiwany.",
+      "TEXT_EXTRACTION_FAILED": "Nie udało się odczytać tekstu z pliku.",
       "RECEIVED_AT_IN_FUTURE_IGNORED": "Pominięto datę wpływu z przyszłości — sprawdź i podaj właściwą datę.",
-      "CASE_NUMBER_TAKEN": "Sugerowany numer sprawy jest już zajęty w backendzie — sprawdź numer."
+      "CASE_NUMBER_TAKEN": "Sugerowany numer sprawy jest już zajęty — sprawdź numer."
     },
     "sourceTitle": "Plik źródłowy",
     "sourceSize": "Rozmiar: {{size}} bajtów",
-    "sourceNotice": "Po utworzeniu sprawy plik zostanie zapisany w backendzie razem z wnioskiem.",
+    "sourceNotice": "Po utworzeniu sprawy plik zostanie zapisany razem z wnioskiem.",
     "extractedTitle": "Odczytany tekst",
     "emptyText": "Brak tekstu w szkicu.",
     "reference": "Znak / numer sprawy",
@@ -217,12 +217,12 @@
     "optional": "Pole opcjonalne.",
     "invalidEmail": "Podaj prawidłowy adres e-mail.",
     "deadline": "Termin odpowiedzi",
-    "deadlineFromServer": "Termin wylicza serwer na podstawie daty wpływu; po utworzeniu sprawy można go przedłużyć osobną akcją.",
+    "deadlineFromServer": "Termin jest wyliczany automatycznie na podstawie daty wpływu; po utworzeniu sprawy można go przedłużyć (kwerenda).",
     "receivedAtInFuture": "Data wpływu nie może być z przyszłości.",
     "submitErrors": {
       "tooLarge": "Plik jest zbyt duży.",
       "unsupported": "Ten format pliku nie jest obsługiwany. Użyj PDF lub DOCX.",
-      "invalid": "Serwer odrzucił dane. Sprawdź pola formularza.",
+      "invalid": "Nie udało się zapisać sprawy. Sprawdź pola formularza.",
       "failed": "Nie udało się utworzyć sprawy. Spróbuj ponownie."
     }
   },
@@ -254,12 +254,12 @@
       "cancel": "Anuluj",
       "next": "Przejdź do analizy"
     },
-    "deadlineFromServer": "Termin liczy serwer na podstawie daty wpływu; przedłużenie wymaga osobnej akcji.",
+    "deadlineFromServer": "Termin jest wyliczany automatycznie na podstawie daty wpływu; przedłużenie (kwerenda) wymaga osobnej akcji.",
     "readOnly": "Sprawa jest zakończona, a odpowiedź została wysłana. Dane wniosku są tylko do odczytu.",
     "scopeWarning": "Zmieniasz treść lub przedmiot wniosku. Po zapisie ewentualny projekt odpowiedzi i anonimizacja zostaną usunięte, a sprawa wróci do analizy. Przejrzyj istniejące pytania.",
     "notice": {
       "saved": "Zapisano zmiany we wniosku.",
-      "saveFailed": "Nie udało się zapisać zmian w API. Sprawdź połączenie i spróbuj ponownie.",
+      "saveFailed": "Nie udało się zapisać zmian. Sprawdź połączenie i spróbuj ponownie.",
       "applicantChanged": "Dane wnioskodawcy zmieniły się. Sprawdź i zapisz ponownie zachowany projekt odpowiedzi; decyzje anonimizacji zostały usunięte.",
       "scopeReset": "Zapisano zmiany. Zakres wniosku się zmienił: usunięto ewentualny projekt odpowiedzi i anonimizację, a sprawa wróciła do etapu analizy. Sprawdź pytania i jednostki w analizie."
     },
@@ -274,8 +274,8 @@
   "analysis": {
     "title": "Analiza wniosku",
     "intro": "Sprawdź zakres wniosku i wybierz jednostki, które mogą dysponować potrzebnymi materiałami.",
-    "saveFailed": "Nie udało się zapisać pytań i jednostek na serwerze. Spróbuj ponownie.",
-    "departmentUnknown": "Wybierz jednostkę z listy podpowiedzi – serwer przyjmuje tylko jednostki ze słownika.",
+    "saveFailed": "Nie udało się zapisać pytań i jednostek. Spróbuj ponownie.",
+    "departmentUnknown": "Wybierz jednostkę z listy podpowiedzi – można wskazać tylko jednostki ze słownika.",
     "reviewRequired": "Treść lub temat wniosku zmieniły się. Przejrzyj istniejące pytania i jednostki, popraw je w razie potrzeby i zapisz ustalenia przed dalszą pracą.",
     "questionsTitle": "Zakres wniosku",
     "questionsDescription": "Zaznacz pytania, które mają znaleźć się w zakresie sprawy. Możesz zmienić ich treść lub dodać własne.",
@@ -290,8 +290,8 @@
     "noReason": "Nie podano uzasadnienia.",
     "removeDepartment": "Usuń jednostkę {{name}}",
     "customName": "Nazwa jednostki",
-    "departmentLookupHint": "Podpowiedzi nazw pochodzą ze słownika serwera; dodać można tylko jednostkę ze słownika.",
-    "departmentLookupError": "Nie udało się pobrać jednostek z API. Możesz wpisać nazwę ręcznie.",
+    "departmentLookupHint": "Podpowiedzi pochodzą ze słownika jednostek; dodać można tylko jednostkę ze słownika.",
+    "departmentLookupError": "Nie udało się pobrać listy jednostek. Możesz wpisać nazwę ręcznie.",
     "customReason": "Uzasadnienie wyboru (opcjonalnie)",
     "addDepartment": "Dodaj jednostkę",
     "departmentNameRequired": "Podaj nazwę jednostki.",
@@ -328,7 +328,7 @@
     "chooseUnit": "Wybierz jednostkę",
     "addFile": "Dodaj materiał",
     "removeFile": "Usuń materiał {{name}}",
-    "fileHelp": "PDF, DOCX lub TXT, maksymalnie 25 MB na plik. Plik trafia na serwer, który odczytuje jego treść i wykorzystuje ją przy szkicu odpowiedzi.",
+    "fileHelp": "PDF, DOCX lub TXT, maksymalnie 25 MB na plik. Treść pliku zostanie odczytana i wykorzystana przy projekcie odpowiedzi.",
     "fileUnitError": "Wybierz jednostkę przekazującą materiał.",
     "fileTypeError": "Nieobsługiwany format pliku. Wybierz PDF, DOCX lub TXT.",
     "fileSizeError": "Plik przekracza limit 25 MB.",
@@ -440,7 +440,7 @@
       "note": "Notatka (opcjonalnie)",
       "confirm": "Zapisz wysyłkę i zakończ sprawę",
       "cancel": "Anuluj",
-      "error": "Nie udało się zapisać wysyłki na serwerze. Status sprawy nie został zmieniony – spróbuj ponownie."
+      "error": "Nie udało się zapisać wysyłki. Status sprawy nie został zmieniony – spróbuj ponownie."
     },
     "errors": {
       "export": "Nie udało się przygotować pliku do pobrania. Spróbuj ponownie.",
@@ -547,7 +547,7 @@
       "fileHelp": "PDF, DOCX lub TXT, maksymalnie 25 MB.",
       "noFile": "Nie wybrano pliku",
       "selectedFile": "Wybrany plik: {{name}} ({{size}})",
-      "fileCaveat": "Plik zostanie przetworzony na serwerze: tekst jest wyodrębniany, dzielony na fragmenty i indeksowany do użycia przez AI.",
+      "fileCaveat": "Plik zostanie przetworzony: tekst zostanie z niego odczytany i udostępniony asystentowi do wyszukiwania i przygotowania odpowiedzi.",
       "cancel": "Anuluj",
       "submitAdd": "Dodaj dokument",
       "submitUpdate": "Zapisz zmiany",
@@ -622,7 +622,7 @@
     "active": "Termin przedłużony z {{from}} do {{to}}. Powód: {{reason}}",
     "save": "Zapisz przedłużenie",
     "cancel": "Anuluj",
-    "invalid": "Serwer odrzucił datę: musi być po terminie ustawowym i najwyżej 2 miesiące od wpływu.",
+    "invalid": "Data musi być późniejsza niż termin ustawowy i najwyżej 2 miesiące od wpływu.",
     "conflict": "Nie można zmienić terminu: odpowiedź została już wysłana lub sprawa zmieniła się w międzyczasie. Odśwież stronę.",
     "unknown": "Nie udało się zapisać zmiany terminu. Spróbuj ponownie."
   },

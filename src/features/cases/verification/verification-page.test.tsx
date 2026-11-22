@@ -126,7 +126,9 @@ describe('weryfikacja wniosku', () => {
     const user = userEvent.setup()
     renderPage(draft)
     expect(await screen.findByText('wniosek.pdf')).toBeInTheDocument()
-    expect(screen.getByText(/Termin wylicza serwer/)).toBeVisible()
+    expect(
+      screen.getByText(/Termin jest wyliczany automatycznie/),
+    ).toBeVisible()
     expect(await screen.findByLabelText('Termin odpowiedzi')).toHaveValue(
       '2026-12-05',
     )
@@ -233,7 +235,7 @@ describe('weryfikacja wniosku', () => {
       screen.getByText('Nie znaleziono tekstu w pliku. Uzupełnij go ręcznie.'),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('API nie znalazło tekstu w pliku.'),
+      screen.getByText('Nie znaleziono tekstu w pliku.'),
     ).toBeInTheDocument()
     expect(
       screen.getByText(/Sugerowany numer sprawy jest już zajęty/),

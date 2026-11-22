@@ -190,7 +190,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Hasło'), 'example')
     await user.click(screen.getByRole('button', { name: 'Zaloguj się' }))
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Nie udało się zalogować. Sprawdź połączenie z serwerem i spróbuj ponownie.',
+      'Nie udało się zalogować. Sprawdź połączenie i spróbuj ponownie.',
     )
   })
 

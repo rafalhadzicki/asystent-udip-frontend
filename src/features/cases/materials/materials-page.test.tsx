@@ -138,7 +138,7 @@ describe('MaterialsPage', () => {
     renderPage({ materialNotes: 'Treść' })
     await user.click(screen.getByRole('button', { name: 'Generuj projekt' }))
     expect(
-      await screen.findByText(/Funkcje AI nie są skonfigurowane/),
+      await screen.findByText(/Funkcje AI są obecnie niedostępne/),
     ).toBeInTheDocument()
     expect(savedCase().responseText).toBe('')
   })
