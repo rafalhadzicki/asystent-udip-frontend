@@ -13,21 +13,12 @@ const documentSchema = z.object({
 })
 
 // Fields without a backend counterpart: kept in the browser for every case.
+// Questions, departments and the date of the letter live on the server.
 export const caseLocalSchema = z.object({
-  writtenAt: optionalIsoDate,
   status: z.enum(['analysis', 'waiting', 'draft', 'redaction', 'completed']),
-  questions: z.array(
-    z.object({ id: z.string(), text: z.string(), selected: z.boolean() }),
-  ),
   analysisNeedsReview: z.boolean().optional(),
-  departments: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      reason: z.string(),
-      selected: z.boolean(),
-    }),
-  ),
+  // The AI reason of a department; the API stores only the department itself.
+  departmentReasons: z.record(z.string(), z.string()).optional(),
   materials: z.array(documentSchema),
   materialNotes: z.string(),
   contactedAt: optionalIsoDate,
@@ -56,6 +47,23 @@ export const pickLocalFields = (changes: object): CaseOverlay =>
   )
 
 const localCaseSchema = caseLocalSchema.extend({
+  writtenAt: optionalIsoDate,
+  questions: z.array(
+    z.object({
+      id: z.string(),
+      text: z.string(),
+      selected: z.boolean(),
+      departmentId: z.string().nullish(),
+    }),
+  ),
+  departments: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      reason: z.string(),
+      selected: z.boolean(),
+    }),
+  ),
   id: z.string(),
   reference: z.string(),
   subject: z.string(),

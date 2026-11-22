@@ -22,6 +22,9 @@ const Draft = () => {
             writtenAt: '',
             applicantEmail: '',
             applicantAddress: '',
+            questions: [],
+            departments: [],
+            aiStatus: 'NOT_CONFIGURED',
           })
         }
       >

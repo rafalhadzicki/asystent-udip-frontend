@@ -18,6 +18,8 @@ vi.mock('@/api/cases/cases.api', () => ({
   createCase: vi.fn(),
   getDeadlinePreview: vi.fn(),
   checkCaseNumber: vi.fn(),
+  setCaseQuestions: vi.fn(),
+  setCaseDepartments: vi.fn(),
 }))
 
 const draft: UploadDraft = {
@@ -29,6 +31,11 @@ const draft: UploadDraft = {
   applicantAddress: '',
   receivedAt: '2026-11-21',
   requestText: 'Pierwsze pytanie.\nDrugie pytanie?',
+  questions: [{ text: 'Pytanie AI', departmentId: 'dep-1' }],
+  departments: [
+    { id: 'dep-1', name: 'Wydział testowy', reason: 'Prowadzi rejestr' },
+  ],
+  aiStatus: 'USED',
 }
 
 const submitLabel = 'Utwórz sprawę i przejdź do analizy'
@@ -88,6 +95,8 @@ const submit = async (user: ReturnType<typeof userEvent.setup>) =>
 
 beforeEach(() => {
   localStorage.clear()
+  vi.mocked(casesApi.setCaseQuestions).mockResolvedValue(detail)
+  vi.mocked(casesApi.setCaseDepartments).mockResolvedValue(detail)
   vi.mocked(casesApi.getDeadlinePreview).mockResolvedValue({
     receivedAt: '2026-11-21',
     dueAt: '2026-12-05',
@@ -146,12 +155,49 @@ describe('weryfikacja wniosku', () => {
     })
     const data = JSON.parse(screen.getByTestId('snapshot').textContent || '{}')
     expect(data.uploadDraft).toBeNull()
-    expect(data.overlays['server-id']).toMatchObject({
-      questions: [
-        { text: 'Pierwsze pytanie.', selected: false },
-        { text: 'Drugie pytanie?', selected: false },
-      ],
+    expect(data.overlays['server-id']).toEqual({
+      analysisNeedsReview: true,
+      departmentReasons: { 'dep-1': 'Prowadzi rejestr' },
     })
+    expect(vi.mocked(casesApi.setCaseQuestions).mock.calls[0][0]).toEqual({
+      id: 'server-id',
+      questions: [{ text: 'Pytanie AI', departmentId: 'dep-1' }],
+    })
+    expect(vi.mocked(casesApi.setCaseDepartments).mock.calls[0][0]).toEqual({
+      id: 'server-id',
+      departmentIds: ['dep-1'],
+    })
+  })
+
+  it('bez pytań od AI dzieli tekst wniosku na pytania', async () => {
+    vi.mocked(casesApi.createCase).mockResolvedValue(detail)
+    const user = userEvent.setup()
+    renderPage({ ...draft, questions: [], departments: [] })
+    await user.type(
+      await screen.findByLabelText('Znak / numer sprawy *'),
+      'A/1',
+    )
+    await submit(user)
+    await screen.findByTestId('path')
+    expect(vi.mocked(casesApi.setCaseQuestions).mock.calls[0][0]).toEqual({
+      id: detail.id,
+      questions: [{ text: 'Pierwsze pytanie.' }, { text: 'Drugie pytanie?' }],
+    })
+    expect(casesApi.setCaseDepartments).not.toHaveBeenCalled()
+  })
+
+  it('przechodzi do analizy, gdy zapis pytań się nie powiódł', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    vi.mocked(casesApi.createCase).mockResolvedValue(detail)
+    vi.mocked(casesApi.setCaseQuestions).mockRejectedValue(failWith(500))
+    const user = userEvent.setup()
+    renderPage(draft)
+    await user.type(
+      await screen.findByLabelText('Znak / numer sprawy *'),
+      'A/1',
+    )
+    await submit(user)
+    expect(await screen.findByTestId('path')).toHaveTextContent('/analiza')
   })
 
   it('wysyła sprawę tylko raz przy podwójnym zatwierdzeniu', async () => {

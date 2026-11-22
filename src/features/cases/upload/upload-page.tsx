@@ -119,6 +119,18 @@ export const UploadPage = () => {
           applicantAddress: result.suggestions.requesterAddress?.value ?? '',
           receivedAt: result.suggestions.receivedAt?.value ?? '',
           writtenAt: result.suggestions.writtenAt?.value ?? '',
+          questions: result.questions.map(({ text, departmentIds }) => ({
+            text,
+            departmentId: departmentIds[0],
+          })),
+          departments: result.departments.map(
+            ({ departmentId, name, reason }) => ({
+              id: departmentId,
+              name,
+              reason,
+            }),
+          ),
+          aiStatus: result.ai.status,
           warnings: result.warnings,
           textExtractionStatus: result.textExtractionStatus,
         })

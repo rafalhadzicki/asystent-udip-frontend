@@ -1,4 +1,5 @@
 import type {
+  AiAnalysisStatus,
   AnalysisWarning,
   CaseStatus as ApiCaseStatus,
   TextExtractionStatus,
@@ -15,7 +16,12 @@ export type DocumentMeta = {
   addedAt: string
 }
 
-export type Question = { id: string; text: string; selected: boolean }
+export type Question = {
+  id: string
+  text: string
+  selected: boolean
+  departmentId?: string | null
+}
 export type Department = {
   id: string
   name: string
@@ -46,6 +52,7 @@ export type CaseItem = {
   // Only on cases composed from the API; never stored locally.
   apiStatus?: ApiCaseStatus
   analysisNeedsReview?: boolean
+  departmentReasons?: Record<string, string>
   departments: Department[]
   materials: DocumentMeta[]
   materialNotes: string
@@ -56,6 +63,10 @@ export type CaseItem = {
   sentAt: string
   sentNote: string
 }
+
+// What the AI suggested for the case; saved on the server once the case exists.
+export type DraftQuestion = { text: string; departmentId?: string }
+export type DraftDepartment = { id: string; name: string; reason: string }
 
 export type UploadDraft = {
   file: File
@@ -69,6 +80,9 @@ export type UploadDraft = {
   writtenAt: string
   applicantEmail: string
   applicantAddress: string
+  questions: DraftQuestion[]
+  departments: DraftDepartment[]
+  aiStatus: AiAnalysisStatus
 }
 
 export type KnowledgeItem = {

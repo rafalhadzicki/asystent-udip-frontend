@@ -1,5 +1,4 @@
 import { getApiErrorKind } from '@/api/errors'
-import type { Question } from '@/features/demo/types'
 
 export type SubmitError = 'tooLarge' | 'unsupported' | 'invalid' | 'failed'
 
@@ -14,9 +13,8 @@ export const isFutureDate = (isoDate: string, today = new Date()) =>
   isoDate > today.toISOString().slice(0, 10)
 
 // Splits the request text into one preliminary question per line or sentence.
-export const splitQuestions = (text: string): Question[] =>
+export const splitQuestions = (text: string): string[] =>
   text
     .split(/\n+|(?<=[.!?])\s+/u)
     .map((part) => part.trim())
     .filter(Boolean)
-    .map((part) => ({ id: crypto.randomUUID(), text: part, selected: false }))

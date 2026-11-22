@@ -45,16 +45,31 @@ const documentMeta = (document: ApiDocument): DocumentMeta => ({
   addedAt: document.createdAt.slice(0, 10),
 })
 
+// Questions and departments are the saved server lists, so all of them are selected.
+const questionsOf = (detail: CaseDetail): CaseItem['questions'] =>
+  [...detail.questions]
+    .sort((left, right) => left.position - right.position)
+    .map(({ id, text, departmentId }) => ({
+      id,
+      text,
+      departmentId,
+      selected: true,
+    }))
+
+const departmentsOf = (
+  detail: CaseDetail,
+  reasons: CaseOverlay['departmentReasons'] = {},
+): CaseItem['departments'] =>
+  detail.departmentRequests.map(({ department }) => ({
+    id: department.id,
+    name: department.name,
+    reason: reasons[department.id] ?? '',
+    selected: true,
+  }))
+
 // Starting point of the local workflow, used until the user changes something.
 const localDefaults = (detail: CaseDetail) => ({
   status: localStatus[detail.status],
-  questions: [],
-  departments: detail.departmentRequests.map(({ department }) => ({
-    id: department.id,
-    name: department.name,
-    reason: '',
-    selected: true,
-  })),
   materials: detail.documents
     .filter(({ kind }) => kind !== 'REQUEST')
     .map(documentMeta),
@@ -78,6 +93,8 @@ export const composeApiCase = (
     ...localDefaults(detail),
     ...overlay,
     status: resolveStatus(detail, overlay),
+    questions: questionsOf(detail),
+    departments: departmentsOf(detail, overlay.departmentReasons),
     id: detail.id,
     reference: detail.caseNumber,
     subject: detail.subject,

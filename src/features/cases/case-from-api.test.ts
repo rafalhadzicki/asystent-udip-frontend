@@ -48,9 +48,7 @@ describe('composeApiCase', () => {
 
   it('takes the writing date from the API, not from the local overlay', () => {
     const withDate = { ...detail, writtenAt: '2026-01-10' }
-    expect(
-      composeApiCase(withDate, { writtenAt: '1999-01-01' }).writtenAt,
-    ).toBe('2026-01-10')
+    expect(composeApiCase(withDate).writtenAt).toBe('2026-01-10')
     expect(composeApiCase({ ...detail, writtenAt: null }, {}).writtenAt).toBe(
       '',
     )
@@ -60,15 +58,31 @@ describe('composeApiCase', () => {
     const item = composeApiCase(detail, {
       status: 'redaction',
       responseText: 'Moja odpowiedź',
-      questions: [{ id: 'q', text: 'Pytanie', selected: true }],
     })
     expect(item).toMatchObject({
       status: 'redaction',
       responseText: 'Moja odpowiedź',
-      questions: [{ id: 'q' }],
       subject: detail.subject,
       apiStatus: 'SENT_TO_DEPARTMENTS',
     })
+  })
+
+  it('takes the questions from the API in order and the reasons from the overlay', () => {
+    const item = composeApiCase(
+      {
+        ...detail,
+        questions: [
+          { id: 'q2', position: 2, text: 'Drugie?', departmentId: null },
+          { id: 'q1', position: 1, text: 'Pierwsze?', departmentId: 'dept-1' },
+        ],
+      },
+      { departmentReasons: { 'dept-1': 'Prowadzi rejestr' } },
+    )
+    expect(item.questions).toEqual([
+      { id: 'q1', text: 'Pierwsze?', departmentId: 'dept-1', selected: true },
+      { id: 'q2', text: 'Drugie?', departmentId: null, selected: true },
+    ])
+    expect(item.departments[0]).toMatchObject({ reason: 'Prowadzi rejestr' })
   })
 
   it('keeps the local stage when the backend stage changes', () => {

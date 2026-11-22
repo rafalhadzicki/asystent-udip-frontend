@@ -8,13 +8,7 @@ import {
 describe('verification utils', () => {
   it('splits text by lines and sentences and drops blanks', () => {
     const questions = splitQuestions('Pierwsze pytanie. Drugie?\n\n  Trzecie  ')
-    expect(questions.map((q) => q.text)).toEqual([
-      'Pierwsze pytanie.',
-      'Drugie?',
-      'Trzecie',
-    ])
-    expect(questions.every((q) => !q.selected)).toBe(true)
-    expect(new Set(questions.map((q) => q.id)).size).toBe(3)
+    expect(questions).toEqual(['Pierwsze pytanie.', 'Drugie?', 'Trzecie'])
   })
 
   it('returns no questions for empty text', () => {

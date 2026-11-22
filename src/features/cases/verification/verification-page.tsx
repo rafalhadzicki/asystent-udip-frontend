@@ -59,6 +59,9 @@ export const VerificationPage = () => {
 
 const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
   const { t } = useTranslation('translation', { keyPrefix: 'verification' })
+  const { t: tApiErrors } = useTranslation('translation', {
+    keyPrefix: 'apiErrors',
+  })
   const { createFromDraft, isCreatingCase } = useCreateCaseFromDraft(draft)
   const [submitError, setSubmitError] = useState<SubmitError | null>(null)
   const navigate = useNavigate()
@@ -135,6 +138,16 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
             {t(`extractionStatus.${draft.textExtractionStatus}`)}
           </Alert>
         )}
+      {draft.aiStatus === 'NOT_CONFIGURED' && (
+        <Alert severity="warning" sx={{ mt: 1 }}>
+          {tApiErrors('aiNotConfigured')}
+        </Alert>
+      )}
+      {draft.aiStatus === 'FAILED' && (
+        <Alert severity="warning" sx={{ mt: 1 }}>
+          {tApiErrors('aiFailed')}
+        </Alert>
+      )}
       {draft.warnings?.map((warning) => (
         <Alert key={warning} severity="warning" sx={{ mt: 1 }}>
           {t(`warnings.${warning}`)}
