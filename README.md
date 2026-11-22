@@ -48,8 +48,9 @@ Backend nie przechowuje jeszcze części pól (tekst odpowiedzi, decyzje
 anonimizacji, notatki do materiałów, powody wyboru jednostek, lokalny etap
 pracy). Te pola zapisujemy w LocalStorage (`asystent-udip-demo-v1:<e-mail>`)
 jako nakładkę na dane z API, osobno dla każdego konta. Nie zapisujemy plików,
-haseł ani tokenów sesji poza kluczem `asystent-udip-session` (tymczasowo; przed
-pracą na prawdziwych danych token trzeba przenieść do ciasteczka httpOnly).
+haseł ani tokenów. Klucz `asystent-udip-session` trzyma tylko identyfikator
+i e-mail zalogowanego użytkownika (podpowiedź do pierwszego renderu); sesją jest
+ciasteczko httpOnly ustawiane przez serwer.
 Dane lokalne nie są szyfrowane. Używaj wyłącznie danych testowych.
 Jeżeli dane zmienią się w innej karcie, zapis w bieżącej zostaje wstrzymany,
 żeby nie nadpisać tamtych zmian.
@@ -75,12 +76,17 @@ Przed uruchomieniem skopiuj `.env.example` do `.env.local` i ustaw adres backend
 bez końcowego `/api`:
 
 ```env
-VITE_API_BASE_URL=https://adres-backendu
+VITE_API_BASE_URL=http://localhost:5173
+BACKEND_URL=https://adres-backendu
 ```
 
-W przypadku tunelu ngrok wymagającego pominięcia strony ostrzegawczej ustaw
-także `VITE_API_NGROK=true`. Zmienne Vite są publiczne: nie umieszczaj w nich
-haseł ani tokenów. Adres serwera deweloperskiego pojawi się w terminalu.
+Sesja to ciasteczko, więc frontend i API muszą być w jednej witrynie. W trybie
+deweloperskim serwer Vite przekazuje `/api` do `BACKEND_URL`, a aplikacja woła
+własny adres (`VITE_API_BASE_URL`). Bez proxy (np. backend na tym samym
+hoście) ustaw `VITE_API_BASE_URL` na adres backendu; backend musi wtedy mieć
+nasz adres w `CORS_ORIGINS`. W produkcji frontend i API powinny być pod jedną
+domeną lub subdomenami jednej domeny. Zmienne Vite są publiczne: nie umieszczaj
+w nich haseł ani tokenów. Adres serwera deweloperskiego pojawi się w terminalu.
 
 ## Weryfikacja
 
@@ -136,8 +142,8 @@ Cała komunikacja z backendem leży w `src/api/`:
 
 ```
 src/api/
-  client.ts          # Axios: adres API, timeout, token, obsługa 401
-  session.ts         # sesja (token + e-mail, tymczasowo w LocalStorage), useSession()
+  client.ts          # Axios: adres API, timeout, ciasteczka, obsługa 401
+  session.ts         # sesja (id + e-mail jako podpowiedź w LocalStorage), useSession()
   query-client.ts    # QueryClient z domyślnymi opcjami i globalnym onError
   query-keys.ts      # fabryka kluczy Query, zakresowana e-mailem użytkownika
   auth/        { auth.api.ts, auth.schemas.ts, auth.queries.ts }
@@ -152,10 +158,12 @@ src/api/
   np. `{ departments, isDepartmentsLoading, isDepartmentsError }`. Mutacje spraw
   zapisują zwrócony szczegół w cache i unieważniają listy.
 
-Klient dokleja `Authorization` z bieżącej sesji. 401 z uwierzytelnionego
-requestu kończy sesję (powrót do logowania); 401 z logowania obsługuje formularz.
+Klient wysyła ciasteczko sesji (`withCredentials`). 401 z każdego endpointu poza
+logowaniem i rejestracją kończy sesję (powrót do logowania); 401 z logowania
+obsługuje formularz. Po starcie zapamiętana sesja jest sprawdzana przez
+`GET /api/auth/me`; wylogowanie woła `POST /api/auth/logout`.
 Każda zmiana sesji czyści cache Query. Zapytania nie są ponawiane po błędach 4xx.
-Komponenty nie przekazują tokenu ani nie wołają `apiClient` bezpośrednio.
+Komponenty nie wołają `apiClient` bezpośrednio.
 
 Adres serwera ustawia `VITE_API_BASE_URL` w `.env.local`; bez niego requesty
 są odrzucane. Nie dodawaj sekretów do zmiennych `VITE_*`: są widoczne w przeglądarce.
