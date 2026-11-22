@@ -84,12 +84,3 @@ export type UploadDraft = {
   departments: DraftDepartment[]
   aiStatus: AiAnalysisStatus
 }
-
-export type KnowledgeItem = {
-  id: string
-  name: string
-  category: 'law' | 'response' | 'guideline'
-  description: string
-  updatedAt: string
-  fileName: string
-}

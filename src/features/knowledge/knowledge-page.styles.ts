@@ -8,8 +8,7 @@ import {
   Typography,
 } from '@mui/material'
 import { styled } from '@mui/material/styles'
-import type { KnowledgeItem } from '@/features/demo/types'
-type KnowledgeCategory = KnowledgeItem['category']
+import type { KnowledgeCategory } from '@/api/knowledge/knowledge.schemas'
 
 const PageRoot = styled('section')(({ theme }) => ({
   display: 'flex',
@@ -106,9 +105,9 @@ const CategoryChip = styled(Chip, {
   shouldForwardProp: (prop) => prop !== 'category',
 })<{ category: KnowledgeCategory }>(({ theme, category }) => {
   const colors: Record<KnowledgeCategory, string> = {
-    law: theme.palette.primary.main,
-    response: theme.palette.success.dark,
-    guideline: theme.palette.warning.dark,
+    LAW: theme.palette.primary.main,
+    RESPONSE: theme.palette.success.dark,
+    GUIDELINE: theme.palette.warning.dark,
   }
   return {
     fontWeight: 500,
@@ -175,7 +174,21 @@ const MetaList = styled('dl')(({ theme }) => ({
   '& dd': { margin: 0, overflowWrap: 'anywhere' },
 }))
 
+const PreviewText = styled('pre')(({ theme }) => ({
+  margin: theme.spacing(2, 0),
+  padding: theme.spacing(1.5),
+  maxHeight: 280,
+  overflow: 'auto',
+  whiteSpace: 'pre-wrap',
+  overflowWrap: 'anywhere',
+  fontFamily: 'inherit',
+  fontSize: theme.typography.body2.fontSize,
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: theme.shape.borderRadius,
+}))
+
 export {
+  PreviewText,
   PageRoot,
   PageHeader,
   HeaderText,

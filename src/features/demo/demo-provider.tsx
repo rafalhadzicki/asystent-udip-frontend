@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { createDemoCases, createDemoKnowledge } from './demo-data'
+import { createDemoCases } from './demo-data'
 import type { CaseItem, UploadDraft } from './types'
 import {
   pickLocalFields,
@@ -18,7 +18,6 @@ const storageKeyFor = (email: string) =>
 const freshSnapshot = (): DemoSnapshot => ({
   version: 1,
   cases: createDemoCases(),
-  knowledge: createDemoKnowledge(),
   overlays: {},
 })
 
@@ -141,7 +140,6 @@ const DemoStateProvider = ({
       value={{
         cases: snapshot.cases,
         overlays: snapshot.overlays,
-        knowledge: snapshot.knowledge,
         uploadDraft,
         setUploadDraft,
         storageError,
@@ -154,18 +152,6 @@ const DemoStateProvider = ({
           })
         },
         updateCase,
-        addKnowledge: (item) =>
-          saveSnapshot({
-            ...currentSnapshot.current,
-            knowledge: [...currentSnapshot.current.knowledge, item],
-          }),
-        updateKnowledge: (id, changes) =>
-          saveSnapshot({
-            ...currentSnapshot.current,
-            knowledge: currentSnapshot.current.knowledge.map((item) =>
-              item.id === id ? { ...item, ...changes } : item,
-            ),
-          }),
         resetDemo: () => {
           saveSnapshot(freshSnapshot())
           setUploadDraft(null)

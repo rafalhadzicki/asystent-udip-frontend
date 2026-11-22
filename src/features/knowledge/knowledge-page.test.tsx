@@ -1,92 +1,155 @@
-import { render, screen, within } from '@testing-library/react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
-import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
-import { DEMO_STORAGE_KEY, DemoProvider } from '@/features/demo/demo-store'
-import type { KnowledgeItem } from '@/features/demo/types'
+import { AxiosError, AxiosHeaders } from 'axios'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as knowledgeApi from '@/api/knowledge/knowledge.api'
+import type { KnowledgeDocument } from '@/api/knowledge/knowledge.schemas'
+import { createTestQueryClient } from '@/test/query-client'
 import { KnowledgePage } from './knowledge-page'
 import { MAX_KNOWLEDGE_FILE_BYTES } from './knowledge-constants'
 
+vi.mock('@/api/knowledge/knowledge.api', () => ({
+  getKnowledgeList: vi.fn(),
+  getKnowledgeDocument: vi.fn(),
+  createKnowledgeDocument: vi.fn(),
+  updateKnowledgeDocument: vi.fn(),
+  deleteKnowledgeDocument: vi.fn(),
+  reindexKnowledgeDocument: vi.fn(),
+}))
+
+const api = vi.mocked(knowledgeApi)
+
+const doc = (
+  overrides: Partial<KnowledgeDocument> = {},
+): KnowledgeDocument => ({
+  id: 'doc-1',
+  name: 'Ustawa o dostępie do informacji publicznej',
+  category: 'LAW',
+  originalName: 'ustawa.pdf',
+  mimeType: 'application/pdf',
+  sizeBytes: 1000,
+  textExtractionStatus: 'EXTRACTED',
+  indexStatus: 'INDEXED',
+  chunkCount: 3,
+  uploadedBy: { id: 'u', email: 'u@example.test' },
+  createdAt: '2026-11-20T10:00:00.000Z',
+  updatedAt: '2026-11-20T10:00:00.000Z',
+  ...overrides,
+})
+
+const list = (...items: KnowledgeDocument[]) =>
+  api.getKnowledgeList.mockResolvedValue({ items, total: items.length })
+
+const failure = (status: number) =>
+  new AxiosError('x', undefined, undefined, null, {
+    data: {},
+    status,
+    statusText: '',
+    headers: {},
+    config: { headers: new AxiosHeaders() },
+  })
+
 const renderPage = () =>
   render(
-    <DemoProvider>
+    <QueryClientProvider client={createTestQueryClient()}>
       <KnowledgePage />
-    </DemoProvider>,
+    </QueryClientProvider>,
   )
 
-const storedKnowledge = (): KnowledgeItem[] => {
-  const raw = localStorage.getItem(DEMO_STORAGE_KEY)
-  if (!raw) throw new Error('Missing demo snapshot')
-  const parsed: { knowledge: KnowledgeItem[] } = JSON.parse(raw)
-  return parsed.knowledge
-}
-
-const seedKnowledge = (knowledge: KnowledgeItem[]) =>
-  localStorage.setItem(
-    DEMO_STORAGE_KEY,
-    JSON.stringify({ version: 1, cases: createDemoCases(), knowledge }),
-  )
-
-const tableRows = () =>
-  within(screen.getByRole('table')).getAllByRole('row').slice(1)
+const tableRows = async () =>
+  within(await screen.findByRole('table'))
+    .getAllByRole('row')
+    .slice(1)
 
 describe('KnowledgePage', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    vi.resetAllMocks()
+    list(doc())
+  })
 
-  it('filtruje listę wyszukiwaniem i kategorią oraz pokazuje pusty stan', async () => {
+  it('pokazuje dokumenty z serwera ze statusem indeksacji', async () => {
+    list(doc(), doc({ id: 'doc-2', name: 'Wzór', indexStatus: 'FAILED' }))
+    renderPage()
+    expect(await tableRows()).toHaveLength(2)
+    expect(screen.getByText('Zindeksowany')).toBeInTheDocument()
+    expect(screen.getByText('Błąd indeksacji')).toBeInTheDocument()
+    expect(api.getKnowledgeList.mock.calls[0][0]).toEqual({
+      q: undefined,
+      category: undefined,
+      limit: 5,
+      offset: 0,
+    })
+  })
+
+  it('filtruje na serwerze wyszukiwaniem i kategorią (wielkimi literami)', async () => {
     const user = userEvent.setup()
     renderPage()
-    expect(tableRows()).toHaveLength(3)
-
+    await tableRows()
     await user.type(
       screen.getByRole('searchbox', { name: 'Szukaj w bazie wiedzy' }),
-      'anonimizacji',
+      'ustawa',
     )
-    expect(tableRows()).toHaveLength(1)
-    expect(screen.getByText('Lista kontrolna anonimizacji')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(api.getKnowledgeList).toHaveBeenLastCalledWith(
+        { q: 'ustawa', category: undefined, limit: 5, offset: 0 },
+        expect.anything(),
+      ),
+    )
+    await user.click(screen.getByRole('button', { name: 'Wytyczne' }))
+    await waitFor(() =>
+      expect(api.getKnowledgeList).toHaveBeenLastCalledWith(
+        { q: 'ustawa', category: 'GUIDELINE', limit: 5, offset: 0 },
+        expect.anything(),
+      ),
+    )
+  })
 
-    await user.click(screen.getByRole('button', { name: 'Akt prawny (0)' }))
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  it('pokazuje pusty stan i błąd z ponowieniem', async () => {
+    const user = userEvent.setup()
+    api.getKnowledgeList.mockRejectedValueOnce(failure(500))
+    list()
+    renderPage()
     expect(
-      screen.getByText('Brak dokumentów spełniających kryteria wyszukiwania.'),
+      await screen.findByText('Nie udało się wczytać bazy wiedzy.'),
     ).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Wyczyść filtry' }))
-    expect(tableRows()).toHaveLength(3)
-    await user.click(
-      screen.getByRole('button', { name: 'Wzór odpowiedzi (1)' }),
-    )
-    expect(tableRows()).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: 'Spróbuj ponownie' }))
     expect(
-      screen.getByText('Archiwalna odpowiedź — inwestycje drogowe'),
+      await screen.findByText(
+        'Baza wiedzy jest pusta. Dodaj pierwszy dokument.',
+      ),
     ).toBeInTheDocument()
   })
 
-  it('stronicuje wyniki', async () => {
+  it('stronicuje po stronie serwera', async () => {
     const user = userEvent.setup()
-    seedKnowledge(
-      Array.from({ length: 7 }, (_, index) => ({
-        ...createDemoKnowledge()[0],
-        id: `seed-${index}`,
-        name: `Dokument demonstracyjny ${index + 1}`,
-      })),
-    )
+    api.getKnowledgeList.mockResolvedValue({
+      items: Array.from({ length: 5 }, (_, index) =>
+        doc({ id: `d-${index}`, name: `Dokument ${index}` }),
+      ),
+      total: 7,
+    })
     renderPage()
-    expect(tableRows()).toHaveLength(5)
+    expect(await tableRows()).toHaveLength(5)
     expect(screen.getByText('1–5 z 7')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Następna strona' }))
-    expect(tableRows()).toHaveLength(2)
-    expect(screen.getByText('6–7 z 7')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(api.getKnowledgeList).toHaveBeenLastCalledWith(
+        { q: undefined, category: undefined, limit: 5, offset: 5 },
+        expect.anything(),
+      ),
+    )
   })
 
-  it('waliduje formularz dodawania i zapisuje tylko metadane pliku', async () => {
+  it('waliduje formularz i wysyła plik na serwer', async () => {
+    api.createKnowledgeDocument.mockResolvedValue(doc())
     const user = userEvent.setup({ applyAccept: false })
     renderPage()
+    await tableRows()
     await user.click(screen.getByRole('button', { name: 'Dodaj dokument' }))
     const dialog = screen.getByRole('dialog', {
       name: 'Dodaj dokument do bazy wiedzy',
     })
-
     await user.type(within(dialog).getByLabelText(/Nazwa dokumentu/), '   ')
     await user.click(
       within(dialog).getByRole('button', { name: 'Dodaj dokument' }),
@@ -95,9 +158,6 @@ describe('KnowledgePage', () => {
       within(dialog).getByText('Podaj nazwę dokumentu.'),
     ).toBeInTheDocument()
     expect(within(dialog).getByText('Wybierz kategorię.')).toBeInTheDocument()
-    expect(
-      within(dialog).getByText('Podaj opis dokumentu.'),
-    ).toBeInTheDocument()
     expect(
       within(dialog).getByText('Wybierz plik PDF, DOCX lub TXT.'),
     ).toBeInTheDocument()
@@ -110,7 +170,6 @@ describe('KnowledgePage', () => {
     expect(
       await within(dialog).findByText(/Nieobsługiwany format pliku/),
     ).toBeInTheDocument()
-
     const large = new File(['x'], 'duzy.pdf', { type: 'application/pdf' })
     Object.defineProperty(large, 'size', {
       value: MAX_KNOWLEDGE_FILE_BYTES + 1,
@@ -119,76 +178,67 @@ describe('KnowledgePage', () => {
     expect(
       await within(dialog).findByText(/Plik jest za duży/),
     ).toBeInTheDocument()
+    expect(api.createKnowledgeDocument).not.toHaveBeenCalled()
 
-    await user.upload(fileInput, new File(['treść'], 'wytyczne.docx'))
+    const file = new File(['treść'], 'wytyczne.docx')
+    await user.upload(fileInput, file)
     await user.type(
       within(dialog).getByLabelText(/Nazwa dokumentu/),
       'Nowe wytyczne  ',
     )
     await user.selectOptions(
       within(dialog).getByLabelText(/Kategoria/),
-      'guideline',
-    )
-    await user.type(
-      within(dialog).getByLabelText(/Opis zakresu/),
-      '  Opis testowy ',
+      'GUIDELINE',
     )
     await user.click(
       within(dialog).getByRole('button', { name: 'Dodaj dokument' }),
     )
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    expect(api.createKnowledgeDocument.mock.calls[0][0]).toEqual({
+      file,
+      name: 'Nowe wytyczne',
+      category: 'GUIDELINE',
+    })
     expect(screen.getByRole('status')).toHaveTextContent(
       'Dodano dokument „Nowe wytyczne”.',
     )
-    const added = storedKnowledge().find(
-      (item) => item.name === 'Nowe wytyczne',
-    )
-    expect(added).toMatchObject({
-      category: 'guideline',
-      description: 'Opis testowy',
-      fileName: 'wytyczne.docx',
-      updatedAt: '2026-11-21',
-    })
-    expect(Object.keys(added ?? {}).sort()).toEqual([
-      'category',
-      'description',
-      'fileName',
-      'id',
-      'name',
-      'updatedAt',
-    ])
+  })
 
-    await user.click(
-      screen.getByRole('button', { name: 'Podgląd: Nowe wytyczne' }),
+  it('pokazuje błąd serwera przy zbyt dużym pliku i zostawia formularz otwarty', async () => {
+    api.createKnowledgeDocument.mockRejectedValue(failure(413))
+    const user = userEvent.setup({ applyAccept: false })
+    renderPage()
+    await tableRows()
+    await user.click(screen.getByRole('button', { name: 'Dodaj dokument' }))
+    const dialog = screen.getByRole('dialog')
+    await user.upload(
+      within(dialog).getByLabelText(/^Plik/),
+      new File(['x'], 'a.txt', { type: 'text/plain' }),
     )
-    const preview = screen.getByRole('dialog', { name: 'Podgląd dokumentu' })
-    expect(within(preview).getByText('wytyczne.docx')).toBeInTheDocument()
-    expect(within(preview).getByText('Opis testowy')).toBeInTheDocument()
+    await user.type(within(dialog).getByLabelText(/Nazwa dokumentu/), 'A')
+    await user.selectOptions(within(dialog).getByLabelText(/Kategoria/), 'LAW')
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Dodaj dokument' }),
+    )
     expect(
-      within(preview).getByText(/Treść pliku nie jest przechowywana/),
+      await within(dialog).findByText(/Plik jest za duży/),
     ).toBeInTheDocument()
   })
 
-  it('aktualizuje wpis z zachowaniem identyfikatora i opcjonalną wymianą pliku', async () => {
+  it('edytuje nazwę i kategorię bez wymiany pliku', async () => {
+    api.updateKnowledgeDocument.mockResolvedValue(doc())
     const user = userEvent.setup()
-    seedKnowledge(
-      createDemoKnowledge().map((item) => ({
-        ...item,
-        updatedAt: '2026-01-10',
-      })),
-    )
     renderPage()
+    await tableRows()
     await user.click(
       screen.getByRole('button', {
-        name: 'Aktualizuj: Lista kontrolna anonimizacji',
+        name: 'Edytuj: Ustawa o dostępie do informacji publicznej',
       }),
     )
-    const dialog = screen.getByRole('dialog', { name: 'Aktualizuj dokument' })
-    expect(
-      within(dialog).getByText('Obecny plik: lista_demo.txt'),
-    ).toBeInTheDocument()
-
+    const dialog = screen.getByRole('dialog', { name: 'Edytuj dokument' })
+    expect(within(dialog).queryByLabelText(/^Plik/)).not.toBeInTheDocument()
     const name = within(dialog).getByLabelText(/Nazwa dokumentu/)
     await user.clear(name)
     await user.click(
@@ -197,31 +247,95 @@ describe('KnowledgePage', () => {
     expect(
       within(dialog).getByText('Podaj nazwę dokumentu.'),
     ).toBeInTheDocument()
-
-    await user.type(name, 'Lista kontrolna v2')
+    await user.type(name, 'Ustawa v2')
+    await user.selectOptions(
+      within(dialog).getByLabelText(/Kategoria/),
+      'RESPONSE',
+    )
     await user.click(
       within(dialog).getByRole('button', { name: 'Zapisz zmiany' }),
     )
-    let updated = storedKnowledge().find((item) => item.id === 'privacy')
-    expect(updated).toMatchObject({
-      name: 'Lista kontrolna v2',
-      fileName: 'lista_demo.txt',
-      updatedAt: '2026-11-21',
+    await waitFor(() => expect(api.updateKnowledgeDocument).toHaveBeenCalled())
+    expect(api.updateKnowledgeDocument.mock.calls[0][0]).toEqual({
+      id: 'doc-1',
+      name: 'Ustawa v2',
+      category: 'RESPONSE',
     })
-    expect(storedKnowledge()).toHaveLength(3)
+  })
 
+  it('usuwa dokument po potwierdzeniu', async () => {
+    api.deleteKnowledgeDocument.mockResolvedValue()
+    const user = userEvent.setup()
+    renderPage()
+    await tableRows()
     await user.click(
-      screen.getByRole('button', { name: 'Aktualizuj: Lista kontrolna v2' }),
+      screen.getByRole('button', {
+        name: 'Usuń: Ustawa o dostępie do informacji publicznej',
+      }),
     )
-    const second = screen.getByRole('dialog', { name: 'Aktualizuj dokument' })
-    await user.upload(
-      within(second).getByLabelText(/^Plik/),
-      new File(['nowa'], 'lista_v2.pdf'),
+    expect(api.deleteKnowledgeDocument).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Usuń dokument' }))
+    await waitFor(() => expect(api.deleteKnowledgeDocument).toHaveBeenCalled())
+    expect(api.deleteKnowledgeDocument.mock.calls[0][0]).toBe('doc-1')
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Usunięto dokument',
     )
+  })
+
+  it('pozwala ponownie zindeksować tylko oczekujące i nieudane dokumenty', async () => {
+    list(
+      doc({ id: 'a', name: 'Zindeksowany', indexStatus: 'INDEXED' }),
+      doc({ id: 'b', name: 'Oczekujący', indexStatus: 'PENDING' }),
+    )
+    api.reindexKnowledgeDocument.mockResolvedValue(
+      doc({ id: 'b', indexStatus: 'INDEXED' }),
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await tableRows()
+    expect(
+      screen.queryByRole('button', { name: 'Indeksuj ponownie: Zindeksowany' }),
+    ).not.toBeInTheDocument()
     await user.click(
-      within(second).getByRole('button', { name: 'Zapisz zmiany' }),
+      screen.getByRole('button', { name: 'Indeksuj ponownie: Oczekujący' }),
     )
-    updated = storedKnowledge().find((item) => item.id === 'privacy')
-    expect(updated?.fileName).toBe('lista_v2.pdf')
+    await waitFor(() => expect(api.reindexKnowledgeDocument).toHaveBeenCalled())
+    expect(api.reindexKnowledgeDocument.mock.calls[0][0]).toBe('b')
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Status: Zindeksowany',
+    )
+  })
+
+  it('informuje, gdy AI nie jest skonfigurowane przy ponownej indeksacji', async () => {
+    list(doc({ indexStatus: 'PENDING' }))
+    api.reindexKnowledgeDocument.mockRejectedValue(failure(503))
+    const user = userEvent.setup()
+    renderPage()
+    await tableRows()
+    await user.click(screen.getByRole('button', { name: /Indeksuj ponownie/ }))
+    expect(
+      await screen.findByText(/Funkcje AI nie są skonfigurowane/),
+    ).toBeInTheDocument()
+  })
+
+  it('pokazuje wyodrębniony tekst w podglądzie', async () => {
+    api.getKnowledgeDocument.mockResolvedValue({
+      ...doc(),
+      extractedText: 'Art. 1. Treść ustawy.',
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await tableRows()
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Podgląd: Ustawa o dostępie do informacji publicznej',
+      }),
+    )
+    const preview = screen.getByRole('dialog', { name: 'Podgląd dokumentu' })
+    expect(within(preview).getByText('ustawa.pdf')).toBeInTheDocument()
+    expect(within(preview).getByText(/3 fragmenty/)).toBeInTheDocument()
+    expect(
+      await within(preview).findByText('Art. 1. Treść ustawy.'),
+    ).toBeInTheDocument()
   })
 })

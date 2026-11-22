@@ -3,14 +3,15 @@ import userEvent from '@testing-library/user-event'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
+import { createDemoCases } from '@/features/demo/demo-data'
 import {
   DEMO_STORAGE_KEY,
   DemoProvider,
   useDemoStore,
 } from '@/features/demo/demo-store'
-import type { CaseItem, KnowledgeItem } from '@/features/demo/types'
+import type { CaseItem } from '@/features/demo/types'
 import { AnalysisPage } from './analysis-page'
+import * as knowledgeApi from '@/api/knowledge/knowledge.api'
 import * as departmentApi from '@/api/departments/departments.api'
 import * as casesApi from '@/api/cases/cases.api'
 import { composeApiCase } from '@/features/cases/case-from-api'
@@ -22,6 +23,25 @@ vi.mock('@/api/cases/cases.api', () => ({
   setCaseDepartments: vi.fn(),
 }))
 
+vi.mock('@/api/knowledge/knowledge.api', () => ({
+  getKnowledgeList: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+  getKnowledgeDocument: vi.fn().mockResolvedValue({
+    id: 'x',
+    name: 'Przykład',
+    category: 'RESPONSE',
+    originalName: 'odpowiedz.txt',
+    mimeType: 'text/plain',
+    sizeBytes: 10,
+    textExtractionStatus: 'EXTRACTED',
+    indexStatus: 'INDEXED',
+    chunkCount: 1,
+    uploadedBy: { id: 'u', email: 'u@example.test' },
+    createdAt: '2026-01-01T10:00:00.000Z',
+    updatedAt: '2026-01-01T10:00:00.000Z',
+    extractedText: 'Treść wzoru',
+  }),
+}))
+
 vi.mock('@/api/departments/departments.api', () => ({
   getDepartments: vi.fn().mockResolvedValue([]),
 }))
@@ -31,10 +51,10 @@ const CaseOutlet = () => {
   return <Outlet context={cases[0]} />
 }
 
-const renderPage = (item: CaseItem, knowledge = createDemoKnowledge()) => {
+const renderPage = (item: CaseItem) => {
   localStorage.setItem(
     DEMO_STORAGE_KEY,
-    JSON.stringify({ version: 1, cases: [item], knowledge }),
+    JSON.stringify({ version: 1, cases: [item] }),
   )
   return render(
     <QueryClientProvider client={createTestQueryClient()}>
@@ -219,25 +239,26 @@ describe('analiza sprawy', () => {
 
   it('adds and removes a custom unit and displays stored response descriptions only', async () => {
     const user = userEvent.setup()
-    const knowledge: KnowledgeItem[] = [
-      {
-        id: 'x',
-        name: 'Przykład',
-        category: 'response',
-        description: 'Zapisany opis',
-        updatedAt: '2026-01-01',
-        fileName: 'opis.txt',
-      },
-      {
-        id: 'y',
-        name: 'Przepis',
-        category: 'law',
-        description: 'Inny materiał',
-        updatedAt: '2026-01-01',
-        fileName: 'prawo.txt',
-      },
-    ]
-    renderPage(createDemoCases()[0], knowledge)
+    vi.mocked(knowledgeApi.getKnowledgeList).mockResolvedValue({
+      total: 1,
+      items: [
+        {
+          id: 'x',
+          name: 'Przykład',
+          category: 'RESPONSE',
+          originalName: 'odpowiedz.txt',
+          mimeType: 'text/plain',
+          sizeBytes: 10,
+          textExtractionStatus: 'EXTRACTED',
+          indexStatus: 'INDEXED',
+          chunkCount: 1,
+          uploadedBy: { id: 'u', email: 'u@example.test' },
+          createdAt: '2026-01-01T10:00:00.000Z',
+          updatedAt: '2026-01-01T10:00:00.000Z',
+        },
+      ],
+    })
+    renderPage(createDemoCases()[0])
     await user.type(screen.getByLabelText('Nazwa jednostki'), 'Archiwum')
     await user.type(
       screen.getByLabelText('Uzasadnienie wyboru (opcjonalnie)'),
@@ -264,13 +285,15 @@ describe('analiza sprawy', () => {
         ),
       ).toBe(false),
     )
-    expect(screen.queryByText('Przepis')).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Zobacz opis' }))
+    expect(await screen.findByText('Przykład')).toBeInTheDocument()
+    expect(vi.mocked(knowledgeApi.getKnowledgeList).mock.calls[0][0]).toEqual({
+      category: 'RESPONSE',
+      limit: 5,
+      offset: 0,
+    })
+    await user.click(screen.getByRole('button', { name: 'Zobacz treść' }))
     expect(
-      within(screen.getByRole('dialog')).getByText('Zapisany opis'),
-    ).toBeInTheDocument()
-    expect(
-      within(screen.getByRole('dialog')).getByText('Plik: opis.txt'),
+      await within(screen.getByRole('dialog')).findByText('Treść wzoru'),
     ).toBeInTheDocument()
   })
 

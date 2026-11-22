@@ -6,7 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { createTestQueryClient } from '@/test/query-client'
-import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
+import { createDemoCases } from '@/features/demo/demo-data'
 import {
   DEMO_STORAGE_KEY,
   DemoProvider,
@@ -29,10 +29,7 @@ const CaseOutlet = () => {
 const renderPage = (changes: Partial<CaseItem> = {}) => {
   const cases = createDemoCases()
   cases[0] = { ...cases[0], ...changes }
-  localStorage.setItem(
-    DEMO_STORAGE_KEY,
-    JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
-  )
+  localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ version: 1, cases }))
   return render(
     <QueryClientProvider client={createTestQueryClient()}>
       <DemoProvider>

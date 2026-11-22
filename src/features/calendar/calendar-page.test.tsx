@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
+import { createDemoCases } from '@/features/demo/demo-data'
 import { DEMO_STORAGE_KEY, DemoProvider } from '@/features/demo/demo-store'
 import { CalendarPage } from './calendar-page'
 
@@ -75,7 +75,6 @@ describe('CalendarPage', () => {
       JSON.stringify({
         version: 1,
         cases,
-        knowledge: createDemoKnowledge(),
       }),
     )
     renderCalendar()

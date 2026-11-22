@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import {
   Alert,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -14,7 +15,11 @@ import {
 } from '@mui/material'
 import { Upload } from 'lucide-react'
 import { FormTextField } from '@/components/form/form-text-field'
-import type { KnowledgeItem } from '@/features/demo/types'
+import type {
+  KnowledgeCategory,
+  KnowledgeDocument,
+} from '@/api/knowledge/knowledge.schemas'
+import { useGetKnowledgeDocument } from '@/api/knowledge/knowledge.queries'
 import { displayDate } from '@/features/demo/date-utils'
 import { CATEGORIES, MAX_KNOWLEDGE_FILE_BYTES } from './knowledge-constants'
 import {
@@ -23,20 +28,18 @@ import {
   FileLabel,
   HiddenFileInput,
   MetaList,
+  PreviewText,
 } from './knowledge-page.styles'
-type KnowledgeCategory = KnowledgeItem['category']
 
 type KnowledgeFormValues = {
   name: string
   category: KnowledgeCategory | ''
-  description: string
   file: File | null
 }
 
 export type KnowledgeSubmit = {
   name: string
   category: KnowledgeCategory
-  description: string
   file: File | null
 }
 
@@ -71,13 +74,17 @@ const useFormatSize = () => {
 }
 
 type KnowledgeFormDialogProps = {
-  item?: KnowledgeItem
+  item?: KnowledgeDocument
+  isSubmitting: boolean
+  error: string
   onClose: () => void
   onSubmit: (values: KnowledgeSubmit) => void
 }
 
 export const KnowledgeFormDialog = ({
   item,
+  isSubmitting,
+  error,
   onClose,
   onSubmit,
 }: KnowledgeFormDialogProps) => {
@@ -93,7 +100,6 @@ export const KnowledgeFormDialog = ({
     defaultValues: {
       name: item?.name ?? '',
       category: item?.category ?? '',
-      description: item?.description ?? '',
       file: null,
     },
   })
@@ -103,7 +109,6 @@ export const KnowledgeFormDialog = ({
     onSubmit({
       name: values.name.trim(),
       category: values.category,
-      description: values.description.trim(),
       file: values.file,
     })
   })
@@ -167,104 +172,89 @@ export const KnowledgeFormDialog = ({
                 </TextField>
               )}
             />
-            <FormTextField
-              control={control}
-              name="description"
-              label={t('form.description')}
-              helperText={t('form.descriptionHelp')}
-              required
-              multiline
-              minRows={3}
-              rules={{
-                validate: requiredText(t('errors.descriptionRequired')),
-              }}
-            />
-            <Controller
-              control={control}
-              name="file"
-              rules={{
-                validate: (value) => {
-                  const error = validateKnowledgeFile(
-                    value instanceof File ? value : null,
-                    !isUpdate,
-                  )
-                  return error ? t(`errors.${error}`) : true
-                },
-              }}
-              render={({ field, fieldState }) => {
-                const selected =
-                  field.value instanceof File ? field.value : null
-                const describedBy = fieldState.error
-                  ? `${fileHelpId}-error`
-                  : fileHelpId
-                return (
-                  <FilePicker>
-                    <FileLabel htmlFor={fileInputId}>
-                      {t('form.file')}
-                      {isUpdate ? '' : ' *'}
-                    </FileLabel>
-                    <HiddenFileInput
-                      id={fileInputId}
-                      ref={fileInputRef}
-                      type="file"
-                      accept={ACCEPT_ATTRIBUTE}
-                      tabIndex={-1}
-                      aria-describedby={describedBy}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        field.onChange(event.target.files?.[0] ?? null)
-                        event.target.value = ''
-                      }}
-                    />
-                    <Button
-                      ref={field.ref}
-                      type="button"
-                      variant="outlined"
-                      color={fieldState.error ? 'error' : 'primary'}
-                      startIcon={<Upload size={18} aria-hidden="true" />}
-                      aria-describedby={describedBy}
-                      onClick={() => fileInputRef.current?.click()}
-                      onBlur={field.onBlur}
-                    >
-                      {t(isUpdate ? 'form.replaceFile' : 'form.chooseFile')}
-                    </Button>
-                    <Typography variant="body2">
-                      {selected
-                        ? t('form.selectedFile', {
-                            name: selected.name,
-                            size: formatSize(selected.size),
-                          })
-                        : item
-                          ? t('form.currentFile', { name: item.fileName })
-                          : t('form.noFile')}
-                    </Typography>
-                    {fieldState.error ? (
-                      <FormHelperText
-                        id={`${fileHelpId}-error`}
-                        error
-                        role="alert"
+            {!item && (
+              <Controller
+                control={control}
+                name="file"
+                rules={{
+                  validate: (value) => {
+                    const error = validateKnowledgeFile(
+                      value instanceof File ? value : null,
+                      true,
+                    )
+                    return error ? t(`errors.${error}`) : true
+                  },
+                }}
+                render={({ field, fieldState }) => {
+                  const selected =
+                    field.value instanceof File ? field.value : null
+                  const describedBy = fieldState.error
+                    ? `${fileHelpId}-error`
+                    : fileHelpId
+                  return (
+                    <FilePicker>
+                      <FileLabel htmlFor={fileInputId}>
+                        {t('form.file')} *
+                      </FileLabel>
+                      <HiddenFileInput
+                        id={fileInputId}
+                        ref={fileInputRef}
+                        type="file"
+                        accept={ACCEPT_ATTRIBUTE}
+                        tabIndex={-1}
+                        aria-describedby={describedBy}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          field.onChange(event.target.files?.[0] ?? null)
+                          event.target.value = ''
+                        }}
+                      />
+                      <Button
+                        ref={field.ref}
+                        type="button"
+                        variant="outlined"
+                        color={fieldState.error ? 'error' : 'primary'}
+                        startIcon={<Upload size={18} aria-hidden="true" />}
+                        aria-describedby={describedBy}
+                        onClick={() => fileInputRef.current?.click()}
+                        onBlur={field.onBlur}
                       >
-                        {fieldState.error.message}
-                      </FormHelperText>
-                    ) : (
-                      <FormHelperText id={fileHelpId}>
-                        {t('form.fileHelp')}
-                      </FormHelperText>
-                    )}
-                  </FilePicker>
-                )
-              }}
-            />
-            <Alert severity="info">
-              {t(isUpdate ? 'form.updateCaveat' : 'form.fileCaveat')}
-            </Alert>
-            {isUpdate && <Alert severity="info">{t('form.fileCaveat')}</Alert>}
+                        {t('form.chooseFile')}
+                      </Button>
+                      <Typography variant="body2">
+                        {selected
+                          ? t('form.selectedFile', {
+                              name: selected.name,
+                              size: formatSize(selected.size),
+                            })
+                          : t('form.noFile')}
+                      </Typography>
+                      {fieldState.error ? (
+                        <FormHelperText
+                          id={`${fileHelpId}-error`}
+                          error
+                          role="alert"
+                        >
+                          {fieldState.error.message}
+                        </FormHelperText>
+                      ) : (
+                        <FormHelperText id={fileHelpId}>
+                          {t('form.fileHelp')}
+                        </FormHelperText>
+                      )}
+                    </FilePicker>
+                  )
+                }}
+              />
+            )}
+            {!isUpdate && <Alert severity="info">{t('form.fileCaveat')}</Alert>}
+            {error && <Alert severity="error">{error}</Alert>}
           </FormStack>
         </DialogContent>
         <DialogActions>
-          <Button type="button" onClick={onClose}>
+          <Button type="button" onClick={onClose} disabled={isSubmitting}>
             {t('form.cancel')}
           </Button>
-          <Button type="submit" variant="contained">
+          <Button type="submit" variant="contained" disabled={isSubmitting}>
             {t(isUpdate ? 'form.submitUpdate' : 'form.submitAdd')}
           </Button>
         </DialogActions>
@@ -277,11 +267,16 @@ export const KnowledgePreviewDialog = ({
   item,
   onClose,
 }: {
-  item: KnowledgeItem
+  item: KnowledgeDocument
   onClose: () => void
 }) => {
   const { t } = useTranslation('translation', { keyPrefix: 'knowledge' })
   const titleId = useId()
+  const {
+    knowledgeDocument,
+    isLoadingKnowledgeDocument,
+    isKnowledgeDocumentError,
+  } = useGetKnowledgeDocument(item.id)
   return (
     <Dialog
       open
@@ -299,17 +294,78 @@ export const KnowledgePreviewDialog = ({
           <dt>{t('preview.category')}</dt>
           <dd>{t(`categories.${item.category}`)}</dd>
           <dt>{t('preview.fileName')}</dt>
-          <dd>{item.fileName}</dd>
+          <dd>{item.originalName}</dd>
           <dt>{t('preview.updated')}</dt>
           <dd>{displayDate(item.updatedAt)}</dd>
-          <dt>{t('preview.description')}</dt>
-          <dd>{item.description}</dd>
+          <dt>{t('preview.indexStatus')}</dt>
+          <dd>
+            {t(`indexStatus.${item.indexStatus}`)}
+            {item.indexStatus === 'INDEXED' &&
+              ` (${t('preview.chunks', { count: item.chunkCount })})`}
+          </dd>
         </MetaList>
-        <Alert severity="warning">{t('preview.caveat')}</Alert>
+        {isLoadingKnowledgeDocument && <CircularProgress size={24} />}
+        {isKnowledgeDocumentError && (
+          <Alert severity="error">{t('errors.previewLoad')}</Alert>
+        )}
+        {knowledgeDocument &&
+          (knowledgeDocument.extractedText ? (
+            <PreviewText tabIndex={0} aria-label={t('preview.text')}>
+              {knowledgeDocument.extractedText}
+            </PreviewText>
+          ) : (
+            <Alert severity="warning">{t('preview.noText')}</Alert>
+          ))}
       </DialogContent>
       <DialogActions>
         <Button type="button" variant="contained" onClick={onClose}>
           {t('preview.close')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+export const KnowledgeDeleteDialog = ({
+  item,
+  isDeleting,
+  error,
+  onClose,
+  onConfirm,
+}: {
+  item: KnowledgeDocument
+  isDeleting: boolean
+  error: string
+  onClose: () => void
+  onConfirm: () => void
+}) => {
+  const { t } = useTranslation('translation', { keyPrefix: 'knowledge' })
+  const titleId = useId()
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      aria-labelledby={titleId}
+      fullWidth
+      maxWidth="xs"
+    >
+      <DialogTitle id={titleId}>{t('delete.title')}</DialogTitle>
+      <DialogContent>
+        <Typography>{t('delete.body', { name: item.name })}</Typography>
+        {error && <Alert severity="error">{error}</Alert>}
+      </DialogContent>
+      <DialogActions>
+        <Button type="button" onClick={onClose} disabled={isDeleting}>
+          {t('delete.cancel')}
+        </Button>
+        <Button
+          type="button"
+          color="error"
+          variant="contained"
+          onClick={onConfirm}
+          disabled={isDeleting}
+        >
+          {t('delete.confirm')}
         </Button>
       </DialogActions>
     </Dialog>

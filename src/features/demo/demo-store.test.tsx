@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DemoProvider, DEMO_STORAGE_KEY, useDemoStore } from './demo-store'
-import { createDemoCases, createDemoKnowledge } from './demo-data'
+import { createDemoCases } from './demo-data'
 import { clearSession, setSession } from '@/api/session'
 
 const DemoProbe = () => {
@@ -53,7 +53,7 @@ describe('demo persistence', () => {
     cases[0].writtenAt = ''
     localStorage.setItem(
       DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+      JSON.stringify({ version: 1, cases }),
     )
     render(
       <DemoProvider>
@@ -64,19 +64,17 @@ describe('demo persistence', () => {
     expect(screen.getByText(cases[0].subject)).toBeInTheDocument()
   })
 
-  it.each(['deadline', 'source', 'contactedAt', 'sentAt', 'knowledge'])(
+  it.each(['deadline', 'source', 'contactedAt', 'sentAt'])(
     'rejects malformed persisted %s dates with a visible error',
     (field) => {
       const cases = createDemoCases()
-      const knowledge = createDemoKnowledge()
       if (field === 'source') cases[0].source.addedAt = 'invalid'
-      else if (field === 'knowledge') knowledge[0].updatedAt = 'invalid'
       else if (field === 'deadline') cases[0].deadline = '2026-02-30'
       else if (field === 'contactedAt') cases[0].contactedAt = 'invalid'
       else cases[0].sentAt = 'invalid'
       localStorage.setItem(
         DEMO_STORAGE_KEY,
-        JSON.stringify({ version: 1, cases, knowledge }),
+        JSON.stringify({ version: 1, cases }),
       )
       const log = vi.spyOn(console, 'error').mockImplementation(() => {})
       render(
@@ -115,10 +113,7 @@ describe('demo persistence', () => {
   })
 
   it('reports corrupt storage explicitly rather than crashing', () => {
-    localStorage.setItem(
-      DEMO_STORAGE_KEY,
-      '{"version":1,"cases":[{}],"knowledge":[]}',
-    )
+    localStorage.setItem(DEMO_STORAGE_KEY, '{"version":1,"cases":[{}]}')
     const log = vi.spyOn(console, 'error').mockImplementation(() => {})
     render(
       <DemoProvider>
@@ -161,7 +156,6 @@ describe('demo persistence', () => {
       cases: createDemoCases().map((item, index) =>
         index === 0 ? { ...item, subject: 'Other tab' } : item,
       ),
-      knowledge: createDemoKnowledge(),
     })
 
     localStorage.setItem(DEMO_STORAGE_KEY, other)
@@ -192,7 +186,6 @@ describe('demo persistence', () => {
       cases: createDemoCases().map((item, index) =>
         index === 0 ? { ...item, subject: 'Other tab' } : item,
       ),
-      knowledge: createDemoKnowledge(),
     })
     localStorage.setItem(DEMO_STORAGE_KEY, other)
     act(() => screen.getByText('Change').click())
@@ -251,7 +244,6 @@ describe('local data of cases stored on the server', () => {
       JSON.stringify({
         version: 1,
         cases: createDemoCases(),
-        knowledge: createDemoKnowledge(),
       }),
     )
     render(
@@ -269,7 +261,6 @@ describe('local data of cases stored on the server', () => {
       JSON.stringify({
         version: 1,
         cases: createDemoCases(),
-        knowledge: createDemoKnowledge(),
         overlays: { 'api-case': { contactedAt: 'not-a-date' } },
       }),
     )
@@ -298,7 +289,7 @@ describe('local data of cases stored on the server', () => {
     cases[0].subject = 'Zapisane dla małych liter'
     localStorage.setItem(
       `${DEMO_STORAGE_KEY}:user@example.test`,
-      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+      JSON.stringify({ version: 1, cases }),
     )
     render(
       <DemoProvider>
@@ -322,7 +313,7 @@ describe('local data of cases stored on the server', () => {
     ]
     localStorage.setItem(
       DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+      JSON.stringify({ version: 1, cases }),
     )
     render(
       <DemoProvider>

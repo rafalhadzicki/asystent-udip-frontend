@@ -12,7 +12,7 @@ import {
 import { beforeEach, describe, expect, it } from 'vitest'
 import { theme } from '@/app/theme'
 import { DemoProvider, useDemoStore } from '@/features/demo/demo-store'
-import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
+import { createDemoCases } from '@/features/demo/demo-data'
 import { DEMO_STORAGE_KEY } from '@/features/demo/demo-store'
 import { createTestQueryClient } from '@/test/query-client'
 import { RequestPage } from './request-page'
@@ -140,7 +140,7 @@ describe('RequestPage', () => {
     cases[0].writtenAt = ''
     localStorage.setItem(
       DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+      JSON.stringify({ version: 1, cases }),
     )
     const user = userEvent.setup()
     renderPage('demo-1')
@@ -172,7 +172,7 @@ describe('RequestPage', () => {
     }
     localStorage.setItem(
       DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+      JSON.stringify({ version: 1, cases }),
     )
     const user = userEvent.setup()
     renderPage('demo-1')

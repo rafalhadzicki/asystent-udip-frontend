@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { createTestQueryClient } from '@/test/query-client'
 import { theme } from '@/app/theme'
-import { createDemoCases, createDemoKnowledge } from '@/features/demo/demo-data'
+import { createDemoCases } from '@/features/demo/demo-data'
 import {
   DEMO_STORAGE_KEY,
   DemoProvider,
@@ -64,7 +64,6 @@ beforeEach(() => {
     JSON.stringify({
       version: 1,
       cases,
-      knowledge: createDemoKnowledge(),
     }),
   )
 })
@@ -204,7 +203,7 @@ describe('redaction workflow', () => {
     }
     localStorage.setItem(
       DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+      JSON.stringify({ version: 1, cases }),
     )
     suggest('Żaneta Żółć', 'ŻANETA ŻÓŁĆ')
     const user = userEvent.setup()
@@ -253,7 +252,7 @@ describe('redaction workflow', () => {
     }
     localStorage.setItem(
       DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+      JSON.stringify({ version: 1, cases }),
     )
     renderPage()
     expect(screen.getByLabelText('Podgląd odpowiedzi')).toHaveTextContent(
@@ -278,7 +277,7 @@ describe('redaction workflow', () => {
     }
     localStorage.setItem(
       DEMO_STORAGE_KEY,
-      JSON.stringify({ version: 1, cases, knowledge: createDemoKnowledge() }),
+      JSON.stringify({ version: 1, cases }),
     )
     suggest('Jan Kowalski', 'JAN KOWALSKI')
     const user = userEvent.setup()

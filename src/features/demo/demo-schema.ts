@@ -75,19 +75,9 @@ const localCaseSchema = caseLocalSchema.extend({
   source: documentSchema,
 })
 
-const knowledgeSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  category: z.enum(['law', 'response', 'guideline']),
-  description: z.string(),
-  updatedAt: isoDate,
-  fileName: z.string(),
-})
-
 export const snapshotSchema = z.object({
   version: z.literal(1),
   cases: z.array(localCaseSchema),
-  knowledge: z.array(knowledgeSchema),
   // Local data of cases that live on the server, keyed by case id.
   overlays: z.record(z.string(), caseOverlaySchema).default({}),
 })

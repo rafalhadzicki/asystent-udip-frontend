@@ -1,4 +1,4 @@
-import type { CaseItem, KnowledgeItem } from './types'
+import type { CaseItem } from './types'
 
 export const DEMO_TODAY = '2026-11-21'
 
@@ -72,33 +72,3 @@ export const createDemoCases = (): CaseItem[] =>
       sentNote: '',
     }
   })
-
-export const createDemoKnowledge = (): KnowledgeItem[] => [
-  {
-    id: 'udip',
-    name: 'Ustawa o dostępie do informacji publicznej',
-    category: 'law',
-    description:
-      'Pozycja demonstracyjna. Aktualny tekst prawny wymaga wgrania i weryfikacji.',
-    updatedAt: DEMO_TODAY,
-    fileName: 'udip_demo.pdf',
-  },
-  {
-    id: 'answer',
-    name: 'Archiwalna odpowiedź — inwestycje drogowe',
-    category: 'response',
-    description:
-      'Przykładowy materiał referencyjny, nie rozstrzygnięcie nowej sprawy.',
-    updatedAt: DEMO_TODAY,
-    fileName: 'odpowiedz_demo.docx',
-  },
-  {
-    id: 'privacy',
-    name: 'Lista kontrolna anonimizacji',
-    category: 'guideline',
-    description:
-      'Materiał demonstracyjny. Każdy fragment wymaga decyzji człowieka.',
-    updatedAt: DEMO_TODAY,
-    fileName: 'lista_demo.txt',
-  },
-]

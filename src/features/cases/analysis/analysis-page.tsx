@@ -9,10 +9,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControlLabel,
   IconButton,
   Stack,
@@ -20,25 +16,25 @@ import {
   Typography,
 } from '@mui/material'
 import { ArrowRight, Plus, Trash2 } from 'lucide-react'
+import { useGetKnowledgeList } from '@/api/knowledge/knowledge.queries'
+import type { KnowledgeDocument } from '@/api/knowledge/knowledge.schemas'
+import { KnowledgePreviewDialog } from '@/features/knowledge/knowledge-dialogs'
 import { useDemoStore } from '@/features/demo/demo-store'
 import { caseTabs, routes } from '@/app/routes'
-import type {
-  CaseItem,
-  Department,
-  KnowledgeItem,
-  Question,
-} from '@/features/demo/types'
+import type { CaseItem, Department, Question } from '@/features/demo/types'
 import { useGetDepartments } from '@/api/departments/departments.queries'
 import {
   useSetCaseDepartments,
   useSetCaseQuestions,
 } from '@/api/cases/cases.queries'
 
+const EXAMPLES_LIMIT = 5
+
 const newId = () => globalThis.crypto.randomUUID()
 
 const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const { t } = useTranslation('translation', { keyPrefix: 'analysis' })
-  const { knowledge, updateCase } = useDemoStore()
+  const { updateCase } = useDemoStore()
   const navigate = useNavigate()
   const [questions, setQuestions] = useState<Question[]>(() =>
     item.questions.map((question) => ({ ...question })),
@@ -56,7 +52,7 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
     useSetCaseQuestions()
   const { setCaseDepartmentsAsync, isSettingCaseDepartments } =
     useSetCaseDepartments()
-  const [example, setExample] = useState<KnowledgeItem | null>(null)
+  const [example, setExample] = useState<KnowledgeDocument | null>(null)
   const readonly = item.status === 'completed'
   const { departments: departmentOptions, isDepartmentsError } =
     useGetDepartments()
@@ -82,7 +78,12 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const departmentsInvalid = !departments.some(
     (department) => department.selected,
   )
-  const examples = knowledge.filter((entry) => entry.category === 'response')
+  const { knowledgeList } = useGetKnowledgeList({
+    category: 'RESPONSE',
+    limit: EXAMPLES_LIMIT,
+    offset: 0,
+  })
+  const examples = knowledgeList?.items ?? []
 
   const updateQuestion = (id: string, changes: Partial<Question>) => {
     setQuestions((current) =>
@@ -473,7 +474,7 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
                 <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
                   <Typography sx={{ fontWeight: 600 }}>{entry.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {entry.description || t('exampleNoDescription')}
+                    {t('exampleFile', { name: entry.originalName })}
                   </Typography>
                   <Button size="small" onClick={() => setExample(entry)}>
                     {t('exampleOpen')}
@@ -503,33 +504,12 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
           {t(readonly ? 'viewMaterials' : 'continue')}
         </Button>
       </Actions>
-      <Dialog
-        open={Boolean(example)}
-        onClose={() => setExample(null)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>{t('exampleDialogTitle')}</DialogTitle>
-        <DialogContent>
-          {example && (
-            <Stack spacing={1}>
-              <Typography sx={{ fontWeight: 700 }}>{example.name}</Typography>
-              <Typography>
-                {example.description || t('exampleNoDescription')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('exampleFile', { name: example.fileName })}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('exampleDate', { date: example.updatedAt })}
-              </Typography>
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setExample(null)}>{t('close')}</Button>
-        </DialogActions>
-      </Dialog>
+      {example && (
+        <KnowledgePreviewDialog
+          item={example}
+          onClose={() => setExample(null)}
+        />
+      )}
     </Stack>
   )
 }
