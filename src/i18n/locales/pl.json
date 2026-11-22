@@ -115,7 +115,10 @@
       "deadline": "Termin",
       "urgency": "Pilność",
       "status": "Etap sprawy",
-      "owner": "Prowadzący"
+      "ordinal": "Lp.",
+      "responded": "Data odpowiedzi",
+      "initials": "Inicjały",
+      "extension": "Kwerenda (dni)"
     },
     "status": {
       "NEW": "W analizie",
@@ -135,7 +138,12 @@
     "empty": "Nie znaleziono spraw",
     "emptyHint": "Zmień kryteria wyszukiwania lub wyczyść filtry.",
     "pagination": "Strony rejestru spraw",
-    "scrollHint": "Przewiń tabelę w poziomie, aby zobaczyć wszystkie kolumny."
+    "scrollHint": "Przewiń tabelę w poziomie, aby zobaczyć wszystkie kolumny.",
+    "extension_one": "Kwerenda: +{{count}} dzień",
+    "extension_few": "Kwerenda: +{{count}} dni",
+    "extension_many": "Kwerenda: +{{count}} dni",
+    "extension_other": "Kwerenda: +{{count}} dnia",
+    "departmentsAnswered": "Odpowiedzi wydziałów: {{answered}}/{{count}}"
   },
   "upload": {
     "back": "Wróć do rejestru spraw",

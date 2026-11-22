@@ -1,4 +1,4 @@
-import { isValid, parseISO } from 'date-fns'
+import { differenceInCalendarDays, isValid, parseISO } from 'date-fns'
 import type { CaseSummary, CaseUrgency } from '@/api/cases/cases.schemas'
 import { displayDate } from '@/features/cases/date-utils'
 
@@ -28,5 +28,14 @@ export const csvCell = (value: string) => {
   return `"${safe.replaceAll('"', '""')}"`
 }
 
-export const caseOwner = (item: CaseSummary) =>
-  item.assignee?.email ?? item.handlerInitials ?? '—'
+export const caseInitials = (item: CaseSummary) =>
+  item.handlerInitials ?? item.assignee?.email ?? '—'
+
+// Number of days the extended (kwerenda) deadline adds to the statutory one.
+export const extensionDays = (item: CaseSummary) =>
+  item.isExtended && item.extendedDueAt
+    ? differenceInCalendarDays(
+        parseISO(item.extendedDueAt),
+        parseISO(item.dueAt),
+      )
+    : 0

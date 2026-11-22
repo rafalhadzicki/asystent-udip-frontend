@@ -60,6 +60,13 @@ const items = [
     urgency: 'OVERDUE',
     daysLeft: -8,
     assignee: null,
+    isExtended: true,
+    extendedDueAt: '2026-11-12',
+    effectiveDueAt: '2026-11-12',
+    departments: [
+      { symbol: 'WT', answered: true },
+      { symbol: 'WZ', answered: false },
+    ],
   }),
   summary({
     id: 'case-3',
@@ -91,10 +98,14 @@ describe('RegisterPage', () => {
     expect(link).toHaveAttribute('href', '/sprawy/case-1/wniosek')
     const rows = within(screen.getByRole('table')).getAllByRole('row')
     expect(rows[1]).toHaveTextContent('W analizie')
-    expect(rows[1]).toHaveTextContent('urzednik@example.test')
+    expect(rows[1]).toHaveTextContent('MZ')
     expect(rows[2]).toHaveTextContent('Oczekuje na materiały')
     expect(rows[2]).toHaveTextContent('Po terminie')
     expect(rows[2]).toHaveTextContent('MZ')
+    expect(rows[1]).toHaveTextContent(/^1BKS/)
+    expect(rows[2]).toHaveTextContent('Kwerenda: +7 dni')
+    expect(rows[2]).toHaveTextContent('Odpowiedzi wydziałów: 1/2')
+    expect(rows[3]).toHaveTextContent('01.11.2026')
     expect(screen.getByText('Wyniki: 25')).toBeInTheDocument()
     expect(screen.getByText('Pokazano 1–10 z 25 spraw')).toBeInTheDocument()
     expect(

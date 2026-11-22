@@ -3,7 +3,13 @@ import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import { getAllCases } from '@/api/cases/cases.api'
 import type { CaseListParams } from '@/api/cases/cases.schemas'
-import { caseOwner, csvCell, formatDate, urgencyTones } from './register-utils'
+import {
+  caseInitials,
+  csvCell,
+  extensionDays,
+  formatDate,
+  urgencyTones,
+} from './register-utils'
 
 export const useExportCases = (
   filters: Omit<CaseListParams, 'limit' | 'offset'>,
@@ -24,22 +30,28 @@ export const useExportCases = (
     try {
       const items = await getAllCases(filters, controller.signal)
       const headers = [
+        t('columns.ordinal'),
         t('columns.reference'),
         t('columns.subject'),
         t('columns.received'),
         t('columns.deadline'),
+        t('columns.extension'),
+        t('columns.responded'),
         t('columns.urgency'),
         t('columns.status'),
-        t('columns.owner'),
+        t('columns.initials'),
       ]
       const lines = items.map((item) => [
+        String(item.sequenceNumber),
         item.caseNumber,
         item.subject,
         formatDate(item.receivedAt),
         formatDate(item.effectiveDueAt),
+        item.isExtended ? String(extensionDays(item)) : '',
+        formatDate(item.respondedAt),
         t(`urgency.${urgencyTones[item.urgency]}`),
         t(`status.${item.status}`),
-        caseOwner(item),
+        caseInitials(item),
       ])
       const csv =
         '\ufeff' +

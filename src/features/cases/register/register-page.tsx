@@ -36,7 +36,12 @@ import {
 } from '@/api/cases/cases.schemas'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { caseTabs, routes } from '@/app/routes'
-import { caseOwner, formatDate, urgencyTones } from './register-utils'
+import {
+  caseInitials,
+  extensionDays,
+  formatDate,
+  urgencyTones,
+} from './register-utils'
 import { useExportCases } from './use-export-cases'
 
 const PAGE_SIZE = 10
@@ -360,7 +365,7 @@ export const RegisterPage = () => {
           <TableContainer>
             <Table
               sx={{
-                minWidth: 1050,
+                minWidth: 1200,
                 '& th': {
                   backgroundColor: '#f4f7fa',
                   color: '#526579',
@@ -373,20 +378,23 @@ export const RegisterPage = () => {
             >
               <TableHead>
                 <TableRow>
+                  <TableCell>{t('columns.ordinal')}</TableCell>
                   <TableCell>{t('columns.reference')}</TableCell>
                   <TableCell sx={{ minWidth: 300, width: '32%' }}>
                     {t('columns.subject')}
                   </TableCell>
                   <TableCell>{t('columns.received')}</TableCell>
                   <TableCell>{t('columns.deadline')}</TableCell>
+                  <TableCell>{t('columns.responded')}</TableCell>
                   <TableCell>{t('columns.urgency')}</TableCell>
                   <TableCell>{t('columns.status')}</TableCell>
-                  <TableCell>{t('columns.owner')}</TableCell>
+                  <TableCell>{t('columns.initials')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {rows.map((item) => (
                   <TableRow key={item.id} hover>
+                    <TableCell>{item.sequenceNumber}</TableCell>
                     <TableCell>
                       <CaseLink to={routes.caseTab(item.id, caseTabs.request)}>
                         {item.caseNumber}
@@ -405,6 +413,17 @@ export const RegisterPage = () => {
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       {formatDate(item.effectiveDueAt)}
+                      {item.isExtended && (
+                        <Typography
+                          variant="caption"
+                          sx={{ display: 'block', color: '#66798c' }}
+                        >
+                          {t('extension', { count: extensionDays(item) })}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                      {formatDate(item.respondedAt)}
                     </TableCell>
                     <TableCell>
                       <Badge $tone={urgencyTones[item.urgency]}>
@@ -415,15 +434,28 @@ export const RegisterPage = () => {
                       <Status $status={item.status}>
                         {t(`status.${item.status}`)}
                       </Status>
+                      {item.departments.length > 0 && (
+                        <Typography
+                          variant="caption"
+                          sx={{ display: 'block', color: '#66798c', mt: 0.5 }}
+                        >
+                          {t('departmentsAnswered', {
+                            answered: item.departments.filter(
+                              (department) => department.answered,
+                            ).length,
+                            count: item.departments.length,
+                          })}
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell sx={{ minWidth: 150 }}>
-                      {caseOwner(item)}
+                      {caseInitials(item)}
                     </TableCell>
                   </TableRow>
                 ))}
                 {rows.length === 0 && isListPending && (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                       <Typography role="status" sx={{ fontWeight: 700 }}>
                         {t('loading')}
                       </Typography>
@@ -432,7 +464,7 @@ export const RegisterPage = () => {
                 )}
                 {rows.length === 0 && !isListPending && !isCasesError && (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                       <Typography sx={{ fontWeight: 700 }}>
                         {t('empty')}
                       </Typography>
