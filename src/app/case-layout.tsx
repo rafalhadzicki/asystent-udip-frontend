@@ -93,6 +93,8 @@ export const CaseLayout = () => {
         {item.status === 'completed' && (
           <Alert severity="success" sx={{ mb: 2 }}>
             {t('caseDetail.completed', { date: displayDate(item.sentAt) })}
+            {item.sentNote &&
+              ` ${t('caseDetail.completedNote', { note: item.sentNote })}`}
           </Alert>
         )}
         <Tabs

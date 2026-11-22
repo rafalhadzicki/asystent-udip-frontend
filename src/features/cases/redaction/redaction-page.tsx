@@ -378,14 +378,7 @@ export const RedactionPage = () => {
           </Grid>
         )}
 
-        {completed ? (
-          <Alert severity="success">
-            {t('sent.recorded', {
-              date: item.sentAt,
-              note: item.sentNote || t('sent.noNote'),
-            })}
-          </Alert>
-        ) : (
+        {!completed && (
           <Button
             variant="outlined"
             fullWidth

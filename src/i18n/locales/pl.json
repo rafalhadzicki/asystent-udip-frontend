@@ -80,7 +80,8 @@
     "received": "Wpływ: {{date}}",
     "deadline": "Termin zatwierdzony: {{date}}",
     "completed": "Wysyłkę poza aplikacją odnotowano: {{date}}.",
-    "tabs": "Zakładki sprawy"
+    "tabs": "Zakładki sprawy",
+    "completedNote": "Notatka: {{note}}"
   },
   "notFound": {
     "title": "Nie znaleziono strony",
@@ -443,8 +444,6 @@
       "note": "Notatka (opcjonalnie)",
       "confirm": "Zapisz wysyłkę i zakończ sprawę",
       "cancel": "Anuluj",
-      "recorded": "Wysyłkę poza aplikacją odnotowano na dzień {{date}}. Notatka: {{note}}",
-      "noNote": "brak",
       "error": "Nie udało się zapisać wysyłki na serwerze. Status sprawy nie został zmieniony – spróbuj ponownie."
     },
     "errors": {
