@@ -9,6 +9,8 @@ const Layout = styled('div')(({ theme }) => ({
 }))
 
 const Item = styled('div')(({ theme }) => ({
+  minWidth: 0,
+  overflowWrap: 'anywhere',
   padding: theme.spacing(2),
   backgroundColor: '#f5f7f9',
   borderRadius: theme.shape.borderRadius,
