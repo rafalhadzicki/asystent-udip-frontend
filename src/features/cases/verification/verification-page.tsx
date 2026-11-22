@@ -4,6 +4,8 @@ import {
   Card,
   Fields,
   FullWidth,
+  SourceBox,
+  SourceCard,
   SourceText,
   Actions,
 } from './verification-page.styles'
@@ -154,7 +156,7 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
         </Alert>
       ))}
       <Columns>
-        <Card as="section" aria-labelledby="source-title">
+        <SourceCard as="section" aria-labelledby="source-title">
           <Typography
             id="source-title"
             variant="h2"
@@ -174,8 +176,10 @@ const VerificationForm = ({ draft }: { draft: UploadDraft }) => {
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
             {t('extractedTitle')}
           </Typography>
-          <SourceText>{draft.requestText || t('emptyText')}</SourceText>
-        </Card>
+          <SourceBox>
+            <SourceText>{draft.requestText || t('emptyText')}</SourceText>
+          </SourceBox>
+        </SourceCard>
         <Card as="section" aria-labelledby="verification-title">
           <Typography id="verification-title" variant="h1">
             {t('title')}

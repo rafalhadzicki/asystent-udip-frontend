@@ -20,6 +20,7 @@ const Card = styled(Paper)(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
   boxShadow: 'none',
 }))
+const SourceCard = styled(Card)({ display: 'flex', flexDirection: 'column' })
 const Fields = styled('div')(({ theme }) => ({
   display: 'grid',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -28,13 +29,21 @@ const Fields = styled('div')(({ theme }) => ({
   [theme.breakpoints.down('sm')]: { gridTemplateColumns: 'minmax(0, 1fr)' },
 }))
 const FullWidth = styled('div')({ gridColumn: '1 / -1', minWidth: 0 })
+// The text fills the card down to its bottom edge and scrolls inside, so a long
+// text never makes the card taller than the form next to it.
+const SourceBox = styled('div')({
+  position: 'relative',
+  flex: 1,
+  minHeight: 240,
+})
 const SourceText = styled('div')(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
   whiteSpace: 'pre-wrap',
   overflowWrap: 'anywhere',
   background: theme.palette.background.default,
   padding: theme.spacing(2),
   borderRadius: theme.shape.borderRadius,
-  maxHeight: 480,
   overflowY: 'auto',
 }))
 const Actions = styled('div')(({ theme }) => ({
@@ -45,4 +54,14 @@ const Actions = styled('div')(({ theme }) => ({
   marginTop: theme.spacing(3),
 }))
 
-export { Page, Columns, Card, Fields, FullWidth, SourceText, Actions }
+export {
+  Page,
+  Columns,
+  Card,
+  SourceCard,
+  Fields,
+  FullWidth,
+  SourceBox,
+  SourceText,
+  Actions,
+}
