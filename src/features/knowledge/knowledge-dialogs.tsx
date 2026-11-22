@@ -257,6 +257,9 @@ export const KnowledgeFormDialog = ({
             {t('form.cancel')}
           </Button>
           <Button type="submit" variant="contained" disabled={isSubmitting}>
+            {isSubmitting && (
+              <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+            )}
             {t(isUpdate ? 'form.submitUpdate' : 'form.submitAdd')}
           </Button>
         </DialogActions>

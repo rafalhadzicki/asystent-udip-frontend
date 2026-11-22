@@ -444,7 +444,18 @@ export const MaterialsPage = () => {
                         </MenuItem>
                       ))}
                     </TextField>
-                    <Button component="label" variant="outlined">
+                    <Button
+                      component="label"
+                      variant="outlined"
+                      disabled={isUploadingCaseDocument}
+                    >
+                      {isUploadingCaseDocument && (
+                        <CircularProgress
+                          size={18}
+                          color="inherit"
+                          sx={{ mr: 1 }}
+                        />
+                      )}
                       {t('addFile')}
                       <input
                         type="file"
