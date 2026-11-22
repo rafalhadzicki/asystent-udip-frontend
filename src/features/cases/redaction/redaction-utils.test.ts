@@ -86,12 +86,14 @@ describe('segmentText', () => {
     ])
   })
 
-  it('replaces hidden fragments and leaves kept ones unmarked', () => {
+  it('replaces hidden fragments and still marks kept ones', () => {
     expect(
       segmentText(text, redactions, { applyHidden: true, replacement: 'X' }),
     ).toEqual([
       { text: 'X', decision: 'hide' },
-      { text: ' z Poznań, ' },
+      { text: ' z ' },
+      { text: 'Poznań', decision: 'keep' },
+      { text: ', ' },
       { text: 'PESEL', decision: 'pending' },
     ])
   })
