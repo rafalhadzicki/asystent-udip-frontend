@@ -32,6 +32,7 @@ import {
 } from '@/api/cases/cases.queries'
 import type { DraftResponse } from '@/api/cases/cases.schemas'
 import { getApiErrorKind } from '@/api/errors'
+import { useSyncCaseStatus } from '../use-sync-case-status'
 import { useAiErrorMessage } from '../use-ai-error-message'
 import { validateMaterialFile } from './materials-utils'
 
@@ -59,6 +60,7 @@ export const MaterialsPage = () => {
   const [editorCaseId, setEditorCaseId] = useState<string | null>(null)
   // Identifies the running generation; a cancelled or outdated one is ignored.
   const generationId = useRef(0)
+  const syncCaseStatus = useSyncCaseStatus()
   const selectedDepartments = item.departments.filter(
     (department) => department.selected,
   )
@@ -95,6 +97,10 @@ export const MaterialsPage = () => {
   const invalidate = (changes: Partial<CaseItem>) => {
     cancelGeneration()
     setSaved(false)
+    if (item.apiStatus === 'RESPONSE_PREPARED')
+      syncCaseStatus(item, 'SENT_TO_DEPARTMENTS').catch(() =>
+        setError(t('statusError')),
+      )
     updateCase(item.id, {
       ...changes,
       status: 'waiting',
@@ -197,9 +203,16 @@ export const MaterialsPage = () => {
     }
   }
 
-  const saveResponse = () => {
+  const saveResponse = async () => {
     if (!item.responseText.trim()) return
     cancelGeneration()
+    try {
+      await syncCaseStatus(item, 'RESPONSE_PREPARED')
+    } catch {
+      setError(t('statusError'))
+      return
+    }
+    setError('')
     updateCase(item.id, { status: 'draft' })
     setSaved(true)
   }

@@ -1,5 +1,6 @@
 import { Layout, Item, Actions } from './analysis-page.styles'
 import { SectionCard as Panel } from '@/components/ui/section-card'
+import { useSyncCaseStatus } from '../use-sync-case-status'
 import { useAiErrorMessage } from '../use-ai-error-message'
 import {
   bestMatchPerDocument,
@@ -60,6 +61,7 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
   const aiErrorMessage = useAiErrorMessage()
   const { t } = useTranslation('translation', { keyPrefix: 'analysis' })
   const { updateCase } = useLocalStore()
+  const syncCaseStatus = useSyncCaseStatus()
   const navigate = useNavigate()
   const [questions, setQuestions] = useState<Question[]>(() =>
     item.questions.map((question) => ({ ...question })),
@@ -204,6 +206,8 @@ const AnalysisEditor = ({ item }: { item: CaseItem }) => {
     }
     try {
       await saveScopeOnServer()
+      if (continueToMaterials || invalidatesDraft)
+        await syncCaseStatus(item, 'SENT_TO_DEPARTMENTS')
     } catch (error) {
       console.error('Cannot save the scope of the case', error)
       setSaveFailed(true)

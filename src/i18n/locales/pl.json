@@ -363,7 +363,8 @@
       "LAW": "Baza wiedzy · przepisy",
       "RESPONSE": "Baza wiedzy · wzór odpowiedzi",
       "GUIDELINE": "Baza wiedzy · wytyczne"
-    }
+    },
+    "statusError": "Nie udało się zapisać etapu sprawy. Spróbuj ponownie."
   },
   "redaction": {
     "analysisReviewRequired": "Przed dalszą pracą przejrzyj i zapisz analizę zmienionego wniosku.",

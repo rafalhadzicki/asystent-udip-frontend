@@ -6,6 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { createTestQueryClient } from '@/test/query-client'
+import { detail } from '@/test/case-detail'
 import { createDemoCases } from '@/test/demo-cases'
 import { LocalStoreProvider } from '@/features/cases/local-store'
 import { TestCaseOutlet } from '@/test/case-outlet'
@@ -17,6 +18,7 @@ vi.mock('@/api/cases/cases.api', () => ({
   uploadCaseDocument: vi.fn(),
   deleteCaseDocument: vi.fn(),
   draftResponse: vi.fn(),
+  changeCaseStatus: vi.fn(),
 }))
 
 let current: CaseItem
@@ -52,6 +54,7 @@ describe('MaterialsPage', () => {
     vi.mocked(casesApi.uploadCaseDocument).mockReset()
     vi.mocked(casesApi.deleteCaseDocument).mockReset()
     vi.mocked(casesApi.draftResponse).mockReset()
+    vi.mocked(casesApi.changeCaseStatus).mockReset().mockResolvedValue(detail)
   })
 
   it('blokuje dalszą pracę do czasu przeglądu zmienionego wniosku', () => {
@@ -170,9 +173,28 @@ describe('MaterialsPage', () => {
       screen.getByRole('button', { name: 'Zapisz wersję roboczą' }),
     )
     expect(
-      screen.getByRole('link', { name: 'Przejdź do anonimizacji' }),
+      await screen.findByRole('link', { name: 'Przejdź do anonimizacji' }),
     ).toBeInTheDocument()
     expect(savedCase().status).toBe('draft')
+    expect(vi.mocked(casesApi.changeCaseStatus).mock.calls[0][0]).toEqual({
+      id: current.id,
+      status: 'RESPONSE_PREPARED',
+    })
+  })
+
+  it('keeps the draft unsaved when the case status cannot be updated', async () => {
+    vi.mocked(casesApi.changeCaseStatus).mockRejectedValue(new Error('500'))
+    const user = userEvent.setup()
+    renderPage({ responseText: 'Moja odpowiedź', status: 'waiting' })
+    await user.click(
+      screen.getByRole('button', { name: 'Zapisz wersję roboczą' }),
+    )
+    expect(
+      await screen.findByText(
+        'Nie udało się zapisać etapu sprawy. Spróbuj ponownie.',
+      ),
+    ).toBeInTheDocument()
+    expect(savedCase().status).toBe('waiting')
   })
 
   it('ignores a generation finished after the notes changed', async () => {

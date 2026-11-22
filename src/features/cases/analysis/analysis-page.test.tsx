@@ -20,6 +20,7 @@ import { createTestQueryClient } from '@/test/query-client'
 vi.mock('@/api/cases/cases.api', () => ({
   setCaseQuestions: vi.fn(),
   setCaseDepartments: vi.fn(),
+  changeCaseStatus: vi.fn(),
 }))
 
 vi.mock('@/api/knowledge/knowledge.api', () => ({
@@ -89,6 +90,7 @@ describe('analiza sprawy', () => {
     localStorage.clear()
     vi.mocked(casesApi.setCaseQuestions).mockReset().mockResolvedValue(detail)
     vi.mocked(casesApi.setCaseDepartments).mockReset().mockResolvedValue(detail)
+    vi.mocked(casesApi.changeCaseStatus).mockReset().mockResolvedValue(detail)
     vi.mocked(departmentApi.getDepartments).mockReset().mockResolvedValue([])
     vi.mocked(knowledgeApi.searchKnowledge)
       .mockReset()
@@ -183,6 +185,10 @@ describe('analiza sprawy', () => {
     expect(
       vi.mocked(casesApi.setCaseQuestions).mock.calls[0][0].questions[0].text,
     ).toBe('Dokumenty')
+    expect(vi.mocked(casesApi.changeCaseStatus).mock.calls[0][0]).toEqual({
+      id: item.id,
+      status: 'SENT_TO_DEPARTMENTS',
+    })
   })
 
   it('saves local edits, preserves the later status when the selected scope is unchanged', async () => {
