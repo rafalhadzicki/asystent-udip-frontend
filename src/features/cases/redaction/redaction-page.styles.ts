@@ -49,10 +49,6 @@ const Grid = styled(Box)(({ theme }) => ({
 const PreviewPanel = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
   gridArea: 'preview',
-  [theme.breakpoints.up('lg')]: {
-    position: 'sticky',
-    top: 24,
-  },
 }))
 
 export { Grid, Mark, Page, Preview, PreviewPanel }
