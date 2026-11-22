@@ -25,8 +25,6 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { AuthSession } from '@/api/auth/auth.schemas'
 import { useDemoStore } from '@/features/demo/demo-store'
-import { DEMO_TODAY } from '@/features/demo/demo-data'
-import { displayDate } from '@/features/demo/date-utils'
 import { routes } from './routes'
 
 const Sidebar = styled('nav')(({ theme }) => ({
@@ -161,9 +159,6 @@ export const AppLayout = ({
           <Button onClick={onLogout}>{t('auth.logout')}</Button>
         </Stack>
         <PageContent>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            {t('demo.notice', { date: displayDate(DEMO_TODAY) })}
-          </Alert>
           {storageError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {t(

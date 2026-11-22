@@ -1,7 +1,5 @@
 import type { CaseItem } from './types'
 
-export const DEMO_TODAY = '2026-11-21'
-
 export const createDemoCases = (): CaseItem[] =>
   Array.from({ length: 10 }, (_, index) => {
     const receivedDay = 5 + index
