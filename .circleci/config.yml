@@ -1,0 +1,105 @@
+version: 2.1
+
+executors:
+  node:
+    docker:
+      - image: cimg/node:24.22.1
+    resource_class: small
+
+commands:
+  install-dependencies:
+    description: Install dependencies with npm, reusing the cached npm cache
+    steps:
+      - restore_cache:
+          keys:
+            - v1-npm-{{ checksum "package-lock.json" }}
+            # fall back to the latest cache if the lockfile changed
+            - v1-npm-
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          key: v1-npm-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+
+jobs:
+  lint:
+    executor: node
+    steps:
+      - checkout
+      - install-dependencies
+      - run: npm run lint
+      - run: npm run format:check
+
+  test:
+    executor: node
+    steps:
+      - checkout
+      - install-dependencies
+      - run: npm test
+
+  build:
+    executor: node
+    steps:
+      - checkout
+      - install-dependencies
+      - run:
+          name: Build application
+          command: npm run build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist
+
+  deploy-production:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: .
+      - add_ssh_keys:
+          fingerprints:
+            - 'SHA256:iXlLpS8a/beAtGZDBUrUckkfls3ogY9eK9eMgVuaTZg'
+      - run:
+          name: Add SSH host to known_hosts
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+      - run:
+          name: Upload static files
+          command: |
+            ssh "$SSH_USER@$SSH_HOST" "rm -rf '$FRONTEND_REMOTE_PATH.new' && mkdir -p '$FRONTEND_REMOTE_PATH.new'"
+            tar -czf - -C dist . | ssh "$SSH_USER@$SSH_HOST" "tar -xzf - -C '$FRONTEND_REMOTE_PATH.new'"
+      - run:
+          name: Swap in the new release
+          command: |
+            ssh "$SSH_USER@$SSH_HOST" "set -e
+              rm -rf '$FRONTEND_REMOTE_PATH.old'
+              if [ -d '$FRONTEND_REMOTE_PATH' ]; then mv '$FRONTEND_REMOTE_PATH' '$FRONTEND_REMOTE_PATH.old'; fi
+              mv '$FRONTEND_REMOTE_PATH.new' '$FRONTEND_REMOTE_PATH'
+              chmod -R a+rX '$FRONTEND_REMOTE_PATH'
+              rm -rf '$FRONTEND_REMOTE_PATH.old'"
+
+workflows:
+  build_and_test:
+    unless:
+      equal: [main, << pipeline.git.branch >>]
+    jobs:
+      - lint
+      - test
+      - build
+
+  deploy_production:
+    when:
+      equal: [main, << pipeline.git.branch >>]
+    jobs:
+      - lint
+      - test
+      - build:
+          context: asystent-udip-frontend-production
+      - deploy-production:
+          context: asystent-udip-frontend-production
+          requires:
+            - lint
+            - test
+            - build
