@@ -67,6 +67,12 @@ const departmentsOf = (
     selected: true,
   }))
 
+// The note given when the response was marked as sent is kept by the server as
+// the comment of the RESPONSE_SENT status change.
+const sentNoteOf = (detail: CaseDetail): string =>
+  detail.statusHistory.findLast(({ toStatus }) => toStatus === 'RESPONSE_SENT')
+    ?.comment ?? ''
+
 // Starting point of the local workflow, used until the user changes something.
 const localDefaults = (detail: CaseDetail) => ({
   status: localStatus[detail.status],
@@ -75,7 +81,7 @@ const localDefaults = (detail: CaseDetail) => ({
   redactions: [],
   redactionConfirmed: false,
   sentAt: detail.respondedAt ?? '',
-  sentNote: '',
+  sentNote: sentNoteOf(detail),
 })
 
 // The backend owns identification, dates, the request itself and the stage;

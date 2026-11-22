@@ -101,4 +101,28 @@ describe('composeApiCase', () => {
     )
     expect(item.status).toBe('completed')
   })
+
+  it('restores the note of the sent response from the status history', () => {
+    const history = (comment: string | null) => ({
+      fromStatus: 'RESPONSE_PREPARED' as const,
+      toStatus: 'RESPONSE_SENT' as const,
+      comment,
+      changedBy: { id: 'u1', email: 'a@b.pl' },
+      createdAt: '2026-11-22T10:00:00.000Z',
+    })
+    expect(
+      composeApiCase({
+        ...detail,
+        status: 'RESPONSE_SENT',
+        statusHistory: [history('ePUAP')],
+      }).sentNote,
+    ).toBe('ePUAP')
+    expect(
+      composeApiCase({
+        ...detail,
+        status: 'RESPONSE_SENT',
+        statusHistory: [history(null)],
+      }).sentNote,
+    ).toBe('')
+  })
 })
