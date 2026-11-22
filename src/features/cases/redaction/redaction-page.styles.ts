@@ -46,13 +46,19 @@ const Grid = styled(Box)(({ theme }) => ({
   },
 }))
 
+// The column stretches over the spanned rows, so the sticky panel stays inside it.
+const PreviewColumn = styled(Box)({
+  gridArea: 'preview',
+  alignSelf: 'stretch',
+  minWidth: 0,
+})
+
 const PreviewPanel = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
-  gridArea: 'preview',
   [theme.breakpoints.up('lg')]: {
     position: 'sticky',
     top: 24,
   },
 }))
 
-export { Grid, Mark, Page, Preview, PreviewPanel }
+export { Grid, Mark, Page, Preview, PreviewColumn, PreviewPanel }
