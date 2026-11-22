@@ -8,6 +8,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { theme } from './app/theme'
+import { apiClient } from './api/client'
 import * as authApi from './api/auth/auth.api'
 import type { AuthSession } from './api/auth/auth.schemas'
 import { createTestQueryClient } from './test/query-client'
@@ -22,7 +23,10 @@ const render = (ui: ReactNode) => {
 }
 
 describe('App', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    localStorage.clear()
+    vi.spyOn(apiClient, 'post').mockResolvedValue(undefined)
+  })
   afterEach(() => vi.restoreAllMocks())
   it('wyświetla puste logowanie', () => {
     render(
@@ -110,8 +114,8 @@ describe('App', () => {
       }),
     )
     login.mockResolvedValueOnce({
+      id: '3f0c1d2e-5a4b-4c6d-8e7f-9a0b1c2d3e4f',
       email: 'demo@example.com',
-      accessToken: 'test-token',
     })
     const user = userEvent.setup()
     render(
@@ -139,8 +143,9 @@ describe('App', () => {
       password: 'demo123',
     })
     expect(localStorage.getItem('asystent-udip-session')).toContain(
-      'test-token',
+      'demo@example.com',
     )
+    expect(localStorage.getItem('asystent-udip-session')).not.toContain('token')
     await user.click(screen.getByRole('button', { name: 'Wyloguj się' }))
     expect(localStorage.getItem('asystent-udip-session')).toBeNull()
     expect(screen.getByLabelText('Hasło')).toHaveValue('')
@@ -170,7 +175,10 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Zaloguj się' }))
     expect(screen.getByRole('button', { name: 'Logowanie…' })).toBeDisabled()
     expect(screen.getByLabelText('E-mail')).toBeDisabled()
-    finishLogin({ email: 'demo@example.com', accessToken: 'test-token' })
+    finishLogin({
+      id: '3f0c1d2e-5a4b-4c6d-8e7f-9a0b1c2d3e4f',
+      email: 'demo@example.com',
+    })
     expect(
       await screen.findByRole('heading', { name: 'Sprawy' }),
     ).toBeInTheDocument()

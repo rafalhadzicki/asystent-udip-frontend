@@ -1,11 +1,10 @@
 import axios, {
-  AxiosHeaders,
   type AxiosError,
   type AxiosRequestConfig,
   type AxiosResponse,
 } from 'axios'
 import type { ZodError } from 'zod'
-import { clearSession, getSession } from './session'
+import { clearSession } from './session'
 
 export type RequestConfig<TData = unknown> = Omit<
   AxiosRequestConfig<TData>,
@@ -17,9 +16,13 @@ export type ApiError = AxiosError | ZodError
 
 export const REQUEST_TIMEOUT_MS = 60_000
 
+const CREDENTIAL_URLS = ['/api/auth/login', '/api/auth/register']
+
 export const httpClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: REQUEST_TIMEOUT_MS,
+  // The session lives in an httpOnly cookie set by the server.
+  withCredentials: true,
   headers:
     import.meta.env.VITE_API_NGROK === 'true'
       ? { 'ngrok-skip-browser-warning': 'true' }
@@ -30,18 +33,16 @@ httpClient.interceptors.request.use((config) => {
   if (!config.baseURL) {
     throw new Error('VITE_API_BASE_URL is not configured')
   }
-  const accessToken = getSession()?.accessToken
-  if (accessToken) config.headers.set('Authorization', `Bearer ${accessToken}`)
   return config
 })
 
 httpClient.interceptors.response.use(undefined, (error: unknown) => {
-  // Only an authenticated request can mean an expired session; a 401 from the
-  // login endpoint means invalid credentials and is handled by the form.
+  // A 401 from the login or register endpoint means invalid credentials and is
+  // handled by the form; anywhere else it means the session has expired.
   if (
     axios.isAxiosError(error) &&
     error.response?.status === 401 &&
-    AxiosHeaders.from(error.config?.headers).has('Authorization')
+    !CREDENTIAL_URLS.includes(error.config?.url ?? '')
   ) {
     clearSession()
   }

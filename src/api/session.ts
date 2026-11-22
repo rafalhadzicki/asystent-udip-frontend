@@ -1,16 +1,10 @@
 import { useSyncExternalStore } from 'react'
-import { z } from 'zod'
-import { emailSchema, type AuthSession } from './auth/auth.schemas'
+import { userSchema, type AuthSession } from './auth/auth.schemas'
 
-// TEMPORARY: the session is kept in localStorage so a reload does not require
-// logging in again. Move the token to memory or an httpOnly cookie before
-// handling real data.
+// Only an optimistic hint (who is signed in) is stored, so a reload does not
+// flash the login screen. The credential is an httpOnly cookie; an expired one
+// ends the session at the first 401.
 export const SESSION_STORAGE_KEY = 'asystent-udip-session'
-
-const storedSessionSchema = z.object({
-  email: emailSchema,
-  accessToken: z.string().min(1),
-})
 
 const writeStoredSession = (next: AuthSession | null) => {
   try {
@@ -25,7 +19,7 @@ const readStoredSession = (): AuthSession | null => {
   try {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY)
     if (!raw) return null
-    const parsed = storedSessionSchema.safeParse(JSON.parse(raw))
+    const parsed = userSchema.safeParse(JSON.parse(raw))
     if (parsed.success) return parsed.data
   } catch {
     // Unavailable or corrupted storage means a regular login.

@@ -3,8 +3,9 @@ import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { Button, Typography } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { LoginPage } from '@/features/auth/login-page'
-import { useSession } from '@/api/session'
-import { logout } from '@/api/auth/auth.api'
+import { useEffect } from 'react'
+import { getSession, useSession } from '@/api/session'
+import { getCurrentUser, logout } from '@/api/auth/auth.api'
 import {
   clearLocalStore,
   LocalStoreProvider,
@@ -48,11 +49,16 @@ const NotFoundPage = () => {
 
 const signOut = () => {
   clearLocalStore()
-  logout()
+  void logout()
 }
 
 const App = () => {
   const user = useSession()
+  // A session restored from storage is only a hint; an expired cookie answers
+  // 401, which ends the session in the HTTP client.
+  useEffect(() => {
+    if (getSession()) getCurrentUser().catch(() => undefined)
+  }, [])
   return (
     <LocalStoreProvider>
       <Routes>

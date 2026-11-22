@@ -8,9 +8,9 @@ describe('queryClient', () => {
   it('czyści cache przy każdej zmianie sesji', () => {
     const client = createQueryClient()
     const unsubscribe = clearCacheOnSessionChange(client)
-    setSession({ email: 'a@example.test', accessToken: 'a' })
+    setSession({ id: 'a', email: 'a@example.test' })
     client.setQueryData(['user', 'a@example.test', 'cases'], [1])
-    setSession({ email: 'b@example.test', accessToken: 'b' })
+    setSession({ id: 'b', email: 'b@example.test' })
     expect(client.getQueryCache().getAll()).toHaveLength(0)
     unsubscribe()
   })

@@ -7,9 +7,7 @@ export const loginCredentialsSchema = z.object({
   password: z.string().min(1),
 })
 
-export const loginResponseSchema = z.object({
-  accessToken: z.string().min(1),
-})
+export const userSchema = z.object({ id: z.uuid(), email: emailSchema })
 
 export type LoginCredentials = z.infer<typeof loginCredentialsSchema>
-export type AuthSession = { email: string; accessToken: string }
+export type AuthSession = z.infer<typeof userSchema>

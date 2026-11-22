@@ -14,32 +14,38 @@ const respond = (status = 200, data: unknown = {}) =>
 describe('apiClient', () => {
   afterEach(() => setSession(null))
 
-  it('dodaje token sesji, adres API i timeout do każdego requestu', async () => {
-    setSession({ email: 'user@example.test', accessToken: 'secret-token' })
+  it('wysyła ciasteczka sesji, adres API i timeout w każdym requeście', async () => {
     const adapter = respond()
     await apiClient.get('/api/cases', { adapter })
     const config = adapter.mock.calls[0][0]
-    expect(config.headers.get('Authorization')).toBe('Bearer secret-token')
+    expect(config.withCredentials).toBe(true)
+    expect(config.headers.has('Authorization')).toBe(false)
     expect(config.baseURL).toBe('https://api.example.test')
     expect(config.timeout).toBe(REQUEST_TIMEOUT_MS)
   })
 
-  it('nie wysyła nagłówka Authorization bez sesji', async () => {
-    const adapter = respond()
-    await apiClient.post('/api/auth/login', {}, { adapter })
-    expect(adapter.mock.calls[0][0].headers.has('Authorization')).toBe(false)
-  })
-
-  it('kończy sesję po 401 z uwierzytelnionego requestu', async () => {
-    setSession({ email: 'user@example.test', accessToken: 'expired' })
+  it('kończy sesję po 401 z dowolnego endpointu poza logowaniem', async () => {
+    setSession({ id: 'u', email: 'user@example.test' })
     await expect(
       apiClient.get('/api/cases', { adapter: respond(401) }),
     ).rejects.toBeInstanceOf(AxiosError)
     expect(getSession()).toBeNull()
   })
 
+  it.each(['/api/auth/login', '/api/auth/register'])(
+    'nie kończy sesji po 401 z %s',
+    async (url) => {
+      const session = { id: 'u', email: 'user@example.test' }
+      setSession(session)
+      await expect(
+        apiClient.post(url, {}, { adapter: respond(401) }),
+      ).rejects.toBeInstanceOf(AxiosError)
+      expect(getSession()).toBe(session)
+    },
+  )
+
   it('nie rusza sesji przy innych błędach', async () => {
-    const session = { email: 'user@example.test', accessToken: 'token' }
+    const session = { id: 'u', email: 'user@example.test' }
     setSession(session)
     await expect(
       apiClient.get('/api/cases', { adapter: respond(403) }),

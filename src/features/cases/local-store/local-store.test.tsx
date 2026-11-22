@@ -73,7 +73,7 @@ describe('local data store', () => {
 
   it('keeps local data separate for each signed-in user', async () => {
     const user = userEvent.setup()
-    setSession({ email: 'a@example.test', accessToken: 'a' })
+    setSession({ id: 'a', email: 'a@example.test' })
     renderProbe()
     await user.click(screen.getByRole('button', { name: 'Change' }))
     expect(
@@ -81,7 +81,7 @@ describe('local data store', () => {
     ).toContain('Projekt')
     expect(localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull()
 
-    act(() => setSession({ email: 'b@example.test', accessToken: 'b' }))
+    act(() => setSession({ id: 'b', email: 'b@example.test' }))
     expect(screen.getByTestId('overlay')).toHaveTextContent('null')
     expect(
       localStorage.getItem(`${LOCAL_STORAGE_KEY}:b@example.test`),
@@ -90,7 +90,7 @@ describe('local data store', () => {
   })
 
   it('treats e-mail addresses that differ only in case as one user', () => {
-    setSession({ email: 'User@Example.test', accessToken: 'token' })
+    setSession({ id: 'u', email: 'User@Example.test' })
     localStorage.setItem(
       `${LOCAL_STORAGE_KEY}:user@example.test`,
       JSON.stringify({

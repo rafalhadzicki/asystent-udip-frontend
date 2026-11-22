@@ -38,7 +38,10 @@ const Draft = () => {
 describe('AppLayout', () => {
   it('clears the in-memory upload draft on logout', async () => {
     const user = userEvent.setup()
-    const session = { email: 'test@example.test', accessToken: 'token' }
+    const session = {
+      id: '3f0c1d2e-5a4b-4c6d-8e7f-9a0b1c2d3e4f',
+      email: 'test@example.test',
+    }
     setSession(session)
     render(
       <MemoryRouter>
