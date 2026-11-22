@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
@@ -54,7 +54,9 @@ describe('AppLayout', () => {
     await user.click(screen.getByRole('button', { name: 'seed' }))
     expect(screen.getByTestId('draft')).toHaveTextContent('present')
     await user.click(screen.getByRole('button', { name: 'Wyloguj się' }))
-    expect(screen.getByTestId('draft')).toHaveTextContent('empty')
+    await waitFor(() =>
+      expect(screen.getByTestId('draft')).toHaveTextContent('empty'),
+    )
     expect(getSession()).toBeNull()
   })
 })

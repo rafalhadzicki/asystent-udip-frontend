@@ -147,8 +147,10 @@ describe('App', () => {
     )
     expect(localStorage.getItem('asystent-udip-session')).not.toContain('token')
     await user.click(screen.getByRole('button', { name: 'Wyloguj się' }))
+    expect(
+      await screen.findByLabelText('Hasło', undefined, { timeout: 5000 }),
+    ).toHaveValue('')
     expect(localStorage.getItem('asystent-udip-session')).toBeNull()
-    expect(screen.getByLabelText('Hasło')).toHaveValue('')
     expect(
       screen.getByRole('heading', { name: 'Asystent UDIP' }),
     ).toBeInTheDocument()
