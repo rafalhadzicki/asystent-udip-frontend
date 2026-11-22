@@ -146,6 +146,24 @@ describe('MaterialsPage', () => {
     expect(savedCase().responseText).toBe('')
   })
 
+  it('points to the analysis when the case has no questions', async () => {
+    vi.mocked(casesApi.draftResponse).mockRejectedValue(
+      new AxiosError('x', undefined, undefined, null, {
+        data: {},
+        status: 400,
+        statusText: 'Bad Request',
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      }),
+    )
+    const user = userEvent.setup()
+    renderPage({ materialNotes: 'Treść' })
+    await user.click(screen.getByRole('button', { name: 'Generuj projekt' }))
+    expect(
+      await screen.findByText(/Uzupełnij je w zakładce Analiza/),
+    ).toBeInTheDocument()
+  })
+
   it('preserves stale edits and invalidates decisions after changing materials', async () => {
     const user = userEvent.setup()
     renderPage({

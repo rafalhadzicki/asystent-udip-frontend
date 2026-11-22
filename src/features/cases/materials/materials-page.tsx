@@ -197,7 +197,11 @@ export const MaterialsPage = () => {
       })
     } catch (generateError) {
       if (requestId === generationId.current)
-        setError(toAiErrorMessage(generateError, t('generateError')))
+        setError(
+          getApiErrorKind(generateError) === 'invalid'
+            ? t('generateNeedsQuestions')
+            : toAiErrorMessage(generateError, t('generateError')),
+        )
     } finally {
       if (requestId === generationId.current) setGenerating(false)
     }

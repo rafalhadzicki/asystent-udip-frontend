@@ -363,7 +363,8 @@
       "RESPONSE": "Baza wiedzy · wzór odpowiedzi",
       "GUIDELINE": "Baza wiedzy · wytyczne"
     },
-    "statusError": "Nie udało się zapisać etapu sprawy. Spróbuj ponownie."
+    "statusError": "Nie udało się zapisać etapu sprawy. Spróbuj ponownie.",
+    "generateNeedsQuestions": "Projekt wymaga treści wniosku i co najmniej jednego pytania. Uzupełnij je w zakładce Analiza."
   },
   "redaction": {
     "analysisReviewRequired": "Przed dalszą pracą przejrzyj i zapisz analizę zmienionego wniosku.",
