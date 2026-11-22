@@ -1,93 +1,66 @@
 # Asystent UDIP — frontend
 
-Aplikacja demonstracyjna React i TypeScript dla projektu hackathonowego.
-Logowanie, odczyt wniosku i podpowiedzi nazw jednostek korzystają z backendu;
-pozostałe funkcje są nadal połączone lokalnym, demonstracyjnym modelem sprawy.
+Aplikacja React i TypeScript dla narzędzia wspierającego urzędników w obsłudze
+wniosków o dostęp do informacji publicznej (Hacknation 2026, Urząd Miasta
+Bydgoszczy). Wszystkie sprawy, terminy, dokumenty, analiza, projekt odpowiedzi,
+sugestie anonimizacji i baza wiedzy pochodzą z backendu (NestJS, `/api`).
+Aplikacja niczego nie wysyła na zewnątrz: wysyłkę odpowiedzi urzędnik
+odnotowuje ręcznie, a ostateczną decyzję zawsze podejmuje człowiek.
 
-## Logowanie i stan integracji
+## Przepływ pracy
 
-Ekran `/login` wysyła e-mail i hasło do `POST /api/auth/login`.
-Po zalogowaniu `/sprawy` nadal pokazuje lokalne dane demonstracyjne, a nie
-sprawy z API. Pozostałe operacje również nie zapisują danych w backendzie.
-W widokach spraw i bazy wiedzy używaj wyłącznie danych testowych.
+Rejestr → nowy wniosek (PDF lub DOCX) → weryfikacja odczytanych danych →
+analiza pytań i podpowiedź wydziałów → materiały z wydziałów i projekt
+odpowiedzi → anonimizacja → pobranie TXT lub DOCX → odnotowanie wysyłki.
 
-Tymczasowo token i e-mail sesji są zapisywane w LocalStorage
-(`asystent-udip-session`), żeby odświeżenie strony nie wymagało logowania.
-Hasła nie zapisujemy. Przed pracą na prawdziwych danych token trzeba
-przenieść do pamięci lub ciasteczka httpOnly. Lokalne dane demo są zapisywane osobno dla każdego konta
-(klucz zawiera e-mail), ale nie są szyfrowane ani chronione przed osobą
-korzystającą z tej samej przeglądarki.
-Nie używaj aplikacji z prawdziwymi dokumentami na tym etapie integracji.
+- `/sprawy`: rejestr z `GET /api/cases` — numer porządkowy, numer sprawy, temat,
+  data wpływu, termin (z oznaczeniem kwerendy i liczbą dodatkowych dni),
+  data odpowiedzi, pilność, etap (z postępem odpowiedzi wydziałów) i inicjały
+  osoby prowadzącej. Wyszukiwanie, rok, etap, sortowanie (domyślnie od
+  najstarszych) i paginacja są po stronie serwera, filtry w URL. API listuje
+  jeden rok wpływu naraz. Eksport CSV obejmuje te same kolumny.
+- `/kalendarz`: siatka miesiąca z `GET /api/cases/calendar`; sprawy z terminem
+  dziś i jutro są wyróżnione.
+- `/sprawy/nowy` i `/sprawy/nowy/weryfikacja`: wgranie pliku do
+  `POST /api/cases/analyze`, weryfikacja tekstu i dat, kontrola numeru sprawy,
+  utworzenie sprawy w backendzie.
+- `/sprawy/:caseId/wniosek`: metryka i treść wniosku, zmiana terminu przez
+  kwerendę z powodem (można ją wycofać), powrót do poprzednich kroków.
+- `/sprawy/:caseId/analiza`: pytania, podpowiedź wydziałów (`/api/departments`)
+  i podobne odpowiedzi z archiwum (`POST /api/knowledge/search`) z procentem
+  podobieństwa.
+- `/sprawy/:caseId/materialy`: odpowiedzi wydziałów (pliki lub tekst),
+  jawne generowanie projektu odpowiedzi i jego edycja. Projekt wymaga
+  weryfikacji przez człowieka.
+- `/sprawy/:caseId/anonimizacja`: sugestie danych do ukrycia (szare), decyzje
+  urzędnika (po akceptacji czarne) i eksport, który naprawdę zastępuje tekst.
+  Nierozstrzygnięte sugestie blokują potwierdzenie.
+- `/baza-wiedzy`: dodawanie, edycja, ponowna indeksacja i usuwanie ustaw,
+  wzorów odpowiedzi i wytycznych (PDF, DOCX, TXT).
 
-## Przepływ demonstracyjny
+Anonimizacja dotyczy tekstu odpowiedzi. Nie anonimizuje oryginalnego pliku
+PDF/DOCX ani załączników i nie zastępuje przeglądu przez człowieka. Aplikacja
+nie integruje się z EZD, ePUAP ani SIDAS.
 
-Rejestr → nowy wniosek → wybór PDF/DOCX → odczyt przez API → weryfikacja
-tekstu i dat → analiza pytań i jednostek → materiały i odpowiedź →
-anonimizacja tekstu → pobranie TXT → ręczne odnotowanie wysyłki poza aplikacją.
+## Dane lokalne
 
-- `/sprawy`: lista z `GET /api/cases` (wyszukiwanie, rok, etap, sortowanie
-  i paginacja po stronie serwera; filtry w URL) oraz lata z `GET /api/cases/years`.
-  API listuje jeden rok wpływu naraz, domyślnie najnowszy — brak opcji
-  „wszystkie lata”. Eksport CSV pobiera wszystkie sprawy spełniające filtry.
-  Rejestr nie pokazuje wnioskodawcy (lista API go nie zwraca). Liczniki
-  terminów obejmują niezakończone sprawy ze wszystkich lat, ale pojedyncze
-  pobranie jest ograniczone do 500 spraw na rok — przy większej liczbie
-  aplikacja oznacza liczby jako przybliżone.
-- `/sprawy/nowy` i `/sprawy/nowy/weryfikacja`: wybór rzeczywistego pliku,
-  walidacja i tworzenie lokalnej sprawy. Plik jest wysyłany do
-  `POST /api/cases/analyze`, który zwraca tekst i sugestie do weryfikacji.
-  Odczyt może się nie powieść lub być niepełny; dane należy sprawdzić.
-  Utworzenie sprawy nadal nie wysyła jej do backendu, więc taka sprawa jest
-  dostępna tylko lokalnie i **nie pojawia się w rejestrze z API**.
-- `/sprawy/:caseId/wniosek`: metryka i korekta tekstu. Sprawa z rejestru API
-  jest czytana z `GET /api/cases/{id}` (cache TanStack Query) i nie jest
-  kopiowana do `localStorage`. Edycja numeru, tematu, wnioskodawcy, daty wpływu
-  i treści zapisuje się przez `PATCH /api/cases/{id}`; termin liczy backend,
-  więc pole jest zablokowane. Data sporządzenia, analiza, materiały, odpowiedź
-  i anonimizacja pozostają lokalne: dla spraw z API zapisujemy tylko te pola
-  (nakładka po `id` sprawy, osobno dla każdego konta). Lokalny etap pracy nie
-  jest nadpisywany zmianą statusu na serwerze; w nagłówku widać status z API.
-- `/sprawy/:caseId/analiza`: edycja pytań i wybór jednostek,
-  przykłady z bazy wiedzy. Pole nazwy podpowiada jednostki z `GET /api/departments`,
-  jednak wybór jednostek nadal jest zapisywany tylko lokalnie.
-- `/sprawy/:caseId/materialy`: odnotowanie kontaktu poza aplikacją,
-  metadane załączników, wklejenie tekstu materiałów, jawne generowanie
-  demonstracyjnego projektu i edycja. Projekt korzysta z wpisanych tekstów,
-  nie z treści plików; nie dodaje własnych ustaleń faktycznych.
-- `/sprawy/:caseId/anonimizacja`: propozycja dotycząca nazwiska wnioskodawcy
-  i ręczne fragmenty, decyzje człowieka, podgląd i rzeczywiste pobranie TXT.
-- `/kalendarz`: terminy pochodzące z tego samego rejestru.
-- `/baza-wiedzy`: wyszukiwanie, dodawanie i aktualizacja metadanych materiałów.
+Backend nie przechowuje jeszcze części pól (tekst odpowiedzi, decyzje
+anonimizacji, notatki do materiałów, powody wyboru jednostek, lokalny etap
+pracy). Te pola zapisujemy w LocalStorage (`asystent-udip-demo-v1:<e-mail>`)
+jako nakładkę na dane z API, osobno dla każdego konta. Nie zapisujemy plików,
+haseł ani tokenów sesji poza kluczem `asystent-udip-session` (tymczasowo; przed
+pracą na prawdziwych danych token trzeba przenieść do ciasteczka httpOnly).
+Dane lokalne nie są szyfrowane. Używaj wyłącznie danych testowych.
+Jeżeli dane zmienią się w innej karcie, zapis w bieżącej zostaje wstrzymany,
+żeby nie nadpisać tamtych zmian.
 
-Analiza proponuje osobno warianty wielkości liter pełnych danych wnioskodawcy.
-Każda decyzja usuwa z nowego TXT wyłącznie dokładne wystąpienia wybranego
-wariantu, z uwzględnieniem wielkości liter. Analiza nie wykrywa odmian imion
-i nazwisk ani wszystkich innych danych osobowych. **Nie anonimizuje oryginalnego
-PDF/DOCX ani załączników** i nie gwarantuje bezpieczeństwa tekstu. Oryginalny tekst odpowiedzi
-pozostaje w lokalnym demo do porównania. Oświadczenie nie zastępuje przeglądu
-całości przez człowieka. Aplikacja nie wysyła korespondencji ani nie integruje
-się z EZD/ePUAP.
+## Wdrożenie i model AI
 
-## Zapis demo
-
-Metadane i teksty spraw oraz bazy wiedzy są zapisywane w LocalStorage
-pod kluczem `asystent-udip-demo-v1:<e-mail>`. Nie zapisujemy plików, haseł ani tokenów.
-Wgrywany wniosek przed zatwierdzeniem istnieje tylko w pamięci; odświeżenie
-na weryfikacji wymaga ponownego wyboru pliku. Oryginalny plik nie będzie
-dostępny do podglądu po jego rejestracji.
-
-Zapis jest jawnie oznaczony w UI: używaj wyłącznie danych testowych.
-Reset demo wymaga potwierdzenia i przywraca początkowe dane.
-Błędy odczytu lub zapisu są pokazywane użytkownikowi.
-Jeżeli dane zmienią się w innej karcie, zapis w bieżącej karcie zostaje
-wstrzymany, aby nie nadpisać tamtych zmian. Przed odświeżeniem skopiuj
-potrzebne niezapisane treści. To mechanizm ostrzegawczy demo, a nie
-transakcyjna synchronizacja wielu użytkowników.
-Stała data odniesienia demo to **21.11.2026**, żeby rejestr i kalendarz
-miały spójne, powtarzalne stany pilności. Sugestia 14 dni jest propozycją
-do zatwierdzenia, a nie pełnym silnikiem obliczania terminów prawnych.
-Backend będzie musiał zapewnić ekstrakcję dokumentów, kontrolę dostępu,
-trwały zapis i reguły terminów uzgodnione z organizatorem.
+Frontend jest statyczną aplikacją (`npm run build`) i nie korzysta z usług
+zewnętrznych: font jest lokalną zależnością, teksty są w `pl.json`. Praca bez
+Internetu zależy od backendu, który docelowo powinien używać lokalnego modelu
+językowego i lokalnej bazy wektorowej (propozycja modelu: do ustalenia z
+zespołem backendowym).
 
 ## Uruchomienie
 
