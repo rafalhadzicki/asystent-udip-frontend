@@ -5,7 +5,7 @@ const Layout = styled('div')(({ theme }) => ({
   gridTemplateColumns: 'minmax(0, 2fr) minmax(260px, 1fr)',
   gap: theme.spacing(2),
   alignItems: 'start',
-  [theme.breakpoints.down('md')]: { gridTemplateColumns: '1fr' },
+  [theme.breakpoints.down('md')]: { gridTemplateColumns: 'minmax(0, 1fr)' },
 }))
 
 const Item = styled('div')(({ theme }) => ({
