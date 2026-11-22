@@ -126,6 +126,10 @@ export const createCase = async ({ file, ...fields }: CreateCaseInput) =>
     ),
   )
 
+export const deleteCase = async (id: string) => {
+  await apiClient.delete(caseUrl(id))
+}
+
 export const updateCase = async ({ id, ...fields }: UpdateCaseInput) =>
   caseDetailSchema.parse(await apiClient.patch<unknown>(caseUrl(id), fields))
 

@@ -125,6 +125,16 @@ const LocalStateProvider = ({
     })
   }
 
+  const removeCase = (id: string) => {
+    const current = currentSnapshot.current
+    saveSnapshot({
+      ...current,
+      overlays: Object.fromEntries(
+        Object.entries(current.overlays).filter(([key]) => key !== id),
+      ),
+    })
+  }
+
   return (
     <LocalStoreContext.Provider
       value={{
@@ -133,6 +143,7 @@ const LocalStateProvider = ({
         setUploadDraft,
         storageError,
         updateCase,
+        removeCase,
       }}
     >
       {children}

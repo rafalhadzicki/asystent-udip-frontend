@@ -16,6 +16,7 @@ import {
   changeCaseStatus,
   checkCaseNumber,
   createCase,
+  deleteCase,
   deleteCaseDocument,
   downloadCaseDocument,
   draftResponse,
@@ -269,6 +270,23 @@ export const useUpdateCase = () => {
     isUpdateCaseError: isError,
     updateCaseError: error,
   }
+}
+
+export const useDeleteCase = () => {
+  const queryClient = useQueryClient()
+  const email = useSessionEmail()
+  const { mutateAsync, isPending } = useMutation<void, ApiError, string>({
+    mutationFn: deleteCase,
+    onSuccess: (_result, id) => {
+      queryClient.removeQueries({
+        queryKey: queryKeys.cases.detail(email, id),
+      })
+      return queryClient.invalidateQueries({
+        queryKey: queryKeys.cases.all(email),
+      })
+    },
+  })
+  return { deleteCaseAsync: mutateAsync, isDeletingCase: isPending }
 }
 
 export const useChangeCaseStatus = () => {

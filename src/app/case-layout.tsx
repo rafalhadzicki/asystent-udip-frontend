@@ -15,6 +15,7 @@ import { useGetCaseById } from '@/api/cases/cases.queries'
 import { composeApiCase } from '@/features/cases/case-from-api'
 import { useLocalStore } from '@/features/cases/local-store'
 import { displayDate } from '@/features/cases/date-utils'
+import { DeleteCaseButton } from '@/features/cases/delete/delete-case-button'
 import { DeadlineExtension } from '@/features/cases/extension/deadline-extension'
 import { caseTabs, routes } from './routes'
 
@@ -56,9 +57,15 @@ export const CaseLayout = () => {
   return (
     <Stack spacing={3}>
       <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
-        <Button component={Link} to={routes.cases} sx={{ mb: 1 }}>
-          {t('caseDetail.back')}
-        </Button>
+        <Stack
+          direction="row"
+          sx={{ mb: 1, justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <Button component={Link} to={routes.cases}>
+            {t('caseDetail.back')}
+          </Button>
+          <DeleteCaseButton item={item} />
+        </Stack>
         <Typography variant="body2" color="text.secondary">
           {item.reference}
         </Typography>

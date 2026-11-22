@@ -16,6 +16,7 @@ vi.mock('@/api/cases/cases.api', () => ({
   getCase: vi.fn(),
   extendDeadline: vi.fn(),
   cancelExtension: vi.fn(),
+  deleteCase: vi.fn(),
 }))
 
 const renderCase = (id: string) =>

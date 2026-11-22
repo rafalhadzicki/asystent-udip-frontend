@@ -68,7 +68,15 @@
     "deadline": "Termin zatwierdzony: {{date}}",
     "completed": "Wysyłkę poza aplikacją odnotowano: {{date}}.",
     "tabs": "Zakładki sprawy",
-    "completedNote": "Notatka: {{note}}"
+    "completedNote": "Notatka: {{note}}",
+    "delete": {
+      "open": "Usuń sprawę",
+      "title": "Usunąć sprawę?",
+      "description": "Sprawa {{reference}} zostanie trwale usunięta razem z historią, plikami i wersjami roboczymi. Tej operacji nie można cofnąć.",
+      "confirm": "Usuń sprawę",
+      "cancel": "Anuluj",
+      "error": "Nie udało się usunąć sprawy. Spróbuj ponownie."
+    }
   },
   "notFound": {
     "title": "Nie znaleziono strony",

@@ -7,6 +7,7 @@ type LocalStore = {
   uploadDraft: UploadDraft | null
   setUploadDraft: (draft: UploadDraft | null) => void
   updateCase: (id: string, changes: Partial<CaseItem>) => void
+  removeCase: (id: string) => void
   storageError: 'restore' | 'save' | 'conflict' | null
 }
 
