@@ -325,8 +325,6 @@
     "goToAnalysis": "Przejdź do analizy",
     "title": "Materiały i odpowiedź",
     "subtitle": "Zbierz informacje od wybranych jednostek i przygotuj projekt odpowiedzi.",
-    "departments": "Wybrane jednostki",
-    "noDepartments": "Nie wybrano jednostek. Wybierz je w zakładce Analiza.",
     "contactInfo": "Zapytania do jednostek należy wysłać poza aplikacją. Tutaj można jedynie odnotować wysłanie.",
     "contactDate": "Data wysłania zapytań",
     "markSent": "Oznacz zapytania jako wysłane",

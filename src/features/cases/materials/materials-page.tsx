@@ -248,18 +248,6 @@ export const MaterialsPage = () => {
       )}
       <Card>
         <Stack spacing={2}>
-          <Typography variant="h6" component="h3">
-            {t('departments')}
-          </Typography>
-          {selectedDepartments.length ? (
-            <Stack direction="row" sx={{ gap: 1, flexWrap: 'wrap' }}>
-              {selectedDepartments.map((department) => (
-                <Chip key={department.id} label={department.name} />
-              ))}
-            </Stack>
-          ) : (
-            <Typography color="text.secondary">{t('noDepartments')}</Typography>
-          )}
           <Typography variant="body2" color="text.secondary">
             {t('contactInfo')}
           </Typography>
