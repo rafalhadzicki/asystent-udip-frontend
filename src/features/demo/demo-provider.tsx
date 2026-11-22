@@ -152,10 +152,6 @@ const DemoStateProvider = ({
           })
         },
         updateCase,
-        resetDemo: () => {
-          saveSnapshot(freshSnapshot())
-          setUploadDraft(null)
-        },
       }}
     >
       {children}

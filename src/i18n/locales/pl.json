@@ -56,10 +56,7 @@
   },
   "demo": {
     "notice": "Demo · data odniesienia: {{date}}. Analiza pytań i projekt odpowiedzi są symulowane. Używaj wyłącznie danych testowych: rejestr i podstawowe dane spraw pochodzą z API, wybrany plik jest wysyłany do API w celu odczytu, a analiza, materiały, odpowiedź i anonimizacja pozostają w tej przeglądarce.",
-    "reset": "Resetuj demo",
-    "resetTitle": "Przywrócić dane demonstracyjne?",
-    "resetDescription": "Wszystkie dodane sprawy, materiały i zmiany zostaną usunięte z demo w tej przeglądarce.",
-    "restoreError": "Nie udało się odczytać zapisanych danych demo. Pokazujemy dane początkowe. Resetuj demo, aby rozpocząć od nowa.",
+    "restoreError": "Nie udało się odczytać zapisanych danych demo. Pokazujemy dane początkowe.",
     "saveError": "Nie udało się zapisać zmian w przeglądarce. Zmiany są dostępne tylko do odświeżenia strony.",
     "conflictError": "Dane demo zmieniły się w innej karcie. Zapis w tej karcie został wstrzymany, aby nie nadpisać tamtych zmian. Skopiuj potrzebne niezapisane treści, a następnie odśwież stronę."
   },

@@ -9,7 +9,6 @@ type DemoStore = {
   setUploadDraft: (draft: UploadDraft | null) => void
   addCase: (item: CaseItem) => void
   updateCase: (id: string, changes: Partial<CaseItem>) => void
-  resetDemo: () => void
   storageError: 'restore' | 'save' | 'conflict' | null
 }
 

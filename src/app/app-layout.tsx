@@ -3,11 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Drawer,
   IconButton,
   List,
@@ -26,7 +21,7 @@ import {
   Menu,
   Plus,
 } from 'lucide-react'
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { AuthSession } from '@/api/auth/auth.schemas'
 import { useDemoStore } from '@/features/demo/demo-store'
@@ -58,10 +53,8 @@ export const AppLayout = ({
 }) => {
   const { t } = useTranslation()
   const location = useLocation()
-  const navigate = useNavigate()
-  const { resetDemo, storageError } = useDemoStore()
+  const { storageError } = useDemoStore()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [resetOpen, setResetOpen] = useState(false)
   const links = [
     {
       to: routes.cases,
@@ -168,19 +161,7 @@ export const AppLayout = ({
           <Button onClick={onLogout}>{t('auth.logout')}</Button>
         </Stack>
         <PageContent>
-          <Alert
-            severity="info"
-            sx={{ mb: 2 }}
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() => setResetOpen(true)}
-              >
-                {t('demo.reset')}
-              </Button>
-            }
-          >
+          <Alert severity="info" sx={{ mb: 2 }}>
             {t('demo.notice', { date: displayDate(DEMO_TODAY) })}
           </Alert>
           {storageError && (
@@ -197,27 +178,6 @@ export const AppLayout = ({
           <Outlet />
         </PageContent>
       </Box>
-      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
-        <DialogTitle>{t('demo.resetTitle')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>{t('demo.resetDescription')}</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setResetOpen(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            color="error"
-            onClick={() => {
-              resetDemo()
-              setResetOpen(false)
-              navigate(routes.cases)
-            }}
-          >
-            {t('demo.reset')}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   )
 }

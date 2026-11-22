@@ -18,7 +18,6 @@ const DemoProbe = () => {
       >
         Change
       </button>
-      <button onClick={store.resetDemo}>Reset</button>
     </div>
   )
 }
@@ -104,11 +103,6 @@ describe('demo persistence', () => {
       </DemoProvider>,
     )
     expect(screen.getByText('Changed demo subject')).toBeInTheDocument()
-    act(() => screen.getByText('Reset').click())
-    expect(screen.queryByText('Changed demo subject')).not.toBeInTheDocument()
-    expect(
-      JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases,
-    ).toHaveLength(10)
   })
 
   it('reports corrupt storage explicitly rather than crashing', () => {
@@ -213,13 +207,12 @@ const OverlayProbe = () => {
         Overlay
       </button>
       <button onClick={() => store.addCase(store.cases[0])}>Duplicate</button>
-      <button onClick={store.resetDemo}>Reset</button>
     </div>
   )
 }
 
 describe('local data of cases stored on the server', () => {
-  it('keeps only local fields of an unknown case and clears them on reset', async () => {
+  it('keeps only local fields of an unknown case', async () => {
     const user = userEvent.setup()
     render(
       <DemoProvider>
@@ -233,8 +226,6 @@ describe('local data of cases stored on the server', () => {
     expect(
       JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).overlays,
     ).toEqual({ 'api-case': { responseText: 'Projekt' } })
-    await user.click(screen.getByRole('button', { name: 'Reset' }))
-    expect(screen.getByTestId('overlay')).toHaveTextContent('null')
   })
 
   it('restores snapshots saved before overlays existed', () => {
