@@ -20,7 +20,10 @@ import {
 } from '@mui/material'
 import { Link, useOutletContext } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useRedactionSuggestions } from '@/api/cases/cases.queries'
+import {
+  useChangeCaseStatus,
+  useRedactionSuggestions,
+} from '@/api/cases/cases.queries'
 import type { RedactionSuggestion } from '@/api/cases/cases.schemas'
 import { useAiErrorMessage } from '../use-ai-error-message'
 import { useDemoStore } from '@/features/demo/demo-store'
@@ -70,6 +73,8 @@ export const RedactionPage = () => {
   const [sentAt, setSentAt] = useState('')
   const [sentNote, setSentNote] = useState('')
   const [sendDateError, setSendDateError] = useState(false)
+  const [sendError, setSendError] = useState(false)
+  const { changeCaseStatusAsync, isChangingCaseStatus } = useChangeCaseStatus()
   const [exportError, setExportError] = useState(false)
   const [exportFormat, setExportFormat] = useState<ExportFormat>('txt')
 
@@ -187,10 +192,32 @@ export const RedactionPage = () => {
     }
   }
 
-  const recordSent = () => {
+  const recordSent = async () => {
     if (!validIsoDate(sentAt)) {
       setSendDateError(true)
       return
+    }
+    setSendError(false)
+    // The server only allows moving forward step by step, so a case that has
+    // not reached RESPONSE_PREPARED yet goes through it first.
+    if (item.apiStatus) {
+      try {
+        if (item.apiStatus !== 'RESPONSE_PREPARED') {
+          await changeCaseStatusAsync({
+            id: item.id,
+            status: 'RESPONSE_PREPARED',
+          })
+        }
+        await changeCaseStatusAsync({
+          id: item.id,
+          status: 'RESPONSE_SENT',
+          respondedAt: sentAt,
+          comment: sentNote.trim() || undefined,
+        })
+      } catch {
+        setSendError(true)
+        return
+      }
     }
     updateCase(item.id, {
       status: 'completed',
@@ -369,6 +396,7 @@ export const RedactionPage = () => {
               setSentAt('')
               setSentNote('')
               setSendDateError(false)
+              setSendError(false)
               setSendDialogOpen(true)
             }}
           >
@@ -387,6 +415,7 @@ export const RedactionPage = () => {
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <Alert severity="info">{t('sent.manualOnly')}</Alert>
+            {sendError && <Alert severity="error">{t('sent.error')}</Alert>}
             <TextField
               fullWidth
               type="date"
@@ -412,7 +441,12 @@ export const RedactionPage = () => {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ flexDirection: 'column', px: 3, pb: 2, gap: 1 }}>
-          <Button fullWidth variant="contained" onClick={recordSent}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => void recordSent()}
+            disabled={isChangingCaseStatus}
+          >
             {t('sent.confirm')}
           </Button>
           <Button

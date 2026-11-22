@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as casesApi from '@/api/cases/cases.api'
 import { createTestQueryClient } from '@/test/query-client'
 import { theme } from '@/app/theme'
+import type { CaseItem } from '@/features/demo/types'
 import { createDemoCases } from '@/features/demo/demo-data'
 import {
   DEMO_STORAGE_KEY,
@@ -18,6 +19,7 @@ import { RedactionPage } from './redaction-page'
 
 vi.mock('@/api/cases/cases.api', () => ({
   getRedactionSuggestions: vi.fn(),
+  changeCaseStatus: vi.fn(),
 }))
 
 const suggest = (...texts: string[]) =>
@@ -29,9 +31,12 @@ const suggest = (...texts: string[]) =>
     })),
   })
 
+// Fields that make the demo case look like a case stored on the server.
+let caseOverrides: Partial<CaseItem> = {}
+
 const CurrentCase = () => {
   const { cases } = useDemoStore()
-  return <Outlet context={cases[0]} />
+  return <Outlet context={{ ...cases[0], ...caseOverrides }} />
 }
 
 const renderPage = () =>
@@ -69,6 +74,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  caseOverrides = {}
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   localStorage.clear()
@@ -191,6 +197,62 @@ describe('redaction workflow', () => {
         name: 'Wyszukaj dane osobowe (AI)',
       }),
     ).toBeDisabled()
+  })
+
+  describe('with a case stored on the server', () => {
+    const openSendDialog = async (user: ReturnType<typeof userEvent.setup>) => {
+      caseOverrides = { apiStatus: 'NEW' }
+      renderPage()
+      await user.click(
+        screen.getByRole('checkbox', { name: /Potwierdzam, że ręcznie/ }),
+      )
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Zapisz ręcznie odnotowaną wysyłkę',
+        }),
+      )
+      fireEvent.change(screen.getByLabelText(/Data wysłania/), {
+        target: { value: '2026-11-21' },
+      })
+      await user.type(screen.getByLabelText('Notatka (opcjonalnie)'), 'ePUAP')
+      await user.click(
+        screen.getByRole('button', { name: 'Zapisz wysyłkę i zakończ sprawę' }),
+      )
+    }
+
+    it('moves the server status to RESPONSE_SENT through RESPONSE_PREPARED', async () => {
+      const user = userEvent.setup()
+      vi.mocked(casesApi.changeCaseStatus).mockResolvedValue(
+        {} as Awaited<ReturnType<typeof casesApi.changeCaseStatus>>,
+      )
+      await openSendDialog(user)
+      await waitFor(() =>
+        expect(casesApi.changeCaseStatus).toHaveBeenCalledTimes(2),
+      )
+      expect(
+        vi.mocked(casesApi.changeCaseStatus).mock.calls.map(([input]) => input),
+      ).toEqual([
+        { id: expect.any(String), status: 'RESPONSE_PREPARED' },
+        {
+          id: expect.any(String),
+          status: 'RESPONSE_SENT',
+          respondedAt: '2026-11-21',
+          comment: 'ePUAP',
+        },
+      ])
+    })
+
+    it('keeps the case open and shows an error when the server refuses', async () => {
+      const user = userEvent.setup()
+      vi.mocked(casesApi.changeCaseStatus).mockRejectedValue(new Error('409'))
+      await openSendDialog(user)
+      expect(
+        await screen.findByText(/Nie udało się zapisać wysyłki/),
+      ).toBeInTheDocument()
+      expect(
+        JSON.parse(localStorage.getItem(DEMO_STORAGE_KEY)!).cases[0].status,
+      ).not.toBe('completed')
+    })
   })
 
   it('suggests case variants separately without hiding declined variants or inflections', async () => {

@@ -444,7 +444,8 @@
       "confirm": "Zapisz wysyłkę i zakończ sprawę",
       "cancel": "Anuluj",
       "recorded": "Wysyłkę poza aplikacją odnotowano na dzień {{date}}. Notatka: {{note}}",
-      "noNote": "brak"
+      "noNote": "brak",
+      "error": "Nie udało się zapisać wysyłki na serwerze. Status sprawy nie został zmieniony – spróbuj ponownie."
     },
     "errors": {
       "export": "Nie udało się przygotować pliku do pobrania. Spróbuj ponownie.",
