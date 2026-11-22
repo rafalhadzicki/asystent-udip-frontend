@@ -5,7 +5,10 @@ import { styled } from '@mui/material/styles'
 import { LoginPage } from '@/features/auth/login-page'
 import { useSession } from '@/api/session'
 import { logout } from '@/api/auth/auth.api'
-import { LocalStoreProvider } from '@/features/cases/local-store'
+import {
+  clearLocalStore,
+  LocalStoreProvider,
+} from '@/features/cases/local-store'
 import { AppLayout } from '@/app/app-layout'
 import { CaseLayout } from '@/app/case-layout'
 import { caseTabs, routes } from '@/app/routes'
@@ -43,6 +46,11 @@ const NotFoundPage = () => {
   )
 }
 
+const signOut = () => {
+  clearLocalStore()
+  logout()
+}
+
 const App = () => {
   const user = useSession()
   return (
@@ -61,7 +69,7 @@ const App = () => {
         <Route
           element={
             user ? (
-              <AppLayout user={user} onLogout={logout} />
+              <AppLayout user={user} onLogout={signOut} />
             ) : (
               <Navigate to={routes.login} replace />
             )

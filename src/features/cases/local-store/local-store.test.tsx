@@ -1,7 +1,12 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { LocalStoreProvider, LOCAL_STORAGE_KEY, useLocalStore } from '.'
+import {
+  clearLocalStore,
+  LocalStoreProvider,
+  LOCAL_STORAGE_KEY,
+  useLocalStore,
+} from '.'
 import { createDemoCases } from '@/test/demo-cases'
 import { clearSession, setSession } from '@/api/session'
 
@@ -183,5 +188,19 @@ describe('local data store', () => {
     const overlay = JSON.parse(screen.getByTestId('overlay').textContent!)
     expect(overlay.responseText).toBe('Moja odpowiedź')
     expect(overlay).not.toHaveProperty('subject')
+  })
+})
+
+describe('clearLocalStore', () => {
+  it('removes local data of every user and leaves other keys alone', () => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, '{}')
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}:a@example.com`, '{}')
+    localStorage.setItem('other', 'x')
+    clearLocalStore()
+    expect(localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull()
+    expect(
+      localStorage.getItem(`${LOCAL_STORAGE_KEY}:a@example.com`),
+    ).toBeNull()
+    expect(localStorage.getItem('other')).toBe('x')
   })
 })
