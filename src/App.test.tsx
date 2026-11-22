@@ -28,7 +28,7 @@ describe('App', () => {
     vi.spyOn(apiClient, 'post').mockResolvedValue(undefined)
   })
   afterEach(() => vi.restoreAllMocks())
-  it('wyświetla puste logowanie', () => {
+  it('shows an empty sign-in form', () => {
     render(
       <MemoryRouter>
         <App />
@@ -42,7 +42,7 @@ describe('App', () => {
     expect(screen.getByLabelText('Hasło')).toHaveValue('')
   })
 
-  it('wymaga loginu i hasła', async () => {
+  it('requires a login and a password', async () => {
     const user = userEvent.setup()
     render(
       <MemoryRouter>
@@ -55,7 +55,7 @@ describe('App', () => {
     expect(screen.getByLabelText('E-mail')).toHaveFocus()
   })
 
-  it('przełącza widoczność hasła bez wysłania formularza', async () => {
+  it('toggles password visibility without submitting the form', async () => {
     const user = userEvent.setup()
     render(
       <MemoryRouter>
@@ -71,7 +71,7 @@ describe('App', () => {
     expect(screen.queryByText('Podaj adres e-mail.')).not.toBeInTheDocument()
   })
 
-  it('odrzuca login niebędący adresem e-mail', async () => {
+  it('rejects a login that is not an e-mail address', async () => {
     const login = vi.spyOn(authApi, 'login')
     const user = userEvent.setup()
     render(
@@ -88,7 +88,7 @@ describe('App', () => {
     expect(login).not.toHaveBeenCalled()
   })
 
-  it('odrzuca login składający się wyłącznie ze spacji', async () => {
+  it('rejects a login made only of spaces', async () => {
     const user = userEvent.setup()
     render(
       <MemoryRouter>
@@ -102,7 +102,7 @@ describe('App', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
-  it('pokazuje błąd, pozwala ponowić logowanie i wylogować się', async () => {
+  it('shows an error, allows retrying the sign-in and signing out', async () => {
     const login = vi.spyOn(authApi, 'login')
     login.mockRejectedValueOnce(
       new AxiosError('Unauthorized', undefined, undefined, undefined, {
@@ -156,7 +156,7 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
-  it('blokuje formularz podczas logowania', async () => {
+  it('locks the form while signing in', async () => {
     let finishLogin: (session: AuthSession) => void = () => {
       throw new Error('Login was not started')
     }
@@ -186,7 +186,7 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
-  it('pokazuje błąd połączenia zamiast błędnych danych logowania', async () => {
+  it('shows a connection error instead of invalid credentials', async () => {
     vi.spyOn(authApi, 'login').mockRejectedValue(
       new AxiosError('Network error'),
     )
@@ -204,7 +204,7 @@ describe('App', () => {
     )
   })
 
-  it('przekierowuje do logowania przy wejściu na sprawy bez sesji', () => {
+  it('redirects to the sign-in page when opening cases without a session', () => {
     render(
       <MemoryRouter initialEntries={['/sprawy']}>
         <App />
@@ -216,7 +216,7 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: 'Wyloguj się' })).toBeNull()
   })
 
-  it('pozwala wrócić ze strony o nieznanym adresie', async () => {
+  it('lets the user leave a page with an unknown address', async () => {
     const user = userEvent.setup()
     render(
       <MemoryRouter initialEntries={['/nieznana']}>

@@ -67,7 +67,7 @@ describe('RequestPage', () => {
     vi.mocked(casesApi.updateCase).mockReset().mockResolvedValue(detail)
   })
 
-  it('pokazuje metadane źródła i pozwala pobrać oryginał', async () => {
+  it('shows the source metadata and allows downloading the original', async () => {
     const original = new Blob(['pdf'])
     vi.mocked(casesApi.downloadCaseDocument).mockResolvedValue(original)
     const user = userEvent.setup()
@@ -89,7 +89,7 @@ describe('RequestPage', () => {
     ).toHaveAttribute('href', '/sprawy/demo-1/analiza')
   })
 
-  it('waliduje wymagane pola', async () => {
+  it('validates required fields', async () => {
     const user = userEvent.setup()
     renderPage('demo-1')
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
@@ -99,7 +99,7 @@ describe('RequestPage', () => {
     expect(screen.getByText('To pole jest wymagane.')).toBeInTheDocument()
   })
 
-  it('zmiana zakresu cofa sprawę do analizy z ostrzeżeniem', async () => {
+  it('changing the scope returns the case to analysis with a warning', async () => {
     const user = userEvent.setup()
     renderPage('demo-2')
     expect(screen.getByTestId('status')).toHaveTextContent('waiting')
@@ -115,7 +115,7 @@ describe('RequestPage', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('analysis')
   })
 
-  it('anulowanie przywraca zapisane dane', async () => {
+  it('cancelling restores the saved data', async () => {
     const user = userEvent.setup()
     renderPage('demo-1')
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))
@@ -125,7 +125,7 @@ describe('RequestPage', () => {
     expect(screen.getByText('Jan Demonstracyjny')).toBeInTheDocument()
   })
 
-  it('zakończona sprawa jest tylko do odczytu', () => {
+  it('a completed case is read-only', () => {
     renderPage('demo-10')
     expect(screen.getByText(/tylko do odczytu/)).toBeInTheDocument()
     expect(
@@ -133,7 +133,7 @@ describe('RequestPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('pozwala zapisać sprawę bez opcjonalnej daty sporządzenia', async () => {
+  it('allows saving a case without the optional writing date', async () => {
     cases[0].writtenAt = ''
     const user = userEvent.setup()
     renderPage('demo-1')
@@ -142,7 +142,7 @@ describe('RequestPage', () => {
     expect(screen.getByText('Zapisano zmiany we wniosku.')).toBeInTheDocument()
   })
 
-  it('unieważnia przegląd i oznacza projekt jako nieaktualny po zmianie wnioskodawcy', async () => {
+  it('invalidates the review and marks the draft stale after the applicant changes', async () => {
     cases[0] = {
       ...cases[0],
       status: 'redaction',
@@ -167,7 +167,7 @@ describe('RequestPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('wymaga przeglądu pytań także po zmianie wniosku w etapie analizy', async () => {
+  it('requires a question review also when the request changes during analysis', async () => {
     const user = userEvent.setup()
     renderPage('demo-1')
     await user.click(screen.getByRole('button', { name: 'Edytuj wniosek' }))

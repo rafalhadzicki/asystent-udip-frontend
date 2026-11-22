@@ -68,7 +68,7 @@ describe('KnowledgePage', () => {
     list(doc())
   })
 
-  it('pokazuje dokumenty z serwera ze statusem indeksacji', async () => {
+  it('shows documents from the server with their indexing status', async () => {
     list(doc(), doc({ id: 'doc-2', name: 'Wzór', indexStatus: 'FAILED' }))
     renderPage()
     expect(await tableRows()).toHaveLength(2)
@@ -82,7 +82,7 @@ describe('KnowledgePage', () => {
     })
   })
 
-  it('filtruje na serwerze wyszukiwaniem i kategorią (wielkimi literami)', async () => {
+  it('filters on the server by search and category (upper case)', async () => {
     const user = userEvent.setup()
     renderPage()
     await tableRows()
@@ -105,7 +105,7 @@ describe('KnowledgePage', () => {
     )
   })
 
-  it('pokazuje pusty stan i błąd z ponowieniem', async () => {
+  it('shows the empty state and an error with a retry', async () => {
     const user = userEvent.setup()
     api.getKnowledgeList.mockRejectedValueOnce(failure(500))
     list()
@@ -121,7 +121,7 @@ describe('KnowledgePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('stronicuje po stronie serwera', async () => {
+  it('paginates on the server', async () => {
     const user = userEvent.setup()
     api.getKnowledgeList.mockResolvedValue({
       items: Array.from({ length: 5 }, (_, index) =>
@@ -141,7 +141,7 @@ describe('KnowledgePage', () => {
     )
   })
 
-  it('waliduje formularz i wysyła plik na serwer', async () => {
+  it('validates the form and uploads the file to the server', async () => {
     api.createKnowledgeDocument.mockResolvedValue(doc())
     const user = userEvent.setup({ applyAccept: false })
     renderPage()
@@ -206,7 +206,7 @@ describe('KnowledgePage', () => {
     )
   })
 
-  it('pokazuje błąd serwera przy zbyt dużym pliku i zostawia formularz otwarty', async () => {
+  it('shows a server error for a file that is too large and keeps the form open', async () => {
     api.createKnowledgeDocument.mockRejectedValue(failure(413))
     const user = userEvent.setup({ applyAccept: false })
     renderPage()
@@ -227,7 +227,7 @@ describe('KnowledgePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('edytuje nazwę i kategorię bez wymiany pliku', async () => {
+  it('edits the name and category without replacing the file', async () => {
     api.updateKnowledgeDocument.mockResolvedValue(doc())
     const user = userEvent.setup()
     renderPage()
@@ -263,7 +263,7 @@ describe('KnowledgePage', () => {
     })
   })
 
-  it('usuwa dokument po potwierdzeniu', async () => {
+  it('deletes a document after confirmation', async () => {
     api.deleteKnowledgeDocument.mockResolvedValue()
     const user = userEvent.setup()
     renderPage()
@@ -282,7 +282,7 @@ describe('KnowledgePage', () => {
     )
   })
 
-  it('pozwala ponownie zindeksować tylko oczekujące i nieudane dokumenty', async () => {
+  it('allows reindexing only pending and failed documents', async () => {
     list(
       doc({ id: 'a', name: 'Zindeksowany', indexStatus: 'INDEXED' }),
       doc({ id: 'b', name: 'Oczekujący', indexStatus: 'PENDING' }),
@@ -306,7 +306,7 @@ describe('KnowledgePage', () => {
     )
   })
 
-  it('informuje, gdy AI nie jest skonfigurowane przy ponownej indeksacji', async () => {
+  it('reports when the AI is not configured during reindexing', async () => {
     list(doc({ indexStatus: 'PENDING' }))
     api.reindexKnowledgeDocument.mockRejectedValue(failure(503))
     const user = userEvent.setup()
@@ -318,7 +318,7 @@ describe('KnowledgePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('pokazuje wyodrębniony tekst w podglądzie', async () => {
+  it('shows the extracted text in the preview', async () => {
     api.getKnowledgeDocument.mockResolvedValue({
       ...doc(),
       extractedText: 'Art. 1. Treść ustawy.',

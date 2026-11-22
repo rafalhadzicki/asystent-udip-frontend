@@ -57,7 +57,7 @@ describe('MaterialsPage', () => {
     vi.mocked(casesApi.changeCaseStatus).mockReset().mockResolvedValue(detail)
   })
 
-  it('blokuje dalszą pracę do czasu przeglądu zmienionego wniosku', () => {
+  it('blocks further work until the changed request is reviewed', () => {
     renderPage({ analysisNeedsReview: true })
     expect(screen.getByText(/Przed dalszą pracą przejrzyj/)).toBeInTheDocument()
     expect(

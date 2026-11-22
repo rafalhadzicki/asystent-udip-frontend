@@ -5,7 +5,7 @@ import { clearCacheOnSessionChange, createQueryClient } from './query-client'
 import { setSession } from './session'
 
 describe('queryClient', () => {
-  it('czyści cache przy każdej zmianie sesji', () => {
+  it('clears the cache on every session change', () => {
     const client = createQueryClient()
     const unsubscribe = clearCacheOnSessionChange(client)
     setSession({ id: 'a', email: 'a@example.test' })
@@ -15,7 +15,7 @@ describe('queryClient', () => {
     unsubscribe()
   })
 
-  it('nie ponawia zapytań po błędach 4xx, ale ponawia błędy sieci', () => {
+  it('does not retry after 4xx errors but retries network errors', () => {
     const retry = createQueryClient().getDefaultOptions().queries?.retry
     if (typeof retry !== 'function') throw new Error('retry is not a function')
     const clientError = new AxiosError(

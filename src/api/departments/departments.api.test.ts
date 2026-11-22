@@ -6,7 +6,7 @@ import { getDepartments } from './departments.api'
 describe('getDepartments', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('przekazuje signal i zwraca listę jednostek', async () => {
+  it('passes the signal and returns the list of departments', async () => {
     const data = [
       {
         id: 'id-1',
@@ -22,12 +22,12 @@ describe('getDepartments', () => {
     expect(get).toHaveBeenCalledWith('/api/departments', { signal })
   })
 
-  it('odrzuca odpowiedź niezgodną z kontraktem', async () => {
+  it('rejects a response that breaks the contract', async () => {
     vi.spyOn(apiClient, 'get').mockResolvedValue([{ id: 'incomplete' }])
     await expect(getDepartments()).rejects.toBeInstanceOf(ZodError)
   })
 
-  it('propaguje błędy transportu', async () => {
+  it('propagates transport errors', async () => {
     const error = new Error('network error')
     vi.spyOn(apiClient, 'get').mockRejectedValue(error)
     await expect(getDepartments()).rejects.toBe(error)

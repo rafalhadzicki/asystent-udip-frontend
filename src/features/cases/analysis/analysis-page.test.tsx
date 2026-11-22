@@ -85,7 +85,7 @@ const renderRemote = (item: CaseItem) =>
 
 const savedCase = () => readSavedCase(current)
 
-describe('analiza sprawy', () => {
+describe('case analysis', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.mocked(casesApi.setCaseQuestions).mockReset().mockResolvedValue(detail)
@@ -97,7 +97,7 @@ describe('analiza sprawy', () => {
       .mockResolvedValue({ matches: [] })
   })
 
-  it('podpowiada jednostki z API i zapisuje wybór lokalnie', async () => {
+  it('suggests departments from the API and saves the choice locally', async () => {
     vi.mocked(departmentApi.getDepartments).mockResolvedValue([
       {
         id: 'api-unit',
@@ -143,7 +143,7 @@ describe('analiza sprawy', () => {
     ).toBeInTheDocument()
   })
 
-  it('informuje o błędzie pobierania jednostek', async () => {
+  it('reports a failure to load departments', async () => {
     vi.mocked(departmentApi.getDepartments).mockRejectedValue(
       new Error('network'),
     )
@@ -427,7 +427,7 @@ describe('analiza sprawy', () => {
     expect(savedCase()).toEqual(item)
   })
 
-  it('wymaga jawnego zapisu poprawnej analizy po zmianie wniosku', async () => {
+  it('requires an explicit save of a valid analysis after the request changed', async () => {
     const item = createDemoCases()[0]
     item.analysisNeedsReview = true
     const user = userEvent.setup()
@@ -439,7 +439,7 @@ describe('analiza sprawy', () => {
     expect(savedCase().analysisNeedsReview).toBe(false)
   })
 
-  describe('sprawa z API', () => {
+  describe('case from the API', () => {
     const remoteItem = () =>
       composeApiCase(
         {
@@ -454,7 +454,7 @@ describe('analiza sprawy', () => {
         },
       )
 
-    it('pokazuje uzasadnienie AI i zapisuje zmienione pytania na serwerze', async () => {
+    it('shows the AI reasoning and saves changed questions on the server', async () => {
       vi.mocked(casesApi.setCaseQuestions).mockResolvedValue(detail)
       const user = userEvent.setup()
       const item = remoteItem()
@@ -472,7 +472,7 @@ describe('analiza sprawy', () => {
       expect(casesApi.setCaseDepartments).not.toHaveBeenCalled()
     })
 
-    it('nie zapisuje ustaleń lokalnie, gdy serwer odrzuci zmianę', async () => {
+    it('does not save findings locally when the server rejects the change', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => undefined)
       vi.mocked(casesApi.setCaseQuestions).mockRejectedValue(new Error('500'))
       const user = userEvent.setup()
@@ -487,7 +487,7 @@ describe('analiza sprawy', () => {
       ).toBeInTheDocument()
     })
 
-    it('odrzuca jednostkę spoza słownika serwera', async () => {
+    it('rejects a department outside the server dictionary', async () => {
       const user = userEvent.setup()
       renderRemote(remoteItem())
       await user.type(screen.getByLabelText('Nazwa jednostki'), 'Nieznana')

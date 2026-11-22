@@ -108,8 +108,8 @@ beforeEach(() => {
 })
 afterEach(() => vi.clearAllMocks())
 
-describe('weryfikacja wniosku', () => {
-  it('wyjaśnia brak szkicu i prowadzi do wyboru pliku', () => {
+describe('request verification', () => {
+  it('explains the missing draft and leads to file selection', () => {
     renderPage()
     expect(screen.getByText('Brak wniosku do weryfikacji')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Wybierz plik' })).toHaveAttribute(
@@ -118,7 +118,7 @@ describe('weryfikacja wniosku', () => {
     )
   })
 
-  it('tworzy sprawę przez API i przechodzi do analizy z id z backendu', async () => {
+  it('creates the case through the API and moves to analysis with the backend id', async () => {
     vi.mocked(casesApi.createCase).mockResolvedValue({
       ...detail,
       id: 'server-id',
@@ -171,7 +171,7 @@ describe('weryfikacja wniosku', () => {
     })
   })
 
-  it('bez pytań od AI dzieli tekst wniosku na pytania', async () => {
+  it('splits the request text into questions when the AI gives none', async () => {
     vi.mocked(casesApi.createCase).mockResolvedValue(detail)
     const user = userEvent.setup()
     renderPage({ ...draft, questions: [], departments: [] })
@@ -188,7 +188,7 @@ describe('weryfikacja wniosku', () => {
     expect(casesApi.setCaseDepartments).not.toHaveBeenCalled()
   })
 
-  it('przechodzi do analizy, gdy zapis pytań się nie powiódł', async () => {
+  it('moves to analysis when saving the questions failed', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     vi.mocked(casesApi.createCase).mockResolvedValue(detail)
     vi.mocked(casesApi.setCaseQuestions).mockRejectedValue(failWith(500))
@@ -202,7 +202,7 @@ describe('weryfikacja wniosku', () => {
     expect(await screen.findByTestId('path')).toHaveTextContent('/analiza')
   })
 
-  it('wysyła sprawę tylko raz przy podwójnym zatwierdzeniu', async () => {
+  it('submits the case only once on a double confirmation', async () => {
     vi.mocked(casesApi.createCase).mockResolvedValue(detail)
     const user = userEvent.setup()
     renderPage(draft)
@@ -220,7 +220,7 @@ describe('weryfikacja wniosku', () => {
     expect(casesApi.createCase).toHaveBeenCalledTimes(1)
   })
 
-  it('pokazuje ostrzeżenia i wypełnia sugerowany numer sprawy', async () => {
+  it('shows warnings and fills in the suggested case number', async () => {
     renderPage({
       ...draft,
       reference: 'NOWA/123',
@@ -242,7 +242,7 @@ describe('weryfikacja wniosku', () => {
     ).toBeInTheDocument()
   })
 
-  it('odrzuca puste dane bez wywołania API', async () => {
+  it('rejects empty data without calling the API', async () => {
     const user = userEvent.setup()
     renderPage(draft)
     await screen.findByText('wniosek.pdf')
@@ -261,7 +261,7 @@ describe('weryfikacja wniosku', () => {
     expect(casesApi.createCase).not.toHaveBeenCalled()
   })
 
-  it('podpowiada numer zajęty według case-number-check i blokuje zapis', async () => {
+  it('flags a number taken according to case-number-check and blocks saving', async () => {
     vi.mocked(casesApi.checkCaseNumber).mockResolvedValue({
       caseNumber: 'A/1',
       available: false,
@@ -280,7 +280,7 @@ describe('weryfikacja wniosku', () => {
     expect(casesApi.createCase).not.toHaveBeenCalled()
   })
 
-  it('409 z kodem SEQUENCE_NUMBER_TAKEN pokazuje komunikat o numerze kolejnym', async () => {
+  it('409 with SEQUENCE_NUMBER_TAKEN shows the sequence number message', async () => {
     vi.mocked(casesApi.createCase).mockRejectedValue(
       failWith(409, { code: 'SEQUENCE_NUMBER_TAKEN' }),
     )
@@ -296,7 +296,7 @@ describe('weryfikacja wniosku', () => {
     ).toBeInTheDocument()
   })
 
-  it('409 oznacza zajęty numer sprawy przy polu numeru', async () => {
+  it('409 marks the case number as taken on the number field', async () => {
     vi.mocked(casesApi.createCase).mockRejectedValue(failWith(409))
     const user = userEvent.setup()
     renderPage(draft)
@@ -311,7 +311,7 @@ describe('weryfikacja wniosku', () => {
     expect(screen.queryByTestId('path')).not.toBeInTheDocument()
   })
 
-  it('400 przy dacie z przyszłości oznacza pole daty wpływu', async () => {
+  it('400 for a future date marks the received date field', async () => {
     vi.mocked(casesApi.createCase).mockRejectedValue(failWith(400))
     const user = userEvent.setup()
     renderPage({ ...draft, receivedAt: '2999-01-01' })

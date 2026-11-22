@@ -14,7 +14,7 @@ const respond = (status = 200, data: unknown = {}) =>
 describe('apiClient', () => {
   afterEach(() => setSession(null))
 
-  it('wysyła ciasteczka sesji, adres API i timeout w każdym requeście', async () => {
+  it('sends the session cookie, API address and timeout with every request', async () => {
     const adapter = respond()
     await apiClient.get('/api/cases', { adapter })
     const config = adapter.mock.calls[0][0]
@@ -24,7 +24,7 @@ describe('apiClient', () => {
     expect(config.timeout).toBe(REQUEST_TIMEOUT_MS)
   })
 
-  it('kończy sesję po 401 z dowolnego endpointu poza logowaniem', async () => {
+  it('ends the session after a 401 from any endpoint except sign-in', async () => {
     setSession({ id: 'u', email: 'user@example.test' })
     await expect(
       apiClient.get('/api/cases', { adapter: respond(401) }),
@@ -44,7 +44,7 @@ describe('apiClient', () => {
     },
   )
 
-  it('nie rusza sesji przy innych błędach', async () => {
+  it('leaves the session alone on other errors', async () => {
     const session = { id: 'u', email: 'user@example.test' }
     setSession(session)
     await expect(
@@ -112,7 +112,7 @@ describe('apiClient', () => {
     },
   )
 
-  it('przekazuje responseType dla pobierania plików', async () => {
+  it('passes responseType for file downloads', async () => {
     const data = new Blob(['demo'], { type: 'application/pdf' })
     const adapter = vi.fn<AxiosAdapter>(async (config) => ({
       data,
@@ -131,14 +131,14 @@ describe('apiClient', () => {
     expect(adapter.mock.calls[0][0].responseType).toBe('blob')
   })
 
-  it('propaguje błędy transportu bez zamiany na udaną odpowiedź', async () => {
+  it('propagates transport errors instead of turning them into a success', async () => {
     const error = new AxiosError('Network error', 'ERR_NETWORK')
     const adapter = vi.fn<AxiosAdapter>().mockRejectedValue(error)
 
     await expect(apiClient.get('/cases', { adapter })).rejects.toBe(error)
   })
 
-  it('przekazuje signal i respektuje anulowanie requestu', async () => {
+  it('passes the signal and honours request cancellation', async () => {
     const controller = new AbortController()
     const adapter = vi.fn<AxiosAdapter>(async (config) => ({
       data: [],

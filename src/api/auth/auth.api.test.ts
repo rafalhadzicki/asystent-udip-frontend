@@ -15,14 +15,14 @@ afterEach(() => {
 })
 
 describe('login', () => {
-  it('wysyła dane do endpointu logowania i zwraca użytkownika', async () => {
+  it('posts the credentials to the login endpoint and returns the user', async () => {
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue(user)
     const credentials = { email: user.email, password: 'example' }
     await expect(login(credentials)).resolves.toEqual(user)
     expect(post).toHaveBeenCalledWith('/api/auth/login', credentials)
   })
 
-  it('odrzuca odpowiedź bez użytkownika', async () => {
+  it('rejects a response without a user', async () => {
     vi.spyOn(apiClient, 'post').mockResolvedValue({})
     await expect(
       login({ email: user.email, password: 'example' }),
@@ -31,7 +31,7 @@ describe('login', () => {
 })
 
 describe('getCurrentUser', () => {
-  it('pobiera zalogowanego użytkownika', async () => {
+  it('fetches the signed-in user', async () => {
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(user)
     await expect(getCurrentUser()).resolves.toEqual(user)
     expect(get).toHaveBeenCalledWith('/api/auth/me')
@@ -39,7 +39,7 @@ describe('getCurrentUser', () => {
 })
 
 describe('logout', () => {
-  it('wywołuje endpoint i kończy sesję', async () => {
+  it('calls the endpoint and ends the session', async () => {
     setSession(user)
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue(undefined)
     await logout()
@@ -47,7 +47,7 @@ describe('logout', () => {
     expect(getSession()).toBeNull()
   })
 
-  it('kończy sesję lokalnie, nawet gdy żądanie się nie powiedzie', async () => {
+  it('ends the session locally even when the request fails', async () => {
     setSession(user)
     vi.spyOn(apiClient, 'post').mockRejectedValue(new Error('offline'))
     await expect(logout()).resolves.toBeUndefined()

@@ -49,7 +49,7 @@ const detail = {
 describe('cases api', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('analyzeRequest wysyła plik jako multipart z sygnałem anulowania', async () => {
+  it('analyzeRequest sends the file as multipart with an abort signal', async () => {
     const response = {
       fileName: 'test.pdf',
       textExtractionStatus: 'NO_TEXT',
@@ -100,7 +100,7 @@ describe('cases api', () => {
     },
   )
 
-  it('getCases łączy statusy przecinkiem i waliduje listę', async () => {
+  it('getCases joins statuses with commas and validates the list', async () => {
     const get = vi
       .spyOn(apiClient, 'get')
       .mockResolvedValue({ items: [summary], total: 1 })
@@ -114,7 +114,7 @@ describe('cases api', () => {
     })
   })
 
-  it('createCase wysyła JSON bez pliku i multipart z plikiem', async () => {
+  it('createCase sends JSON without a file and multipart with a file', async () => {
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue(detail)
     const fields = { subject: 'Temat', receivedAt: '2026-11-20' }
     await createCase(fields)
@@ -149,7 +149,7 @@ describe('cases api', () => {
     await expect(getAllCases({ year: 2026 })).rejects.toThrow('Too many cases')
   })
 
-  it('PUT pytań i jednostek wysyła listy pod adresami sprawy', async () => {
+  it('PUT of questions and departments sends the lists to the case addresses', async () => {
     const put = vi.spyOn(apiClient, 'put').mockResolvedValue(detail)
     await setCaseQuestions({
       id: 'case-1',
@@ -166,7 +166,7 @@ describe('cases api', () => {
     ])
   })
 
-  it('uploadCaseDocument wysyła plik, rodzaj i jednostkę jako multipart', async () => {
+  it('uploadCaseDocument sends the file, kind and department as multipart', async () => {
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue({
       id: 'doc-1',
       kind: 'DEPARTMENT_RESPONSE',
@@ -193,7 +193,7 @@ describe('cases api', () => {
     expect(form.get('departmentId')).toBe('dep-1')
   })
 
-  it('draftResponse i redaction-suggestions parsują odpowiedzi AI', async () => {
+  it('draftResponse and redaction-suggestions parse AI responses', async () => {
     const post = vi.spyOn(apiClient, 'post')
     post.mockResolvedValueOnce({
       text: 'Szkic [UZUPEŁNIJ: data]',

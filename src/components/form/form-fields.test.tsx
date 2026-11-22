@@ -44,8 +44,8 @@ const TestForm = ({
   )
 }
 
-describe('wspólne pola formularzy', () => {
-  it('obsługuje zagnieżdżone nazwy, onBlur, błędy, fokus i reset', async () => {
+describe('shared form fields', () => {
+  it('handles nested names, onBlur, errors, focus and reset', async () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn()
     render(<TestForm onSubmit={onSubmit} />)
@@ -76,14 +76,14 @@ describe('wspólne pola formularzy', () => {
     expect(email).toHaveAccessibleDescription('Pomoc')
   })
 
-  it('blokuje pole hasła oraz jego podgląd, gdy jest disabled', () => {
+  it('disables the password field and its toggle when disabled', () => {
     render(<TestForm onSubmit={vi.fn()} disabled />)
     expect(screen.getByLabelText('Email')).toBeDisabled()
     expect(screen.getByLabelText('Hasło')).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Pokaż hasło' })).toBeDisabled()
   })
 
-  it('wbudowane loading MUI nie usuwa niezależnego disabled', () => {
+  it('the built-in MUI loading does not clear an independent disabled', () => {
     const { rerender } = render(
       <Button loading disabled>
         Wyślij
